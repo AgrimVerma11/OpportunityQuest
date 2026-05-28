@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { fetchPublic } from "../utils/api"; // ✅ FIXED
+import { fetchPublic } from "../utils/api"; // FIXED it .... was fetchWithAuth before, but this page is public ( remember this as a lesson in the future :) )
 import Navbar from "./Navbar";
 import "./OpportunityDetail.css";
 

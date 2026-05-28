@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 import "./Home.css";
+
 import Navbar from "./Navbar";
+
 import { fetchPublic } from "../utils/api";
+
+
 
 function Home() {
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] =
+    useState("");
 
   const [selectedCategory, setSelectedCategory] =
     useState("All");
@@ -25,9 +31,11 @@ function Home() {
 
   const navigate = useNavigate();
 
-  // =========================
+
+
+ 
   // AUTH
-  // =========================
+ 
 
   useEffect(() => {
 
@@ -35,7 +43,9 @@ function Home() {
       localStorage.getItem("token");
 
     if (!token) {
+
       navigate("/");
+
       return;
     }
 
@@ -49,9 +59,11 @@ function Home() {
 
   }, [navigate]);
 
-  // =========================
+
+
+ 
   // FETCH OPPORTUNITIES
-  // =========================
+ 
 
   useEffect(() => {
 
@@ -70,59 +82,90 @@ function Home() {
 
   }, []);
 
-  // =========================
-  // FILTERS
-  // =========================
+
+
+
+
+  // FILTERING
+
 
   const filteredOpportunities =
     opportunities.filter((item) => {
 
       const matchesSearch =
+
         item.title
           ?.toLowerCase()
           .includes(
             searchTerm.toLowerCase()
           );
 
+
+
       const matchesCategory =
+
         selectedCategory === "All" ||
+
         item.category === selectedCategory;
 
+
+
       const matchesBranch =
+
         selectedBranch === "All" ||
-        item.eligibleBranches?.includes(
-          "All"
-        ) ||
+
+        item.eligibleBranches?.includes("All") ||
+
         item.eligibleBranches?.includes(
           selectedBranch
         );
 
+
+
       const matchesYear =
+
         selectedYear === "All" ||
-        item.eligibleYears?.includes(
-          "All"
-        ) ||
+
+        item.eligibleYears?.includes("All") ||
+
         item.eligibleYears?.includes(
           selectedYear
         );
 
+
+
       return (
+
         matchesSearch &&
+
         matchesCategory &&
+
         matchesBranch &&
+
         matchesYear
+
       );
+
     });
 
+
+
+
   return (
+
     <>
+
       <Navbar />
+
+
 
       <div className="home-container">
 
         <div className="home-inner">
 
+          
           {/* HEADER */}
+          
 
           <div className="top-bar">
 
@@ -132,24 +175,40 @@ function Home() {
                 Opportunity Quest
               </h1>
 
+
+
               <p className="home-subtitle">
-                Discover internships,
-                research opportunities,
-                collaborations and gigs.
+
+                {currentUser?.role === "Faculty"
+
+                  ? "Manage and publish opportunities across campus."
+
+                  : "Discover internships, research and collaborations across campus."
+
+                }
+
               </p>
+
+
 
               {currentUser && (
 
                 <div className="user-header">
 
                   <span className="hello-text">
+
                     Hello, {currentUser.name}
+
                   </span>
+
+
 
                   <span
                     className={`role-badge ${currentUser.role}`}
                   >
+
                     {currentUser.role}
+
                   </span>
 
                 </div>
@@ -158,42 +217,62 @@ function Home() {
 
             </div>
 
+
+
+            {/* ACTIONS */}
+
             <div className="top-actions">
 
-              <button
-                className="create-btn"
-                onClick={() =>
-                  navigate("/create")
-                }
-              >
-                + Post Opportunity
-              </button>
+              {currentUser?.role === "Faculty" && (
+
+                <button
+                  className="create-btn"
+                  onClick={() =>
+                    navigate("/create-opportunity")
+                  }
+                >
+
+                  + Post Opportunity
+
+                </button>
+
+              )}
 
             </div>
 
           </div>
 
+
+
+          
           {/* FILTERS */}
+          
 
           <div className="filter-wrapper">
+
+            {/* SEARCH */}
 
             <input
               type="text"
               className="search-input"
               placeholder="Search opportunities..."
+
               value={searchTerm}
+
               onChange={(e) =>
-                setSearchTerm(
-                  e.target.value
-                )
+                setSearchTerm(e.target.value)
               }
             />
+
+
 
             {/* CATEGORY */}
 
             <select
               className="category-select"
+
               value={selectedCategory}
+
               onChange={(e) =>
                 setSelectedCategory(
                   e.target.value
@@ -223,11 +302,15 @@ function Home() {
 
             </select>
 
+
+
             {/* BRANCH */}
 
             <select
               className="category-select"
+
               value={selectedBranch}
+
               onChange={(e) =>
                 setSelectedBranch(
                   e.target.value
@@ -239,37 +322,24 @@ function Home() {
                 All Branches
               </option>
 
-              <option value="COE">
-                COE
-              </option>
-
-              <option value="ENC">
-                ENC
-              </option>
-
-              <option value="ECE">
-                ECE
-              </option>
-
-              <option value="RAI">
-                RAI
-              </option>
-
-              <option value="COBS">
-                COBS
-              </option>
-
-              <option value="EEC">
-                EEC
-              </option>
+              <option value="COE">COE</option>
+              <option value="ENC">ENC</option>
+              <option value="ECE">ECE</option>
+              <option value="RAI">RAI</option>
+              <option value="COBS">COBS</option>
+              <option value="EEC">EEC</option>
 
             </select>
+
+
 
             {/* YEAR */}
 
             <select
               className="category-select"
+
               value={selectedYear}
+
               onChange={(e) =>
                 setSelectedYear(
                   e.target.value
@@ -299,48 +369,65 @@ function Home() {
 
             </select>
 
+
+
             {/* CLEAR */}
 
             <button
               className="clear-btn"
+
               onClick={() => {
 
                 setSearchTerm("");
 
-                setSelectedCategory(
-                  "All"
-                );
+                setSelectedCategory("All");
 
-                setSelectedBranch(
-                  "All"
-                );
+                setSelectedBranch("All");
 
-                setSelectedYear(
-                  "All"
-                );
+                setSelectedYear("All");
 
               }}
             >
+
               Clear
+
             </button>
 
           </div>
 
+
+
+
           {/* TITLE */}
+         
 
           <h2 className="section-title">
+
             Explore Opportunities
+
           </h2>
 
+
+
+         
           {/* OPPORTUNITIES */}
+          
 
           <div className="opportunities-grid">
 
             {filteredOpportunities.length === 0 ? (
 
-              <p className="no-results">
-                No opportunities found.
-              </p>
+              <div className="no-results">
+
+                <h3>
+                  No opportunities found
+                </h3>
+
+                <p>
+                  Try changing filters or search terms.
+                </p>
+
+              </div>
 
             ) : (
 
@@ -348,7 +435,9 @@ function Home() {
 
                 <div
                   className="opportunity-card"
+
                   key={item._id}
+
                   onClick={() =>
                     navigate(
                       `/opportunity/${item._id}`
@@ -364,29 +453,39 @@ function Home() {
                       {item.title}
                     </h3>
 
+
+
                     <span
                       className={`badge ${item.category?.replace(
                         " ",
                         "-"
                       )}`}
                     >
+
                       {item.category}
+
                     </span>
 
                   </div>
+
+
 
                   {/* DESCRIPTION */}
 
                   <p className="card-description">
 
                     {item.description?.length > 140
+
                       ? item.description.slice(
                           0,
                           140
                         ) + "..."
+
                       : item.description}
 
                   </p>
+
+
 
                   {/* TAGS */}
 
@@ -395,17 +494,21 @@ function Home() {
                     <div className="tags-row">
 
                       {item.tags
+
                         .filter(
                           (tag) =>
                             tag.trim() !== ""
                         )
+
                         .map((tag, index) => (
 
                           <span
                             key={index}
                             className="tag-pill"
                           >
+
                             {tag}
+
                           </span>
 
                         ))}
@@ -413,6 +516,8 @@ function Home() {
                     </div>
 
                   )}
+
+
 
                   {/* ELIGIBILITY */}
 
@@ -425,12 +530,12 @@ function Home() {
                       </span>
 
                       <p>
-                        {item.eligibleBranches?.join(
-                          ", "
-                        )}
+                        {item.eligibleBranches?.join(", ")}
                       </p>
 
                     </div>
+
+
 
                     <div className="eligibility-box">
 
@@ -439,14 +544,28 @@ function Home() {
                       </span>
 
                       <p>
-                        {item.eligibleYears?.join(
-                          ", "
-                        )}
+                        {item.eligibleYears?.join(", ")}
+                      </p>
+
+                    </div>
+
+
+
+                    <div className="eligibility-box">
+
+                      <span className="footer-label">
+                        Gender
+                      </span>
+
+                      <p>
+                        {item.eligibleGender || "Any"}
                       </p>
 
                     </div>
 
                   </div>
+
+
 
                   {/* FOOTER */}
 
@@ -461,14 +580,18 @@ function Home() {
                       <span className="deadline-text">
 
                         {item.deadline
+
                           ? new Date(
                               item.deadline
                             ).toLocaleDateString()
+
                           : "No deadline"}
 
                       </span>
 
                     </div>
+
+
 
                     <div className="posted-box">
 
@@ -479,8 +602,9 @@ function Home() {
                       <span
                         className={`role-badge ${item.postedBy?.role}`}
                       >
-                        {item.postedBy?.role ||
-                          "User"}
+
+                        {item.postedBy?.role || "User"}
+
                       </span>
 
                     </div>
@@ -490,6 +614,7 @@ function Home() {
                 </div>
 
               ))
+
             )}
 
           </div>
@@ -497,6 +622,7 @@ function Home() {
         </div>
 
       </div>
+
     </>
   );
 }

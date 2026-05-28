@@ -7,66 +7,94 @@ import {
 
 import authMiddleware from "../middleware/authMiddleware.js";
 
+import authorizeRoles from "../middleware/authorizeRoles.js";
+
+import validate from "../middleware/validateMiddleware.js";
+
+import {
+  createOpportunityValidation,
+} from "../validators/opportunityValidator.js";
+
 import Opportunity from "../models/Opportunity.js";
 
 const router = express.Router();
 
 
 
-// =========================
-// 🔐 Protected Routes
-// =========================
 
-// Create opportunity
-router.post("/create", authMiddleware, createOpportunity);
+// CREATE OPPORTUNITY
 
 
+router.post(
 
-// =========================
-// 🌍 Public Routes
-// =========================
+  "/create",
 
-// Get all opportunities
-router.get("/", getOpportunities);
+  authMiddleware,
+
+  authorizeRoles("Faculty"),
+
+  validate(createOpportunityValidation),
+
+  createOpportunity
+);
 
 
 
-// =========================
-// 📊 AGGREGATION ROUTE
-// =========================
 
-router.get("/stats/categories", async (req, res) => {
+// GET OPPORTUNITIES
 
-  try {
 
-    const stats = await Opportunity.aggregate([
+router.get(
+  "/",
+  getOpportunities
+);
 
-      {
-        $group: {
-          _id: "$category",
-          count: { $sum: 1 },
-        },
-      },
 
-      {
-        $sort: { count: -1 },
-      },
 
-    ]);
+// CATEGORY STATS
 
-    res.json(stats);
 
-  } catch (err) {
+router.get(
+  "/stats/categories",
 
-    console.error(err);
+  async (req, res) => {
 
-    res.status(500).json({
-      message: "Failed to generate category stats",
-    });
+    try {
 
+      const stats =
+        await Opportunity.aggregate([
+
+          {
+            $group: {
+              _id: "$category",
+              count: { $sum: 1 },
+            },
+          },
+
+          {
+            $sort: { count: -1 },
+          },
+
+        ]);
+
+      res.json(stats);
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to generate category stats",
+
+      });
+
+    }
   }
-
-});
+);
 
 
 

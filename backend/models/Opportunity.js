@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const opportunitySchema = new mongoose.Schema(
   {
-    // =========================
+    
     // BASIC INFO
-    // =========================
+    
 
     title: {
       type: String,
@@ -33,20 +33,19 @@ const opportunitySchema = new mongoose.Schema(
       required: true,
     },
 
-    // =========================
+    
     // POSTED BY
-    // =========================
+    
 
     postedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
     },
 
-    // =========================
+    
     // ELIGIBILITY
-    // =========================
+    
 
     eligibleBranches: {
       type: [String],
@@ -64,9 +63,9 @@ const opportunitySchema = new mongoose.Schema(
       default: "Any",
     },
 
-    // =========================
+    
     // CONTACT
-    // =========================
+    
 
     contactEmail: {
       type: String,
@@ -75,27 +74,27 @@ const opportunitySchema = new mongoose.Schema(
       lowercase: true,
     },
 
-    // =========================
+    
     // TAGS
-    // =========================
+    
 
     tags: {
       type: [String],
       default: [],
     },
 
-    // =========================
+    
     // DEADLINE
-    // =========================
+    
 
     deadline: {
       type: Date,
       required: true,
     },
 
-    // =========================
+    
     // STATUS
-    // =========================
+    
 
     status: {
       type: String,
@@ -103,9 +102,9 @@ const opportunitySchema = new mongoose.Schema(
       default: "Active",
     },
 
-    // =========================
+    
     // ANALYTICS
-    // =========================
+    
 
     applicationsCount: {
       type: Number,
@@ -125,9 +124,9 @@ const opportunitySchema = new mongoose.Schema(
       min: 0,
     },
 
-    // =========================
+    
     // FUTURE FEATURES
-    // =========================
+    
 
     isRemote: {
       type: Boolean,
@@ -159,9 +158,9 @@ const opportunitySchema = new mongoose.Schema(
 
 
 
-// =========================
+
 // 🔍 INDEXES
-// =========================
+
 
 // Full text search
 opportunitySchema.index({
