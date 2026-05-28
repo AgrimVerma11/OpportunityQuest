@@ -33,9 +33,10 @@ function Home() {
 
 
 
- 
+
+  // =========================
   // AUTH
- 
+  // =========================
 
   useEffect(() => {
 
@@ -61,9 +62,10 @@ function Home() {
 
 
 
- 
+
+  // =========================
   // FETCH OPPORTUNITIES
- 
+  // =========================
 
   useEffect(() => {
 
@@ -85,9 +87,9 @@ function Home() {
 
 
 
-
+  // =========================
   // FILTERING
-
+  // =========================
 
   const filteredOpportunities =
     opportunities.filter((item) => {
@@ -163,9 +165,10 @@ function Home() {
 
         <div className="home-inner">
 
-          
+
+
+
           {/* HEADER */}
-          
 
           <div className="top-bar">
 
@@ -244,9 +247,9 @@ function Home() {
 
 
 
-          
+
+
           {/* FILTERS */}
-          
 
           <div className="filter-wrapper">
 
@@ -398,8 +401,8 @@ function Home() {
 
 
 
+
           {/* TITLE */}
-         
 
           <h2 className="section-title">
 
@@ -409,9 +412,9 @@ function Home() {
 
 
 
-         
+
+
           {/* OPPORTUNITIES */}
-          
 
           <div className="opportunities-grid">
 
@@ -445,6 +448,9 @@ function Home() {
                   }
                 >
 
+
+
+
                   {/* TOP */}
 
                   <div className="card-top">
@@ -470,6 +476,46 @@ function Home() {
 
 
 
+
+                  {/* FACULTY INFO */}
+
+                  <div className="faculty-info-row">
+
+                    <div className="faculty-avatar">
+
+                      {item.postedBy?.name
+                        ?.charAt(0)
+                        ?.toUpperCase()}
+
+                    </div>
+
+
+
+                    <div className="faculty-details">
+
+                      <span className="faculty-name">
+
+                        {item.postedBy?.name ||
+                          "Faculty"}
+
+                      </span>
+
+
+
+                      <span className="faculty-department">
+
+                        {item.postedBy?.department ||
+                          "Department"}
+
+                      </span>
+
+                    </div>
+
+                  </div>
+
+
+
+
                   {/* DESCRIPTION */}
 
                   <p className="card-description">
@@ -484,6 +530,7 @@ function Home() {
                       : item.description}
 
                   </p>
+
 
 
 
@@ -516,6 +563,7 @@ function Home() {
                     </div>
 
                   )}
+
 
 
 
@@ -567,6 +615,7 @@ function Home() {
 
 
 
+
                   {/* FOOTER */}
 
                   <div className="card-footer">
@@ -603,7 +652,7 @@ function Home() {
                         className={`role-badge ${item.postedBy?.role}`}
                       >
 
-                        {item.postedBy?.role || "User"}
+                        {item.postedBy?.role || "Faculty"}
 
                       </span>
 

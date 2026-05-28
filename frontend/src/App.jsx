@@ -16,7 +16,15 @@ function App() {
       <Route path="/register" element={<Register />} />
 
       <Route path="/home" element={<Home />} />
-      <Route path="/create" element={<CreateOpportunity />} />
+      <Route
+        path="/create"
+        element={<CreateOpportunity />}
+      />
+
+      <Route
+        path="/create-opportunity"
+        element={<CreateOpportunity />}
+      />
       <Route path="/opportunity/:id" element={<OpportunityDetail />} />
       <Route path="/faculty" element={<Faculty />} />
     </Routes>

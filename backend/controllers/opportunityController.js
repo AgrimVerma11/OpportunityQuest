@@ -2,9 +2,9 @@ import Opportunity from "../models/Opportunity.js";
 
 
 
-// =========================
+
 // CREATE OPPORTUNITY
-// =========================
+
 
 export const createOpportunity = async (req, res) => {
 
@@ -74,9 +74,9 @@ export const createOpportunity = async (req, res) => {
 
 
 
-// =========================
+
 // GET ALL OPPORTUNITIES
-// =========================
+
 
 export const getOpportunities = async (req, res) => {
 
@@ -87,7 +87,10 @@ export const getOpportunities = async (req, res) => {
         status: "Active",
       })
 
-      .populate("postedBy", "name role")
+      .populate(
+        "postedBy",
+        "name role department"
+      )
 
       .sort({
         createdAt: -1,
@@ -108,9 +111,9 @@ export const getOpportunities = async (req, res) => {
 
 
 
-// =========================
+
 // ARCHIVE OPPORTUNITY
-// =========================
+
 
 export const archiveOpportunity = async (req, res) => {
 
