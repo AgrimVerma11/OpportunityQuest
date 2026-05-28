@@ -1,0 +1,192 @@
+.create-container {
+  min-height: 100vh;
+
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+
+  padding: 60px 20px;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* MAIN CARD */
+.create-card {
+  width: 100%;
+  max-width: 760px;
+
+  background: white;
+
+  padding: 40px;
+
+  border-radius: 24px;
+
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 18px;
+
+  border: 1px solid #eef2ff;
+}
+
+/* TITLE */
+.create-card h2 {
+  text-align: center;
+
+  font-size: 34px;
+  font-weight: 700;
+
+  color: #111827;
+
+  margin-bottom: 10px;
+}
+
+/* INPUTS */
+.create-card input,
+.create-card textarea,
+.create-card select {
+  width: 100%;
+
+  padding: 14px 16px;
+
+  border-radius: 12px;
+
+  border: 1px solid #d1d5db;
+
+  font-size: 15px;
+
+  transition: 0.2s ease;
+
+  background: #fafafa;
+}
+
+/* FOCUS */
+.create-card input:focus,
+.create-card textarea:focus,
+.create-card select:focus {
+  outline: none;
+
+  border-color: #2563eb;
+
+  background: white;
+
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.08);
+}
+
+/* TEXTAREA */
+.create-card textarea {
+  min-height: 130px;
+
+  resize: vertical;
+
+  line-height: 1.6;
+}
+
+/* LABELS */
+.multi-section label {
+  display: block;
+
+  margin-bottom: 10px;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  color: #374151;
+}
+
+/* OPTIONS */
+.multi-options {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 12px;
+}
+
+/* OPTION BUTTONS */
+.multi-options button {
+  padding: 10px 16px;
+
+  border-radius: 999px;
+
+  border: 1px solid #d1d5db;
+
+  background: white;
+
+  cursor: pointer;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  transition: 0.2s ease;
+}
+
+.multi-options button:hover {
+  border-color: #2563eb;
+
+  color: #2563eb;
+}
+
+/* SELECTED */
+.multi-options button.selected {
+  background: #2563eb;
+
+  color: white;
+
+  border-color: #2563eb;
+}
+
+/* SUBMIT BUTTON */
+.submit-btn {
+  margin-top: 10px;
+
+  padding: 15px;
+
+  background: #2563eb;
+
+  color: white;
+
+  border: none;
+
+  border-radius: 14px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.25s ease;
+}
+
+.submit-btn:hover {
+  background: #1d4ed8;
+
+  transform: translateY(-2px);
+}
+
+/* ERROR */
+.error {
+  text-align: center;
+
+  color: #dc2626;
+
+  background: #fee2e2;
+
+  padding: 12px;
+
+  border-radius: 10px;
+
+  font-size: 14px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .create-card {
+    padding: 25px;
+  }
+
+  .create-card h2 {
+    font-size: 28px;
+  }
+}

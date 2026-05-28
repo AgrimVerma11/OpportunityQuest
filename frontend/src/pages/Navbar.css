@@ -1,0 +1,57 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+  background-color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-logo {
+  font-weight: bold;
+  font-size: 18px;
+  color: #2563eb;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #374151;
+  font-size: 15px;
+}
+
+.nav-link:hover {
+  color: #2563eb;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+}
+
+.nav-logout {
+  padding: 6px 12px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.nav-logout:hover {
+  background-color: #dc2626;
+}
+
+
+/* AUTH PAGE NAVBAR (Login/Register) */
+.auth-navbar {
+  justify-content: center;
+  box-shadow: none;
+  background: transparent;
+  margin-top: 40px;
+}
