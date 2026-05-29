@@ -293,7 +293,7 @@ function CreateOpportunity() {
       // HOME
       else {
 
-        navigate("/home");
+        navigate("/faculty");
 
       }
 

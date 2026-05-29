@@ -226,20 +226,7 @@ function Home() {
 
             <div className="top-actions">
 
-              {currentUser?.role === "Faculty" && (
-
-                <button
-                  className="create-btn"
-                  onClick={() =>
-                    navigate("/create-opportunity")
-                  }
-                >
-
-                  + Post Opportunity
-
-                </button>
-
-              )}
+              {/* here i had the create opportunity for faculty directly from the home page but now i moved it to the faculty corner */}
 
             </div>
 

@@ -20,8 +20,27 @@ function Navbar() {
 
         {!isAuthPage && (
           <>
-            <Link to="/home" className="nav-link">Home</Link>
-            <Link to="/faculty" className="nav-link">Faculty</Link>
+            <Link
+              to="/home"
+              className="nav-link"
+            >
+              Home
+            </Link>
+
+            {JSON.parse(
+              localStorage.getItem(
+                "currentUser"
+              )
+            )?.role === "Faculty" && (
+
+              <Link
+                to="/faculty"
+                className="nav-link"
+              >
+                Faculty Corner
+              </Link>
+
+            )}
           </>
         )}
       </div>
