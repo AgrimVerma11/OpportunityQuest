@@ -55,3 +55,50 @@
   background: transparent;
   margin-top: 40px;
 }
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: 18px;
+}
+
+.user-avatar {
+  width: 42px;
+  height: 42px;
+
+  border-radius: 50%;
+
+  background: #dbeafe;
+  color: #1d4ed8;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: 700;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.user-role {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.user-role.Student {
+  color: #0369a1;
+}
+
+.user-role.Faculty {
+  color: #5b21b6;
+}

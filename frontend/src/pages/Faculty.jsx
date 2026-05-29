@@ -7,7 +7,6 @@ import "./Faculty.css";
 import { fetchWithAuth } from "../utils/api";
 
 function Faculty() {
-
   const navigate = useNavigate();
 
   const [loading, setLoading] =
@@ -16,46 +15,39 @@ function Faculty() {
   const [opportunities, setOpportunities] =
     useState([]);
 
-  useEffect(() => {
+  const currentUser = JSON.parse(
+    localStorage.getItem("currentUser")
+  );
 
+  useEffect(() => {
     const user = JSON.parse(
       localStorage.getItem("currentUser")
     );
 
     if (!user || user.role !== "Faculty") {
-
       navigate("/home");
-
       return;
     }
 
     loadMyOpportunities();
-
   }, []);
 
   const loadMyOpportunities =
     async () => {
-
       try {
-
         const data =
           await fetchWithAuth(
             "/opportunities/my-opportunities"
           );
 
         if (data.success) {
-
           setOpportunities(
             data.opportunities
           );
         }
-
       } catch (error) {
-
         console.error(error);
-
       } finally {
-
         setLoading(false);
       }
     };
@@ -86,21 +78,29 @@ function Faculty() {
       <Navbar />
 
       <div className="faculty-container">
-
         <div className="faculty-inner">
 
-          <div className="faculty-header">
+          {/* HERO */}
+
+          <div className="faculty-hero">
 
             <div>
 
+              <p className="faculty-welcome">
+                FACULTY DASHBOARD
+              </p>
+
               <h1 className="faculty-title">
-                Faculty Corner
+                Welcome back,
+                {" "}
+                {currentUser?.name}
               </h1>
 
               <p className="faculty-subtitle">
                 Manage opportunities,
-                collaborations and
-                student engagement.
+                research projects and
+                future student applications
+                from one place.
               </p>
 
             </div>
@@ -118,7 +118,10 @@ function Faculty() {
 
           </div>
 
+          {/* STATS */}
+
           {!loading && (
+
             <div className="stats-grid">
 
               <div className="stat-card">
@@ -151,11 +154,12 @@ function Faculty() {
                 Faculty Profile
               </strong>
               <p>
-                Profile management,
-                document uploads and
-                applicant tracking will
-                be introduced in future
-                releases.
+                Faculty Tools - 
+
+                Profile Management (Coming Soon) , 
+                PDF Attachments (Coming Soon) , 
+                Student Applications (Phase 2) , 
+                Applicant Tracking (Phase 2)
               </p>
             </div>
 
@@ -271,9 +275,16 @@ function Faculty() {
                         View
                       </button>
 
+                      <button
+                        className="secondary-btn"
+                      >
+                        Archive
+                      </button>
+
                     </div>
 
                   </div>
+
                 )
               )}
 
@@ -282,7 +293,6 @@ function Faculty() {
           )}
 
         </div>
-
       </div>
     </>
   );

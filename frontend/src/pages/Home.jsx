@@ -34,9 +34,9 @@ function Home() {
 
 
 
-  // =========================
+
   // AUTH
-  // =========================
+
 
   useEffect(() => {
 
@@ -63,9 +63,9 @@ function Home() {
 
 
 
-  // =========================
+
   // FETCH OPPORTUNITIES
-  // =========================
+
 
   useEffect(() => {
 
@@ -87,9 +87,9 @@ function Home() {
 
 
 
-  // =========================
+
   // FILTERING
-  // =========================
+
 
   const filteredOpportunities =
     opportunities.filter((item) => {
@@ -175,34 +175,32 @@ function Home() {
             <div>
 
               <h1 className="home-title">
-                Opportunity Quest
-              </h1>
+
+              Welcome back,
+              {" "}
+              {currentUser?.name}
+              👋
+
+            </h1>
+
+            <p className="home-subtitle">
+
+              {currentUser?.role === "Faculty"
+
+                ? "Manage opportunities, collaborations and projects across campus."
+
+                : "Discover internships, research opportunities, faculty projects and paid gigs."
+
+              }
+
+            </p>
 
 
 
-              <p className="home-subtitle">
-
-                {currentUser?.role === "Faculty"
-
-                  ? "Manage and publish opportunities across campus."
-
-                  : "Discover internships, research and collaborations across campus."
-
-                }
-
-              </p>
-
-
-
-              {currentUser && (
+              {/* {currentUser && (
 
                 <div className="user-header">
 
-                  <span className="hello-text">
-
-                    Hello, {currentUser.name}
-
-                  </span>
 
 
 
@@ -216,7 +214,7 @@ function Home() {
 
                 </div>
 
-              )}
+              )} */}
 
             </div>
 

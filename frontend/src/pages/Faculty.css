@@ -164,3 +164,93 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* adding more to enhance the design of faculty corner */
+.faculty-inner {
+  max-width: 1400px;
+}
+
+.faculty-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.faculty-welcome {
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.faculty-title {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.faculty-subtitle {
+  max-width: 650px;
+  line-height: 1.7;
+}
+
+.stat-card {
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+  transition: 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-card h3 {
+  font-size: 2.8rem;
+}
+
+.roadmap-card {
+  background: white;
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 35px;
+  border: 1px solid #e5e7eb;
+}
+
+.roadmap-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.roadmap-grid span {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.faculty-card {
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
+  transition: 0.2s ease;
+}
+
+.faculty-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+}
+
+.secondary-btn {
+  background: #f3f4f6;
+  color: #111827;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background: #e5e7eb;
+}
