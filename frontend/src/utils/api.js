@@ -61,3 +61,57 @@ export const fetchPublic = async (
 
   return res.json();
 };
+
+// PATCH with token
+export const patchWithAuth = async (
+  endpoint,
+  data = {}
+) => {
+
+  const token =
+    localStorage.getItem("token");
+
+  const res = await fetch(
+    `${API_BASE}${endpoint}`,
+    {
+      method: "PATCH",
+
+      headers: {
+        "Content-Type":
+          "application/json",
+
+        Authorization:
+          `Bearer ${token}`,
+      },
+
+      body: JSON.stringify(data),
+    }
+  );
+
+  return res.json();
+};
+
+
+
+// DELETE with token
+export const deleteWithAuth = async (
+  endpoint
+) => {
+
+  const token =
+    localStorage.getItem("token");
+
+  const res = await fetch(
+    `${API_BASE}${endpoint}`,
+    {
+      method: "DELETE",
+
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.json();
+};

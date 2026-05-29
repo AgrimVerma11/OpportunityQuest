@@ -233,7 +233,7 @@ function OpportunityDetail() {
                       className="tag"
                       key={index}
                     >
-                      #{tag}
+                      {tag}
                     </span>
 
                   )
