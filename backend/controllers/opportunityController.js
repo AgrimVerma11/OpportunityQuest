@@ -1,10 +1,7 @@
 import Opportunity from "../models/Opportunity.js";
 
 
-
-
 // CREATE OPPORTUNITY
-
 
 export const createOpportunity = async (req, res) => {
 
@@ -108,6 +105,53 @@ export const getOpportunities = async (req, res) => {
 
   }
 };
+
+export const getMyOpportunities = async (
+  req,
+  res
+) => {
+
+  try {
+
+    const opportunities =
+      await Opportunity.find({
+
+        postedBy: req.user.id,
+
+      })
+
+      .sort({
+        createdAt: -1,
+      });
+
+    res.status(200).json({
+
+      success: true,
+
+      count:
+        opportunities.length,
+
+      opportunities,
+
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+
+      success: false,
+
+      message:
+        "Failed to fetch opportunities",
+
+    });
+
+  }
+};
+
+
 
 // GET SINGLE OPPORTUNITY
 

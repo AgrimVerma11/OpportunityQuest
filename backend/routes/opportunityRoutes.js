@@ -4,6 +4,7 @@ import {
   createOpportunity,
   getOpportunities,
   getOpportunityById,
+  getMyOpportunities,
 } from "../controllers/opportunityController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -41,13 +42,25 @@ router.post(
 
 
 
-
 // GET OPPORTUNITIES
-
 
 router.get(
   "/",
   getOpportunities
+);
+
+
+// GET MY OPPORTUNITIES (for individual faculty members)
+
+router.get(
+
+  "/my-opportunities",
+
+  authMiddleware,
+
+  authorizeRoles("Faculty"),
+
+  getMyOpportunities
 );
 
 
