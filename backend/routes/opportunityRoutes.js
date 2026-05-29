@@ -3,6 +3,7 @@ import express from "express";
 import {
   createOpportunity,
   getOpportunities,
+  getOpportunityById,
 } from "../controllers/opportunityController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -50,9 +51,14 @@ router.get(
 );
 
 
+// GET OPPORTUNITY BY ID
+router.get(
+  "/:id",
+  getOpportunityById
+);
+
 
 // CATEGORY STATS
-
 
 router.get(
   "/stats/categories",

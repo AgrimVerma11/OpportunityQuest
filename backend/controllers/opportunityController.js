@@ -109,7 +109,45 @@ export const getOpportunities = async (req, res) => {
   }
 };
 
+// GET SINGLE OPPORTUNITY
 
+export const getOpportunityById = async (req, res) => {
+
+  try {
+
+    const opportunity =
+      await Opportunity.findById(req.params.id)
+
+      .populate(
+        "postedBy",
+        "name role department"
+      );
+
+    if (!opportunity) {
+
+      return res.status(404).json({
+        success: false,
+        message: "Opportunity not found",
+      });
+
+    }
+
+    res.status(200).json({
+      success: true,
+      opportunity,
+    });
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+
+  }
+};
 
 
 // ARCHIVE OPPORTUNITY

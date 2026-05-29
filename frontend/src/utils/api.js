@@ -1,36 +1,63 @@
-const API_BASE = "http://localhost:5174/api";
+const API_BASE =
+  import.meta.env.VITE_API_URL;
 
 // GET with token
-export const fetchWithAuth = async (endpoint) => {
-  const token = localStorage.getItem("token");
+export const fetchWithAuth = async (
+  endpoint
+) => {
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const token =
+    localStorage.getItem("token");
+
+  const res = await fetch(
+    `${API_BASE}${endpoint}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
   return res.json();
 };
 
 // POST with token
-export const postWithAuth = async (endpoint, data) => {
-  const token = localStorage.getItem("token");
+export const postWithAuth = async (
+  endpoint,
+  data
+) => {
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
+  const token =
+    localStorage.getItem("token");
+
+  const res = await fetch(
+    `${API_BASE}${endpoint}`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type":
+          "application/json",
+
+        Authorization:
+          `Bearer ${token}`,
+      },
+
+      body: JSON.stringify(data),
+    }
+  );
 
   return res.json();
 };
 
-// ✅ PUBLIC GET (THIS WAS MISSING)
-export const fetchPublic = async (endpoint) => {
-  const res = await fetch(`${API_BASE}${endpoint}`);
+// PUBLIC GET
+export const fetchPublic = async (
+  endpoint
+) => {
+
+  const res = await fetch(
+    `${API_BASE}${endpoint}`
+  );
+
   return res.json();
 };
