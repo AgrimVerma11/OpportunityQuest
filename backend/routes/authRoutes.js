@@ -12,6 +12,17 @@ import {
   loginValidation,
 } from "../validators/authValidator.js";
 
+import authMiddleware from "../middleware/authMiddleware.js";
+
+import {
+  updateProfileValidation,
+} from "../validators/profileValidator.js";
+
+import {
+  getProfile,
+  updateProfile,
+} from "../controllers/authController.js";
+
 const router = express.Router();
 
 
@@ -32,6 +43,21 @@ router.post(
   "/login",
   validate(loginValidation),
   loginUser
+);
+
+router.get(
+  "/profile",
+  authMiddleware,
+  getProfile
+);
+
+router.put(
+  "/profile",
+  authMiddleware,
+  validate(
+    updateProfileValidation
+  ),
+  updateProfile
 );
 
 

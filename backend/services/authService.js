@@ -1,9 +1,12 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
 import {
   findUserByEmail,
   createUser,
+  findUserById,
+  updateUserProfile,
 } from "../repositories/authRepository.js";
 
 export const registerUserService = async (
@@ -40,10 +43,15 @@ export const loginUserService = async (
   }
 
   const isMatch =
-    await bcrypt.compare(password, user.password);
+    await bcrypt.compare(
+      password,
+      user.password
+    );
 
   if (!isMatch) {
-    throw new Error("Invalid credentials");
+    throw new Error(
+      "Invalid credentials"
+    );
   }
 
   const token = jwt.sign(
@@ -62,3 +70,42 @@ export const loginUserService = async (
     user,
   };
 };
+
+
+
+
+// PROFILE SERVICES
+
+
+  export const getProfileService = async (
+      userId
+      ) => {
+
+        const user =
+          await User.findById(userId)
+            .select("-password");
+
+          if (!user) {
+            throw new Error("User not found");
+          }
+
+        return user;
+  };
+
+export const updateProfileService =
+  async (userId, updates) => {
+
+    const user =
+      await updateUserProfile(
+        userId,
+        updates
+      );
+
+    if (!user) {
+      throw new Error(
+        "User not found"
+      );
+    }
+
+    return user;
+  };

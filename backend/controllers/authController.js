@@ -1,13 +1,14 @@
 import {
   registerUserService,
   loginUserService,
+  getProfileService,
+  updateProfileService,
 } from "../services/authService.js";
 
 
 
-// =========================
+
 // REGISTER USER
-// =========================
 
 export const registerUser = async (
   req,
@@ -17,7 +18,9 @@ export const registerUser = async (
   try {
 
     const user =
-      await registerUserService(req.body);
+      await registerUserService(
+        req.body
+      );
 
     res.status(201).json({
 
@@ -41,7 +44,8 @@ export const registerUser = async (
       success: false,
 
       message:
-        error.message || "Server error",
+        error.message ||
+        "Server error",
 
     });
   }
@@ -49,9 +53,8 @@ export const registerUser = async (
 
 
 
-// =========================
+
 // LOGIN USER
-// =========================
 
 export const loginUser = async (
   req,
@@ -60,7 +63,10 @@ export const loginUser = async (
 
   try {
 
-    const { email, password } = req.body;
+    const {
+      email,
+      password,
+    } = req.body;
 
     const result =
       await loginUserService(
@@ -72,17 +78,26 @@ export const loginUser = async (
 
       success: true,
 
-      message: "Login successful",
+      message:
+        "Login successful",
 
       data: {
 
-        token: result.token,
+        token:
+          result.token,
 
         user: {
-          id: result.user._id,
-          name: result.user.name,
-          email: result.user.email,
-          role: result.user.role,
+          id:
+            result.user._id,
+
+          name:
+            result.user.name,
+
+          email:
+            result.user.email,
+
+          role:
+            result.user.role,
         },
 
       },
@@ -98,8 +113,91 @@ export const loginUser = async (
       success: false,
 
       message:
-        error.message || "Login failed",
+        error.message ||
+        "Login failed",
 
     });
   }
 };
+
+
+
+
+// GET PROFILE
+
+export const getProfile =
+  async (req, res) => {
+
+    try {
+
+      const user =
+        await getProfileService(
+          req.user.id
+        );
+
+      res.json({
+
+        success: true,
+
+        profile: user,
+
+      });
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          error.message,
+
+      });
+
+    }
+  };
+
+
+
+
+// UPDATE PROFILE
+
+export const updateProfile =
+  async (req, res) => {
+
+    try {
+
+      const user =
+        await updateProfileService(
+          req.user.id,
+          req.body
+        );
+
+      res.json({
+
+        success: true,
+
+        message:
+          "Profile updated successfully",
+
+        profile: user,
+
+      });
+
+    } catch (error) {
+
+      console.error(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          error.message,
+
+      });
+
+    }
+  };

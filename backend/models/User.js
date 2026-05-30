@@ -107,6 +107,12 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    designation: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     isProfilePublic: {
       type: Boolean,
       default: true,
