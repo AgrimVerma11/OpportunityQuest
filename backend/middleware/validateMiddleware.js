@@ -2,9 +2,7 @@ const validate = (schema) => {
 
   return (req, res, next) => {
 
-    console.log("Incoming Body:", req.body);
-
-    const { error } = schema.validate(
+    const { error, value } = schema.validate(
       req.body,
       {
         abortEarly: false,
@@ -13,8 +11,6 @@ const validate = (schema) => {
     );
 
     if (error) {
-
-      console.log(error.details);
 
       return res.status(400).json({
 
@@ -30,6 +26,7 @@ const validate = (schema) => {
 
     }
 
+    req.body = value;
     next();
   };
 };

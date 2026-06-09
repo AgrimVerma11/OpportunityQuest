@@ -1,6 +1,9 @@
 const API_BASE =
   import.meta.env.VITE_API_URL;
 
+export const BACKEND_URL =
+  (import.meta.env.VITE_API_URL || "http://localhost:5174/api").replace("/api", "");
+
 // GET with token
 export const fetchWithAuth = async (
   endpoint
@@ -110,6 +113,48 @@ export const deleteWithAuth = async (
         Authorization:
           `Bearer ${token}`,
       },
+    }
+  );
+
+  return res.json();
+};
+
+// MULTIPART UPLOAD with token (for file uploads — do NOT set Content-Type manually)
+export const uploadWithAuth = async (endpoint, formData) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+  return res.json();
+};
+
+// PUT with token
+export const putWithAuth = async (
+  endpoint,
+  data
+) => {
+
+  const token =
+    localStorage.getItem("token");
+
+  const res = await fetch(
+    `${API_BASE}${endpoint}`,
+    {
+      method: "PUT",
+
+      headers: {
+        "Content-Type":
+          "application/json",
+
+        Authorization:
+          `Bearer ${token}`,
+      },
+
+      body: JSON.stringify(data),
     }
   );
 

@@ -257,6 +257,7 @@ function Home() {
             {/* CATEGORY */}
 
             <select
+              id="categoryFilter"
               className="category-select"
 
               value={selectedCategory}
@@ -311,11 +312,23 @@ function Home() {
               </option>
 
               <option value="COE">COE</option>
-              <option value="ENC">ENC</option>
-              <option value="ECE">ECE</option>
-              <option value="RAI">RAI</option>
+              <option value="COPC">COPC</option>
               <option value="COBS">COBS</option>
+              <option value="DSAI">DSAI</option>
               <option value="EEC">EEC</option>
+              <option value="ECE">ECE</option>
+              <option value="ENC">ENC</option>
+              <option value="RAI">RAI</option>
+              <option value="EVD">EVD</option>
+              <option value="EIC">EIC</option>
+              <option value="MEE">MEE</option>
+              <option value="MEC">MEC</option>
+              <option value="CHE">CHE</option>
+              <option value="CIE">CIE</option>
+              <option value="CCA">CCA</option>
+              <option value="ELE">ELE</option>
+              <option value="BME">BME</option>
+              <option value="BT">BT</option>
 
             </select>
 
@@ -407,11 +420,11 @@ function Home() {
 
               <div className="no-results">
 
-                <h3>
+                <h3 id="no_opportunity_found">
                   No opportunities found
                 </h3>
 
-                <p>
+                <p id="no_opportunity_message">
                   Try changing filters or search terms.
                 </p>
 

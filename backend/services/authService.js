@@ -28,7 +28,9 @@ export const registerUserService = async (
     password: hashedPassword,
   });
 
-  return user;
+  const userObj = user.toObject();
+  delete userObj.password;
+  return userObj;
 };
 
 export const loginUserService = async (
@@ -39,7 +41,7 @@ export const loginUserService = async (
   const user = await findUserByEmail(email);
 
   if (!user) {
-    throw new Error("User not found");
+    throw new Error("Invalid email or password");
   }
 
   const isMatch =
@@ -49,9 +51,7 @@ export const loginUserService = async (
     );
 
   if (!isMatch) {
-    throw new Error(
-      "Invalid credentials"
-    );
+    throw new Error("Invalid email or password");
   }
 
   const token = jwt.sign(

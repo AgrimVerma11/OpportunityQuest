@@ -15,18 +15,13 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin:
-      process.env.ALLOWED_ORIGIN,
+    origin: process.env.ALLOWED_ORIGIN || "http://localhost:5173",
     credentials: true,
   })
 );
 app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 app.use("/api/opportunities", opportunityRoutes);
-// Debug (optional but useful)
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
 
 // Connect DB
 connectDB();
@@ -55,6 +50,14 @@ app.get("/api/protected", authMiddleware, (req, res) => {
 });
 
 // -------- SERVER --------
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal server error",
+  });
+});
 
 const PORT = process.env.PORT || 5174;
 

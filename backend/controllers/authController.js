@@ -39,7 +39,10 @@ export const registerUser = async (
 
     console.error(error);
 
-    res.status(500).json({
+    const status =
+      error.message === "User already exists" ? 409 : 500;
+
+    res.status(status).json({
 
       success: false,
 

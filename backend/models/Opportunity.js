@@ -149,6 +149,48 @@ const opportunitySchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+
+
+    // SOFT DELETE
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
+
+    // PDF ATTACHMENTS
+
+    attachments: {
+      type: [
+        {
+          originalName: { type: String, required: true },
+          filename: { type: String, required: true },
+          url: { type: String, required: true },
+          uploadedAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
+
+
+    // DEADLINE EXTENSION HISTORY
+
+    deadlineHistory: {
+      type: [
+        {
+          previousDeadline: { type: Date, required: true },
+          extendedAt: { type: Date, default: Date.now },
+          reason: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
   },
 
   {

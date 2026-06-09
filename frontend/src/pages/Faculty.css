@@ -22,9 +22,39 @@
   color: #111827;
 }
 
+/* .faculty-hero > div:first-child {
+  flex: 1;
+} */
+
+
+/* updated faculty hero */
+.faculty-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+.faculty-hero > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+/* 
 .faculty-subtitle {
+  max-width: 850px;
+  line-height: 1.8;
+  font-size: 1.05rem;
+} */
+
+
+/* updated faculty-subtitle */
+.faculty-subtitle {
+  width: 100%;
+  max-width: none;
+  font-size: 1.1rem;
+  line-height: 1.8;
   color: #6b7280;
-  margin-top: 8px;
 }
 
 .create-opportunity-btn {
@@ -85,7 +115,8 @@
 
 .card-actions {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-top: 18px;
 }
 
@@ -96,6 +127,12 @@
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.view-btn:hover {
+  background: #1d4ed8;
 }
 
 .empty-state {
@@ -171,12 +208,12 @@
   max-width: 1400px;
 }
 
-.faculty-hero {
+/* .faculty-hero {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 40px;
-}
+} */
 
 .faculty-welcome {
   color: #2563eb;
@@ -191,10 +228,10 @@
   margin-bottom: 10px;
 }
 
-.faculty-subtitle {
+/* .faculty-subtitle {
   max-width: 650px;
   line-height: 1.7;
-}
+} */
 
 .stat-card {
   border: 1px solid #e5e7eb;
@@ -249,8 +286,230 @@
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .secondary-btn:hover {
   background: #e5e7eb;
+}
+
+.faculty-profile-card {
+
+  background: white;
+
+  border-radius: 18px;
+
+  border: 1px solid #e5e7eb;
+
+  padding: 24px;
+
+  margin-bottom: 30px;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+}
+
+.profile-completion {
+
+  margin-bottom: 12px;
+
+  font-weight: 700;
+
+  color: #2563eb;
+}
+
+.status-pill {
+
+  padding: 6px 12px;
+
+  border-radius: 999px;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.status-pill.Active {
+
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+.status-pill.Closed {
+
+  background: #e5e7eb;
+
+  color: #374151;
+}
+
+.status-pill.Expired {
+
+  background: #fee2e2;
+
+  color: #b91c1c;
+}
+
+.faculty-role-line {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2563eb;
+  margin-bottom: 12px;
+}
+
+.archived-card {
+  opacity: 0.9;
+}
+
+.faculty-profile-card h2 {
+  margin-bottom: 8px;
+}
+
+.faculty-profile-card p {
+  color: #6b7280;
+  line-height: 1.6;
+  max-width: 550px;
+}
+
+.profile-completion {
+  text-align: center;
+  font-size: 1rem;
+}
+
+.faculty-profile-card {
+  transition: 0.25s ease;
+}
+
+.faculty-profile-card:hover {
+  box-shadow:
+    0 12px 28px
+    rgba(0,0,0,0.06);
+}
+
+@media (max-width: 900px) {
+
+  .faculty-hero {
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .faculty-profile-card {
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-start;
+  }
+}
+
+/* ---- DELETE BUTTON ---- */
+
+.delete-btn {
+  background: transparent;
+  border: 1px solid #ff4d4f;
+  color: #ff4d4f;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.delete-btn:hover {
+  background: #ff4d4f;
+  color: #fff;
+}
+
+
+/* ---- DEADLINE EXTENDED / ATTACHMENT NOTES ---- */
+
+.deadline-extended-note,
+.attachment-note {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 4px 0 0;
+}
+
+
+/* ---- EXTEND DEADLINE MODAL ---- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.modal-card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #1a1a2e;
+}
+
+.modal-hint {
+  font-size: 0.85rem;
+  color: #888;
+  margin: 0;
+}
+
+.modal-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: -4px;
+}
+
+.modal-input,
+.modal-textarea {
+  width: 100%;
+  border: 1px solid #dde1f0;
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.9rem;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.modal-input:focus,
+.modal-textarea:focus {
+  border-color: #4361ee;
+}
+
+.modal-textarea {
+  resize: vertical;
+}
+
+.modal-error {
+  color: #ff4d4f;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: flex-end;
+  margin-top: 0.4rem;
 }

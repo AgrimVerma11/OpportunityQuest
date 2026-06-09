@@ -1,212 +1,123 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import "./Login.css";
-import Navbar from "./Navbar";
+import "./Auth.css";
 
 function Login() {
-
-  const [email, setEmail] =
-    useState("");
-
-  const [password, setPassword] =
-    useState("");
-
-  const [errors, setErrors] =
-    useState({});
-
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // =========================
-  // SUBMIT
-  // =========================
-
   async function handleSubmit(e) {
-
     e.preventDefault();
-
     const newErrors = {};
 
-    // EMAIL VALIDATION
-    if (
-      !email.endsWith("@thapar.edu")
-    ) {
-
-      newErrors.email =
-        "Only thapar.edu email addresses are allowed.";
-
+    if (!email.endsWith("@thapar.edu")) {
+      newErrors.email = "Only thapar.edu email addresses are allowed.";
     }
-
-    // PASSWORD VALIDATION
     if (password.length < 6) {
-
-      newErrors.password =
-        "Password must be at least 6 characters long.";
-
+      newErrors.password = "Password must be at least 6 characters.";
     }
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length !== 0) return;
 
-    if (
-      Object.keys(newErrors).length !== 0
-    ) return;
-
+    setLoading(true);
     try {
-
-      const res = await fetch(
-        "http://localhost:5174/api/auth/login",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        }
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
       const data = await res.json();
 
-      console.log(data);
-
-      // LOGIN FAILED
       if (!res.ok) {
-
-        setErrors({
-          email:
-            data.message ||
-            "Login failed",
-        });
-
+        setErrors({ email: data.message || "Login failed" });
         return;
       }
 
-      // STORE AUTH
-      localStorage.setItem(
-        "isLoggedIn",
-        "true"
-      );
-
-      localStorage.setItem(
-        "token",
-        data.data.token
-      );
-
-      localStorage.setItem(
-        "currentUser",
-
-        JSON.stringify(
-          data.data.user
-        )
-      );
-
-      // NAVIGATE
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("token", data.data.token);
+      localStorage.setItem("currentUser", JSON.stringify(data.data.user));
       navigate("/home");
-
     } catch (error) {
-
       console.error(error);
-
-      setErrors({
-        email:
-          "Server error. Please try again.",
-      });
-
+      setErrors({ email: "Server error. Please try again." });
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <>
-      <Navbar />
+    <div className="auth-split">
 
-      <div className="login-wrapper">
-
-        <form
-          className="login-card"
-          onSubmit={handleSubmit}
-        >
-
-          <h2 className="login-title">
-            Welcome Back
-          </h2>
-
-          <p className="login-subtitle">
-            Sign in to discover opportunities,
-            internships and collaborations.
+      {/* ── LEFT — branding ── */}
+      <div className="auth-left">
+        <div className="auth-brand">
+          <div className="auth-logo">OQ</div>
+          <h1>Opportunity<br />Quest</h1>
+          <p className="auth-tagline">
+            Your gateway to internships, research projects and faculty collaborations at Thapar.
           </p>
+        </div>
 
-          {/* EMAIL */}
+        <ul className="auth-features">
+          <li><span className="check">✓</span> Faculty-posted opportunities</li>
+          <li><span className="check">✓</span> Research, internships &amp; paid gigs</li>
+          <li><span className="check">✓</span> Filter by branch, year &amp; category</li>
+        </ul>
 
-          <input
-            type="email"
-            id="loginEmail"
-            placeholder="Thapar Email"
+        <p className="auth-institute">
+          Thapar Institute of Engineering &amp; Technology · Patiala
+        </p>
+      </div>
 
-            value={email}
+      {/* ── RIGHT — form ── */}
+      <div className="auth-right">
+        <form className="auth-form" onSubmit={handleSubmit}>
 
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
-          />
+          <div className="auth-form-header">
+            <h2>Welcome back</h2>
+            <p>Sign in with your Thapar account to continue.</p>
+          </div>
 
-          {errors.email && (
-            <p className="error-text">
-              {errors.email}
-            </p>
-          )}
+          <div className="auth-field">
+            <label htmlFor="loginEmail">Email</label>
+            <input
+              type="email"
+              id="loginEmail"
+              placeholder="you@thapar.edu"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            {errors.email && <span className="auth-error">{errors.email}</span>}
+          </div>
 
-          {/* PASSWORD */}
+          <div className="auth-field">
+            <label htmlFor="loginPassword">Password</label>
+            <input
+              type="password"
+              id="loginPassword"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {errors.password && <span className="auth-error">{errors.password}</span>}
+          </div>
 
-          <input
-            type="password"
-            id="loginPassword"
-            placeholder="Password"
-
-            value={password}
-
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
-          />
-
-          {errors.password && (
-            <p className="error-text">
-              {errors.password}
-            </p>
-          )}
-
-          {/* BUTTON */}
-
-          <button
-            id="loginBtn"
-            type="submit"
-          >
-            Login
+          <button id="loginBtn" type="submit" className="auth-submit" disabled={loading}>
+            {loading ? "Signing in…" : "Sign In"}
           </button>
 
-          {/* REDIRECT */}
-
-          <p className="redirect-text">
-
-            Don't have an account?{" "}
-
-            <Link
-              to="/register"
-              className="redirect-link"
-            >
-              Register
-            </Link>
-
+          <p className="auth-redirect">
+            Don't have an account? <Link to="/register">Create one</Link>
           </p>
 
         </form>
-
       </div>
-    </>
+    </div>
   );
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import { fetchPublic } from "../utils/api";
+import { fetchPublic, BACKEND_URL } from "../utils/api";
 
 import Navbar from "./Navbar";
 
@@ -212,35 +212,52 @@ function OpportunityDetail() {
 
           </div>
 
-          {opportunity.tags?.length >
-            0 && (
-
+          {opportunity.tags?.length > 0 && (
             <>
-
-              <h3 className="tags-title">
-                Related Tags
-              </h3>
-
+              <h3 className="tags-title">Related Tags</h3>
               <div className="tags-container">
-
-                {opportunity.tags.map(
-                  (
-                    tag,
-                    index
-                  ) => (
-
-                    <span
-                      className="tag"
-                      key={index}
-                    >
-                      {tag}
-                    </span>
-
-                  )
-                )}
-
+                {opportunity.tags.map((tag, index) => (
+                  <span className="tag" key={index}>
+                    {tag}
+                  </span>
+                ))}
               </div>
+            </>
+          )}
 
+          {opportunity.attachments?.length > 0 && (
+            <>
+              <h3 className="tags-title">Attachments</h3>
+              <div className="attachments-list">
+                {opportunity.attachments.map((att) => (
+                  <a
+                    key={att._id}
+                    href={`${BACKEND_URL}${att.url}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="detail-attachment-link"
+                  >
+                    📄 {att.originalName}
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
+
+          {opportunity.deadlineHistory?.length > 0 && (
+            <>
+              <h3 className="tags-title">Deadline History</h3>
+              <ul className="deadline-history-list">
+                {opportunity.deadlineHistory.map((entry, i) => (
+                  <li key={i} className="deadline-history-item">
+                    Extended on{" "}
+                    {new Date(entry.extendedAt).toLocaleDateString()} — previous
+                    deadline was{" "}
+                    {new Date(entry.previousDeadline).toLocaleDateString()}
+                    {entry.reason && ` (${entry.reason})`}
+                  </li>
+                ))}
+              </ul>
             </>
           )}
 
