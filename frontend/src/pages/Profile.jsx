@@ -1,423 +1,241 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import Navbar from "./Navbar";
-
-import {
-  fetchWithAuth,
-  putWithAuth,
-} from "../utils/api";
-
+import { fetchWithAuth, putWithAuth } from "../utils/api";
 import "./Profile.css";
 
 function Profile() {
-
   const navigate = useNavigate();
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const [editMode, setEditMode] =
-    useState(false);
-
-  const [profile, setProfile] =
-    useState(null);
-
-  const [saveError, setSaveError] =
-    useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [draft, setDraft] = useState(null);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+    if (!localStorage.getItem("token")) {
       navigate("/");
       return;
     }
     loadProfile();
   }, [navigate]);
 
-  const loadProfile =
-    async () => {
-
-      try {
-
-        const data =
-          await fetchWithAuth(
-            "/auth/profile"
-          );
-
-        if (data.success) {
-
-          setProfile(
-            data.profile
-          );
-        }
-
-      } catch (error) {
-
-        console.error(error);
-
-      } finally {
-
-        setLoading(false);
+  const loadProfile = async () => {
+    try {
+      const data = await fetchWithAuth("/auth/profile");
+      if (data.success) {
+        setProfile(data.profile);
+        setDraft(data.profile);
       }
-    };
-
-  const handleChange = (e) => {
-
-    setProfile({
-      ...profile,
-      [e.target.name]:
-        e.target.value,
-    });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSave =
-    async () => {
+  const handleChange = (e) => {
+    setDraft({ ...draft, [e.target.name]: e.target.value });
+  };
 
-      try {
+  const handleEdit = () => {
+    setDraft({ ...profile });
+    setSaveError("");
+    setEditMode(true);
+  };
 
-        setSaving(true);
+  const handleCancel = () => {
+    setDraft({ ...profile });
+    setSaveError("");
+    setEditMode(false);
+  };
 
-        const payload = {
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError("");
+    try {
+      const result = await putWithAuth("/auth/profile", {
+        name: draft.name,
+        department: draft.department,
+        designation: draft.designation,
+        interests: draft.interests,
+        bio: draft.bio,
+        linkedinUrl: draft.linkedinUrl,
+      });
 
-          name:
-            profile.name,
-
-          department:
-            profile.department,
-
-          designation:
-            profile.designation,
-
-          interests:
-            profile.interests,
-
-          bio:
-            profile.bio,
-
-          linkedinUrl:
-            profile.linkedinUrl,
-        };
-
-        const result =
-          await putWithAuth(
-            "/auth/profile",
-            payload
-          );
-
-        if (result.success) {
-
-          setProfile(
-            result.profile
-          );
-
-          setEditMode(false);
-
-          setSaveError("");
-
-          alert(
-            "Profile updated successfully."
-          );
-
-        } else {
-
-          setSaveError(
-            result.message ||
-            "Failed to save profile. Please try again."
-          );
-
-        }
-
-      } catch (error) {
-
-        console.error(error);
-
-        setSaveError(
-          "Something went wrong. Please try again."
-        );
-
-      } finally {
-
-        setSaving(false);
+      if (result.success) {
+        setProfile(result.profile);
+        setDraft(result.profile);
+        setEditMode(false);
+      } else {
+        setSaveError(result.message || "Failed to save. Please try again.");
       }
-    };
+    } catch (err) {
+      console.error(err);
+      setSaveError("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) {
-
     return (
       <>
         <Navbar />
-
-        <div className="profile-loading">
-          Loading profile...
-        </div>
+        <div className="profile-loading">Loading profile…</div>
       </>
     );
   }
 
-  const profileFields = [
+  const profileFields = [profile?.bio, profile?.department, profile?.designation, profile?.interests, profile?.linkedinUrl];
+  const completion = Math.round(
+    (profileFields.filter((f) => f && f.toString().trim() !== "").length / profileFields.length) * 100
+  );
 
-    profile?.bio,
-
-    profile?.department,
-
-    profile?.designation,
-
-    profile?.interests,
-
-    profile?.linkedinUrl,
-  ];
-
-  const completedFields =
-    profileFields.filter(
-      (field) =>
-        field &&
-        field.toString().trim() !== ""
-    ).length;
-
-  const completion =
-    Math.round(
-      (
-        completedFields /
-        profileFields.length
-      ) * 100
-    );
+  const current = editMode ? draft : profile;
 
   return (
     <>
       <Navbar />
 
-      <div className="profile-container">
+      <div className="profile-page">
+        <div className="profile-inner">
 
-        {/* HERO */}
-
-        <div className="profile-hero">
-
-          <div className="profile-avatar-large">
-
-            {profile?.name
-              ?.charAt(0)
-              ?.toUpperCase()}
-
-          </div>
-
-          <h1>
-            {profile.name}
-          </h1>
-
-          <p className="profile-role">
-
-            {profile.role}
-
-            {profile.department
-              ? ` • ${profile.department}`
-              : ""}
-
-          </p>
-
-          <div className="completion-wrapper">
-
-            <span>
-              Profile Completion
-            </span>
-
-            <div className="progress-bar">
-
-              <div
-                className="progress-fill"
-                style={{
-                  width:
-                    `${completion}%`,
-                }}
-              />
-
+          {/* ── HERO ── */}
+          <div className="profile-hero">
+            <div className="profile-avatar-large">
+              {profile?.name?.charAt(0)?.toUpperCase()}
             </div>
 
-            <span>
-              {completion}%
-            </span>
+            <div className="profile-hero-info">
+              <h1>{profile.name}</h1>
+              <p className="profile-role">
+                {profile.role}{profile.department ? ` • ${profile.department}` : ""}
+              </p>
 
+              <div className="completion-wrapper">
+                <div className="completion-label">
+                  <span>Profile completion</span>
+                  <span className="completion-pct">{completion}%</span>
+                </div>
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${completion}%` }} />
+                </div>
+              </div>
+            </div>
+
+            <div className="profile-hero-actions">
+              {editMode ? (
+                <>
+                  <button className="edit-btn" onClick={handleSave} disabled={saving}>
+                    {saving ? "Saving…" : "Save Changes"}
+                  </button>
+                  <button className="cancel-btn" onClick={handleCancel}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button className="edit-btn" onClick={handleEdit}>
+                  Edit Profile
+                </button>
+              )}
+              {saveError && <p className="profile-save-error">{saveError}</p>}
+            </div>
           </div>
 
-          {saveError && (
-            <p className="error-text" style={{ color: "red", marginBottom: "8px" }}>
-              {saveError}
-            </p>
-          )}
-
-          <button
-            className="edit-btn"
-            onClick={() => {
-              if (editMode) {
-                handleSave();
-              } else {
-                setSaveError("");
-                setEditMode(true);
-              }
-            }}
-            disabled={saving}
-          >
-
-            {editMode
-
-              ? (
-                saving
-                  ? "Saving..."
-                  : "Save Changes"
-              )
-
-              : "Edit Profile"}
-
-          </button>
-
-        </div>
-
-        {/* ABOUT */}
-
-        <div className="profile-section">
-
-          <h2>
-            About Me
-          </h2>
-
-          {editMode ? (
-
-            <textarea
-              rows="5"
-              name="bio"
-              value={
-                profile.bio || ""
-              }
-              onChange={
-                handleChange
-              }
-            />
-
-          ) : (
-
-            <p>
-
-              {profile.bio ||
-
-                "Tell students about your research interests, expertise and academic journey."}
-
-            </p>
-
-          )}
-
-        </div>
-
-        {/* INFORMATION */}
-
-        <div className="profile-grid">
-
-          <div className="profile-info-card">
-
-            <h3>
-              Professional Information
-            </h3>
-
-            <label>
-              Name
-            </label>
-
-            <input
-              name="name"
-              value={
-                profile.name || ""
-              }
-              disabled={!editMode}
-              onChange={
-                handleChange
-              }
-            />
-
-            <label>
-              Department
-            </label>
-
-            <input
-              name="department"
-              value={
-                profile.department || ""
-              }
-              disabled={!editMode}
-              onChange={
-                handleChange
-              }
-            />
-
-            <label>
-              Designation
-            </label>
-
-            <input
-              name="designation"
-              value={
-                profile.designation || ""
-              }
-              disabled={!editMode}
-              onChange={
-                handleChange
-              }
-            />
-
-            <label>
-              Interests
-            </label>
-
-            <input
-              name="interests"
-              value={
-                profile.interests || ""
-              }
-              disabled={!editMode}
-              onChange={
-                handleChange
-              }
-            />
-
+          {/* ── ABOUT ── */}
+          <div className="profile-about-card">
+            <h2>About Me</h2>
+            {editMode ? (
+              <textarea
+                name="bio"
+                value={current.bio || ""}
+                onChange={handleChange}
+                placeholder="Tell students about your research interests, expertise and academic journey."
+                rows={4}
+              />
+            ) : (
+              <p>
+                {profile.bio || "Tell students about your research interests, expertise and academic journey."}
+              </p>
+            )}
           </div>
 
-          <div className="profile-info-card">
+          {/* ── INFO GRID ── */}
+          <div className="profile-grid">
 
-            <h3>
-              Contact & Links
-            </h3>
+            {/* Professional */}
+            <div className="profile-info-card">
+              <h3>Professional Information</h3>
 
-            <label>
-              Email
-            </label>
+              <div className="profile-field">
+                <label>Full Name</label>
+                <input
+                  name="name"
+                  value={current.name || ""}
+                  disabled={!editMode}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <input
-              value={
-                profile.email || ""
-              }
-              disabled
-            />
+              <div className="profile-field">
+                <label>Department</label>
+                <input
+                  name="department"
+                  value={current.department || ""}
+                  disabled={!editMode}
+                  onChange={handleChange}
+                  placeholder={editMode ? "e.g. DCSE" : "—"}
+                />
+              </div>
 
-            <label>
-              LinkedIn
-            </label>
+              <div className="profile-field">
+                <label>Designation</label>
+                <input
+                  name="designation"
+                  value={current.designation || ""}
+                  disabled={!editMode}
+                  onChange={handleChange}
+                  placeholder={editMode ? "e.g. Assistant Professor" : "—"}
+                />
+              </div>
 
-            <input
-              name="linkedinUrl"
-              value={
-                profile.linkedinUrl || ""
-              }
-              disabled={!editMode}
-              onChange={
-                handleChange
-              }
-            />
+              <div className="profile-field">
+                <label>Research Interests</label>
+                <input
+                  name="interests"
+                  value={current.interests || ""}
+                  disabled={!editMode}
+                  onChange={handleChange}
+                  placeholder={editMode ? "e.g. Machine Learning, IoT" : "—"}
+                />
+              </div>
+            </div>
+
+            {/* Contact */}
+            <div className="profile-info-card">
+              <h3>Contact &amp; Links</h3>
+
+              <div className="profile-field">
+                <label>Email</label>
+                <input value={profile.email || ""} disabled />
+              </div>
+
+              <div className="profile-field">
+                <label>LinkedIn URL</label>
+                <input
+                  name="linkedinUrl"
+                  value={current.linkedinUrl || ""}
+                  disabled={!editMode}
+                  onChange={handleChange}
+                  placeholder={editMode ? "https://linkedin.com/in/yourname" : "—"}
+                />
+              </div>
+            </div>
 
           </div>
-
         </div>
-
       </div>
     </>
   );

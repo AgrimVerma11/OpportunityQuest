@@ -1,26 +1,64 @@
+import { useNavigate } from "react-router-dom";
 import "./Footer.css";
 
 function Footer() {
+  const navigate = useNavigate();
+
   return (
     <footer className="footer">
-      <div className="footer-content">
-        
-        <p>© 2026 Opportunity Quest. All rights reserved.</p>
+      <div className="footer-inner">
+        <div className="footer-grid">
 
-        <div className="footer-links">
-          <a href="mailto:masteragrim11@gmail.com">
-            📧 Contact
-          </a>
+          {/* Brand */}
+          <div>
+            <div className="footer-brand-logo">
+              <div className="footer-logo-badge">OQ</div>
+              <span className="footer-brand-name">Opportunity Quest</span>
+            </div>
+            <p className="footer-tagline">
+              Connecting Thapar students with faculty-posted internships,
+              research projects, and paid gigs — all in one place.
+            </p>
+          </div>
 
-          <a 
-            href="https://substack.com/@agrimverma" 
-            target="_blank" 
-            rel="noreferrer"
-          >
-            ✍️ Substack
-          </a>
+          {/* Navigation */}
+          <div className="footer-col">
+            <h4>Navigate</h4>
+            <ul>
+              <li><a onClick={() => navigate("/home")}>Home</a></li>
+              <li><a onClick={() => navigate("/faculty")}>Faculty Corner</a></li>
+              <li><a onClick={() => navigate("/profile")}>My Profile</a></li>
+              <li><a onClick={() => navigate("/create-opportunity")}>Post Opportunity</a></li>
+            </ul>
+          </div>
+
+          {/* Creator */}
+          <div className="footer-col">
+            <h4>Creator</h4>
+            <ul>
+              <li>
+                <a href="mailto:masteragrim11@gmail.com">
+                  Contact
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://substack.com/@agrimverma"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Substack
+                </a>
+              </li>
+            </ul>
+          </div>
+
         </div>
 
+        <div className="footer-bottom">
+          <span>© {new Date().getFullYear()} Opportunity Quest · Thapar Institute of Engineering &amp; Technology</span>
+          <span>Built for students, by a student</span>
+        </div>
       </div>
     </footer>
   );

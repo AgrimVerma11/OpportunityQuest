@@ -16,7 +16,7 @@ function App() {
     location.pathname === "/register";
 
   return (
-    <>
+    <div className="page-shell">
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -49,7 +49,7 @@ function App() {
       />
     </Routes>
     {!isAuthPage && <Footer />}
-    </>
+    </div>
   );
 }
 
