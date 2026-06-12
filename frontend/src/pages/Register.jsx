@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { IconCheck } from "../components/Icons";
 import "./Auth.css";
 
 function Register() {
@@ -98,9 +99,9 @@ function Register() {
         </div>
 
         <ul className="auth-features">
-          <li><span className="check">✓</span> Browse faculty-posted opportunities</li>
-          <li><span className="check">✓</span> Filter by your branch &amp; year</li>
-          <li><span className="check">✓</span> Apply to research &amp; paid gigs</li>
+          <li><span className="check"><IconCheck /></span> Browse faculty-posted opportunities</li>
+          <li><span className="check"><IconCheck /></span> Filter by your branch &amp; year</li>
+          <li><span className="check"><IconCheck /></span> Apply to research &amp; paid gigs</li>
         </ul>
 
         <p className="auth-institute">
