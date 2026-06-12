@@ -5,202 +5,76 @@ import {
   updateProfileService,
 } from "../services/authService.js";
 
+import { respondError } from "../utils/respondError.js";
 
-
+// Controller — request handling and response formatting only.
+// Business rules live in the service; persistence in the repository.
 
 // REGISTER USER
-
-export const registerUser = async (
-  req,
-  res
-) => {
-
+export const registerUser = async (req, res) => {
   try {
-
-    const user =
-      await registerUserService(
-        req.body
-      );
+    const user = await registerUserService(req.body);
 
     res.status(201).json({
-
       success: true,
-
-      message:
-        "User registered successfully",
-
-      data: {
-        user,
-      },
-
+      message: "User registered successfully",
+      data: { user },
     });
-
   } catch (error) {
-
-    console.error(error);
-
-    const status =
-      error.message === "User already exists" ? 409 : 500;
-
-    res.status(status).json({
-
-      success: false,
-
-      message:
-        error.message ||
-        "Server error",
-
-    });
+    respondError(res, error);
   }
 };
-
-
-
 
 // LOGIN USER
-
-export const loginUser = async (
-  req,
-  res
-) => {
-
+export const loginUser = async (req, res) => {
   try {
+    const { email, password } = req.body;
 
-    const {
-      email,
-      password,
-    } = req.body;
-
-    const result =
-      await loginUserService(
-        email,
-        password
-      );
+    const result = await loginUserService(email, password);
 
     res.status(200).json({
-
       success: true,
-
-      message:
-        "Login successful",
-
+      message: "Login successful",
       data: {
-
-        token:
-          result.token,
-
+        token: result.token,
         user: {
-          id:
-            result.user._id,
-
-          name:
-            result.user.name,
-
-          email:
-            result.user.email,
-
-          role:
-            result.user.role,
+          id: result.user._id,
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role,
         },
-
       },
-
     });
-
   } catch (error) {
-
-    console.error(error);
-
-    res.status(400).json({
-
-      success: false,
-
-      message:
-        error.message ||
-        "Login failed",
-
-    });
+    respondError(res, error);
   }
 };
 
-
-
-
 // GET PROFILE
+export const getProfile = async (req, res) => {
+  try {
+    const user = await getProfileService(req.user.id);
 
-export const getProfile =
-  async (req, res) => {
-
-    try {
-
-      const user =
-        await getProfileService(
-          req.user.id
-        );
-
-      res.json({
-
-        success: true,
-
-        profile: user,
-
-      });
-
-    } catch (error) {
-
-      console.error(error);
-
-      res.status(500).json({
-
-        success: false,
-
-        message:
-          error.message,
-
-      });
-
-    }
-  };
-
-
-
+    res.json({
+      success: true,
+      profile: user,
+    });
+  } catch (error) {
+    respondError(res, error);
+  }
+};
 
 // UPDATE PROFILE
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await updateProfileService(req.user.id, req.body);
 
-export const updateProfile =
-  async (req, res) => {
-
-    try {
-
-      const user =
-        await updateProfileService(
-          req.user.id,
-          req.body
-        );
-
-      res.json({
-
-        success: true,
-
-        message:
-          "Profile updated successfully",
-
-        profile: user,
-
-      });
-
-    } catch (error) {
-
-      console.error(error);
-
-      res.status(500).json({
-
-        success: false,
-
-        message:
-          error.message,
-
-      });
-
-    }
-  };
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      profile: user,
+    });
+  } catch (error) {
+    respondError(res, error);
+  }
+};
