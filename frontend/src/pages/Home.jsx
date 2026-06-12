@@ -175,13 +175,8 @@ function Home() {
             <div>
 
               <h1 className="home-title">
-
-              Welcome back,
-              {" "}
-              {currentUser?.name}
-              👋
-
-            </h1>
+                Welcome back, {currentUser?.name}
+              </h1>
 
             <p className="home-subtitle">
 
