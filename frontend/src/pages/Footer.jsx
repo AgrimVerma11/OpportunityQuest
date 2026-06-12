@@ -16,7 +16,7 @@ function Footer() {
               <span className="footer-brand-name">Opportunity Quest</span>
             </div>
             <p className="footer-tagline">
-              Connecting Thapar students with faculty-posted internships,
+              Connecting students with faculty-posted internships,
               research projects, and paid gigs — all in one place.
             </p>
           </div>
@@ -43,6 +43,24 @@ function Footer() {
               </li>
               <li>
                 <a
+                  href="https://github.com/AgrimVerma11"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  GitHub
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.linkedin.com/in/agrimverma11"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  LinkedIn
+                </a>
+              </li>
+              <li>
+                <a
                   href="https://substack.com/@agrimverma"
                   target="_blank"
                   rel="noreferrer"
@@ -56,7 +74,7 @@ function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} Opportunity Quest · Thapar Institute of Engineering &amp; Technology</span>
+          <span>© {new Date().getFullYear()} Agrim Verma · All rights reserved.</span>
           <span>Built for students, by a student</span>
         </div>
       </div>
