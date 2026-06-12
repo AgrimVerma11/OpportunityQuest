@@ -4,9 +4,12 @@ import "./CreateOpportunity.css";
 import "./EditOpportunity.css";
 import { postWithAuth, uploadWithAuth } from "../utils/api";
 import Navbar from "./Navbar";
+import { useConfirm } from "../components/ConfirmProvider";
+import { IconFile } from "../components/Icons";
 
 function CreateOpportunity() {
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const fileInputRef = useRef(null);
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -113,9 +116,13 @@ function CreateOpportunity() {
         }
       }
 
-      const createAnother = window.confirm(
-        "Opportunity created successfully ✅\n\nPress OK to create another opportunity.\nPress Cancel to go back to Faculty Corner."
-      );
+      const createAnother = await confirm({
+        title: "Opportunity published",
+        message:
+          "Your opportunity is now live for students. Would you like to create another?",
+        confirmLabel: "Create another",
+        cancelLabel: "Back to Faculty Corner",
+      });
 
       if (createAnother) {
         setForm({
@@ -251,7 +258,7 @@ function CreateOpportunity() {
               <ul className="attachment-list" style={{ marginBottom: "0.8rem" }}>
                 {pendingFiles.map((file, i) => (
                   <li key={i} className="attachment-item">
-                    <span className="attachment-link">📄 {file.name}</span>
+                    <span className="attachment-link"><IconFile /> {file.name}</span>
                     <button
                       type="button"
                       className="attachment-delete-btn"
