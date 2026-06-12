@@ -6,11 +6,14 @@ import {
   getOpportunityById,
   getMyOpportunities,
   archiveOpportunity,
+  unarchiveOpportunity,
+  closeOpportunity,
   updateOpportunity,
   softDeleteOpportunity,
   extendDeadline,
   uploadAttachment,
   deleteAttachment,
+  getCategoryStats,
 } from "../controllers/opportunityController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -25,9 +28,8 @@ import {
 import {
   updateOpportunityValidation,
   extendDeadlineValidation,
+  unarchiveValidation,
 } from "../validators/updateOpportunityValidator.js";
-
-import Opportunity from "../models/Opportunity.js";
 
 const router = express.Router();
 
@@ -62,19 +64,7 @@ router.get(
 
 // CATEGORY STATS
 
-router.get("/stats/categories", async (_req, res) => {
-  try {
-    const stats = await Opportunity.aggregate([
-      { $match: { isDeleted: { $ne: true } } },
-      { $group: { _id: "$category", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-    ]);
-    res.json(stats);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Failed to generate category stats" });
-  }
-});
+router.get("/stats/categories", getCategoryStats);
 
 
 // GET OPPORTUNITY BY ID
@@ -103,13 +93,34 @@ router.delete(
 );
 
 
-// ARCHIVE OPPORTUNITY
+// ARCHIVE OPPORTUNITY (Active → Archived)
 
 router.patch(
   "/:id/archive",
   authMiddleware,
   authorizeRoles("Faculty"),
   archiveOpportunity
+);
+
+
+// UNARCHIVE OPPORTUNITY (Archived → Active)
+
+router.patch(
+  "/:id/unarchive",
+  authMiddleware,
+  authorizeRoles("Faculty"),
+  validate(unarchiveValidation),
+  unarchiveOpportunity
+);
+
+
+// CLOSE OPPORTUNITY (→ Closed, terminal)
+
+router.patch(
+  "/:id/close",
+  authMiddleware,
+  authorizeRoles("Faculty"),
+  closeOpportunity
 );
 
 
