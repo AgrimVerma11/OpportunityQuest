@@ -20,3 +20,11 @@ export const extendDeadlineValidation = Joi.object({
   }),
   reason: Joi.string().trim().max(300).allow(""),
 });
+
+// Reactivating an archived opportunity — the new deadline is optional
+// (the faculty may choose to keep the existing one).
+export const unarchiveValidation = Joi.object({
+  newDeadline: Joi.date().greater("now").messages({
+    "date.greater": "New deadline must be a future date",
+  }),
+});
