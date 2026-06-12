@@ -60,7 +60,7 @@ function Login() {
           <div className="auth-logo">OQ</div>
           <h1>Opportunity<br />Quest</h1>
           <p className="auth-tagline">
-            Your gateway to internships, research projects and faculty collaborations at Thapar.
+            Your gateway to internships, research projects and faculty collaborations — all in one place.
           </p>
         </div>
 
@@ -71,7 +71,7 @@ function Login() {
         </ul>
 
         <p className="auth-institute">
-          Thapar Institute of Engineering &amp; Technology · Patiala
+          Designed &amp; built by Agrim Verma
         </p>
       </div>
 
