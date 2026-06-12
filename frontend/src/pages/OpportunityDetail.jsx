@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { fetchPublic, BACKEND_URL } from "../utils/api";
 
 import Navbar from "./Navbar";
+import { IconFile } from "../components/Icons";
 
 import "./OpportunityDetail.css";
 
@@ -237,7 +238,7 @@ function OpportunityDetail() {
                     rel="noreferrer"
                     className="detail-attachment-link"
                   >
-                    📄 {att.originalName}
+                    <IconFile /> {att.originalName}
                   </a>
                 ))}
               </div>
@@ -250,7 +251,7 @@ function OpportunityDetail() {
               <ul className="deadline-history-list">
                 {opportunity.deadlineHistory.map((entry, i) => (
                   <li key={i} className="deadline-history-item">
-                    Extended on{" "}
+                    Changed on{" "}
                     {new Date(entry.extendedAt).toLocaleDateString()} — previous
                     deadline was{" "}
                     {new Date(entry.previousDeadline).toLocaleDateString()}
