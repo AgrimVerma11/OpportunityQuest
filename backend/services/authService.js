@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { AppError } from "../utils/AppError.js";
 
 import {
   findUserByEmail,
@@ -17,7 +18,7 @@ export const registerUserService = async (
     await findUserByEmail(userData.email);
 
   if (existingUser) {
-    throw new Error("User already exists");
+    throw new AppError("User already exists", 409);
   }
 
   const hashedPassword =
@@ -41,7 +42,7 @@ export const loginUserService = async (
   const user = await findUserByEmail(email);
 
   if (!user) {
-    throw new Error("Invalid email or password");
+    throw new AppError("Invalid email or password", 401);
   }
 
   const isMatch =
@@ -51,7 +52,7 @@ export const loginUserService = async (
     );
 
   if (!isMatch) {
-    throw new Error("Invalid email or password");
+    throw new AppError("Invalid email or password", 401);
   }
 
   const token = jwt.sign(
@@ -86,7 +87,7 @@ export const loginUserService = async (
             .select("-password");
 
           if (!user) {
-            throw new Error("User not found");
+            throw new AppError("User not found", 404);
           }
 
         return user;
@@ -102,9 +103,7 @@ export const updateProfileService =
       );
 
     if (!user) {
-      throw new Error(
-        "User not found"
-      );
+      throw new AppError("User not found", 404);
     }
 
     return user;
