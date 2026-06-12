@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { IconCheck } from "../components/Icons";
 import "./Auth.css";
 
 function Login() {
@@ -64,9 +65,9 @@ function Login() {
         </div>
 
         <ul className="auth-features">
-          <li><span className="check">✓</span> Faculty-posted opportunities</li>
-          <li><span className="check">✓</span> Research, internships &amp; paid gigs</li>
-          <li><span className="check">✓</span> Filter by branch, year &amp; category</li>
+          <li><span className="check"><IconCheck /></span> Faculty-posted opportunities</li>
+          <li><span className="check"><IconCheck /></span> Research, internships &amp; paid gigs</li>
+          <li><span className="check"><IconCheck /></span> Filter by branch, year &amp; category</li>
         </ul>
 
         <p className="auth-institute">
