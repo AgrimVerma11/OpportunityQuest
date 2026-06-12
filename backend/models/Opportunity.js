@@ -96,9 +96,13 @@ const opportunitySchema = new mongoose.Schema(
     // STATUS
     
 
+    // Active   → live, visible in the public feed, accepting applications
+    // Archived → paused while the faculty reviews applicants; reversible
+    // Closed   → finalised (e.g. position filled); terminal
+    // Expired  → derived in the UI when an Active deadline has passed
     status: {
       type: String,
-      enum: ["Active", "Closed", "Expired"],
+      enum: ["Active", "Archived", "Closed", "Expired"],
       default: "Active",
     },
 
@@ -201,7 +205,7 @@ const opportunitySchema = new mongoose.Schema(
 
 
 
-// 🔍 INDEXES
+// INDEXES
 
 
 // Full text search
