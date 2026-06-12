@@ -111,7 +111,7 @@ function Profile() {
             <div className="profile-hero-info">
               <h1>{profile.name}</h1>
               <p className="profile-role">
-                {profile.role}{profile.department ? ` • ${profile.department}` : ""}
+                {profile.role}{profile.department ? ` · ${profile.department}` : ""}
               </p>
 
               <div className="completion-wrapper">
@@ -128,15 +128,15 @@ function Profile() {
             <div className="profile-hero-actions">
               {editMode ? (
                 <>
-                  <button className="edit-btn" onClick={handleSave} disabled={saving}>
+                  <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
                     {saving ? "Saving…" : "Save Changes"}
                   </button>
-                  <button className="cancel-btn" onClick={handleCancel}>
+                  <button className="btn btn-secondary" onClick={handleCancel}>
                     Cancel
                   </button>
                 </>
               ) : (
-                <button className="edit-btn" onClick={handleEdit}>
+                <button className="btn btn-primary" onClick={handleEdit}>
                   Edit Profile
                 </button>
               )}
