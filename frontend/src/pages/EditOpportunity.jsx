@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import "./CreateOpportunity.css";
 import "./EditOpportunity.css";
 import Navbar from "./Navbar";
+import { useConfirm } from "../components/ConfirmProvider";
+import { IconFile } from "../components/Icons";
 import {
   fetchWithAuth,
   putWithAuth,
@@ -22,6 +24,7 @@ const YEARS = ["All", "1", "2", "3", "4"];
 function EditOpportunity() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const fileInputRef = useRef(null);
 
   const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -162,7 +165,13 @@ function EditOpportunity() {
   };
 
   const handleDeleteAttachment = async (attachmentId) => {
-    if (!window.confirm("Remove this attachment?")) return;
+    const ok = await confirm({
+      title: "Remove this attachment?",
+      message: "The file will be permanently deleted.",
+      confirmLabel: "Remove",
+      tone: "danger",
+    });
+    if (!ok) return;
     try {
       const res = await deleteWithAuth(
         `/opportunities/${id}/attachments/${attachmentId}`
@@ -309,7 +318,7 @@ function EditOpportunity() {
                     rel="noreferrer"
                     className="attachment-link"
                   >
-                    📄 {att.originalName}
+                    <IconFile /> {att.originalName}
                   </a>
                   <button
                     type="button"
