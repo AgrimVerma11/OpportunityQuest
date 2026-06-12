@@ -105,7 +105,7 @@ function Register() {
         </ul>
 
         <p className="auth-institute">
-          Thapar Institute of Engineering &amp; Technology · Patiala
+          Designed &amp; built by Agrim Verma
         </p>
       </div>
 
