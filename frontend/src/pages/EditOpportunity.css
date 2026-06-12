@@ -55,6 +55,8 @@
   text-decoration: underline;
 }
 
+.attachment-link svg { vertical-align: -0.15em; }
+
 .attachment-delete-btn {
   background: transparent;
   border: 1px solid #ff4d4f;
