@@ -160,3 +160,28 @@ export const putWithAuth = async (
 
   return res.json();
 };
+
+// Open a protected file (e.g. a resume) in a new tab. The route needs the
+// auth header, so we fetch it as a blob rather than linking to it directly.
+export const openAuthedFile = async (endpoint) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    let message = "Unable to open file";
+    try {
+      const data = await res.json();
+      message = data.message || message;
+    } catch {
+      /* response was not JSON */
+    }
+    throw new Error(message);
+  }
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank", "noopener,noreferrer");
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+};
