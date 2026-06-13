@@ -17,8 +17,6 @@
   margin-bottom: var(--space-6);
 }
 
-.top-actions { display: flex; gap: var(--space-3); }
-
 .home-title {
   font-size: var(--text-h1);
   font-weight: var(--weight-bold);
@@ -49,10 +47,25 @@
   box-shadow: var(--shadow-sm);
 }
 
-.search-input {
+.search-box {
+  position: relative;
   flex: 1;
   min-width: 220px;
-  padding: var(--space-3);
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-3) var(--space-3) 38px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
@@ -101,181 +114,195 @@
   border-color: var(--color-border-strong);
 }
 
-/* Section title */
+/* Section header */
 .section-title {
   font-size: var(--text-h2);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
-  margin-bottom: var(--space-5);
   letter-spacing: -0.3px;
 }
 
-/* Opportunity grid */
+.explore-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.result-count {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+/* Grid */
 .opportunities-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: var(--space-5);
 }
 
-/* Opportunity card */
+/* ── Opportunity card ── */
 .opportunity-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   cursor: pointer;
-  transition: transform var(--transition), box-shadow var(--transition),
-    border-color var(--transition);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  transition: transform var(--transition), box-shadow var(--transition),
+    border-color var(--transition);
 }
 
 .opportunity-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
   border-color: var(--color-border-strong);
 }
+.opportunity-card:hover .oc-cta { color: var(--color-primary-hover); }
 
-/* Card top: title + badge */
-.card-top {
+/* Header: category + deadline */
+.oc-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
   gap: var(--space-3);
-  min-height: 52px;
 }
 
-.opportunity-title {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-  line-height: 1.35;
-  flex: 1;
-}
-
-/* Category badge */
 .badge {
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
-  flex-shrink: 0;
 }
-
 .Internship      { background: #dbeafe; color: #1e40af; }
 .Research        { background: #f3e8ff; color: #6d28d9; }
 .Paid-Gig        { background: var(--color-success-soft); color: var(--color-success); }
 .Faculty-Project { background: #ffedd5; color: #c2410c; }
 
-/* Faculty info row */
-.faculty-info-row {
-  display: flex;
+/* Deadline urgency chip */
+.deadline-chip {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-}
-
-.faculty-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 4px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
-  font-size: var(--text-sm);
-  flex-shrink: 0;
+  white-space: nowrap;
+}
+.deadline-chip svg { font-size: 0.85rem; }
+.deadline-chip.normal { background: var(--color-surface-subtle); color: var(--color-text-secondary); }
+.deadline-chip.soon   { background: var(--color-warning-soft);  color: var(--color-warning); }
+.deadline-chip.urgent { background: var(--color-danger-soft);   color: var(--color-danger); }
+.deadline-chip.past   { background: #f1f5f9;                    color: var(--color-text-muted); }
+
+/* Title */
+.oc-title {
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  line-height: 1.35;
+  letter-spacing: -0.2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.7em;
 }
 
-.faculty-details { display: flex; flex-direction: column; gap: 1px; }
-.faculty-name { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--color-text); }
-.faculty-department { font-size: var(--text-xs); color: var(--color-text-secondary); }
+/* Faculty row */
+.oc-faculty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
 
-/* Description */
-.card-description {
+.oc-faculty-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.oc-faculty-dept {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  line-height: 1.65;
-  overflow-wrap: break-word;
-  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Description */
+.oc-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* Tags */
-.tags-row {
+.oc-tags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
 
-.tag-pill {
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  padding: var(--space-1) var(--space-3);
+.oc-tag {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  padding: 2px var(--space-2);
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--weight-medium);
 }
 
-/* Eligibility */
-.eligibility-row {
-  display: flex;
-  gap: var(--space-5);
-}
-
-.eligibility-box .footer-label {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  font-weight: var(--weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 3px;
-}
-
-.eligibility-box p {
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  font-weight: var(--weight-medium);
-}
-
-/* Card footer */
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border);
+/* Footer */
+.oc-footer {
   margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
-.footer-label {
-  display: block;
+.oc-eligibility {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   font-size: var(--text-xs);
+  color: var(--color-text);
+}
+
+.oc-elig-label {
   color: var(--color-text-muted);
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  margin-bottom: 3px;
+  margin-right: 4px;
 }
 
-.deadline-text {
+.oc-cta {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  color: var(--color-text);
+  color: var(--color-primary);
+  white-space: nowrap;
+  transition: color var(--transition);
 }
-
-/* Role badge */
-.role-badge {
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-}
-.role-badge.Faculty  { background: #f3e8ff; color: #6d28d9; }
-.role-badge.Student  { background: #dbeafe; color: #1e40af; }
 
 /* Empty state */
 .no-results {
@@ -284,15 +311,15 @@
   color: var(--color-text-secondary);
   grid-column: 1 / -1;
 }
-.no-results h3 { font-size: var(--text-h3); margin-bottom: var(--space-2); color: var(--color-text); }
-.no-results p  { font-size: var(--text-sm); }
-
-/* User header (inline badge) */
-.user-header { display: flex; gap: var(--space-3); align-items: center; margin-top: var(--space-3); }
+.no-results h3 {
+  font-size: var(--text-h3);
+  margin-bottom: var(--space-2);
+  color: var(--color-text);
+}
+.no-results p { font-size: var(--text-sm); }
 
 @media (max-width: 900px) {
   .home-container { padding: var(--space-5) var(--space-4) var(--space-7); }
   .opportunities-grid { grid-template-columns: 1fr; }
-  .eligibility-row { gap: var(--space-4); }
   .home-title { font-size: 1.9rem; }
 }

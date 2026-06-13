@@ -4,667 +4,263 @@ import { useNavigate } from "react-router-dom";
 import "./Home.css";
 
 import Navbar from "./Navbar";
+import Avatar from "../components/Avatar";
+import { IconSearch, IconClock } from "../components/Icons";
+import { BRANCH_OPTIONS, YEAR_OPTIONS } from "../constants/profileOptions";
 
 import { fetchPublic } from "../utils/api";
 
 
+// Days remaining until a deadline (negative if past). Drives the urgency chip.
+function deadlineInfo(deadline) {
+  if (!deadline) return null;
+  const days = Math.ceil(
+    (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+  );
+  if (days < 0) return { label: "Closed", tone: "past" };
+  if (days === 0) return { label: "Last day", tone: "urgent" };
+  if (days === 1) return { label: "1 day left", tone: "urgent" };
+  if (days <= 5) return { label: `${days} days left`, tone: "soon" };
+  return { label: `${days} days left`, tone: "normal" };
+}
+
+function DeadlineChip({ deadline }) {
+  const info = deadlineInfo(deadline);
+  if (!info) return null;
+  return (
+    <span className={`deadline-chip ${info.tone}`}>
+      <IconClock /> {info.label}
+    </span>
+  );
+}
+
+// Compact eligibility summary: "All", or first few values with a "+N" overflow.
+function summarize(list, max = 3) {
+  if (!list || list.length === 0) return "—";
+  if (list.includes("All")) return "All";
+  if (list.length <= max) return list.join(", ");
+  return `${list.slice(0, max).join(", ")} +${list.length - max}`;
+}
+
 
 function Home() {
-
-  const [searchTerm, setSearchTerm] =
-    useState("");
-
-  const [selectedCategory, setSelectedCategory] =
-    useState("All");
-
-  const [selectedBranch, setSelectedBranch] =
-    useState("All");
-
-  const [selectedYear, setSelectedYear] =
-    useState("All");
-
-  const [currentUser, setCurrentUser] =
-    useState(null);
-
-  const [opportunities, setOpportunities] =
-    useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedBranch, setSelectedBranch] = useState("All");
+  const [selectedYear, setSelectedYear] = useState("All");
+  const [opportunities, setOpportunities] = useState([]);
 
   const navigate = useNavigate();
 
-
-
-
-
-  // AUTH
-
+  const currentUser = JSON.parse(
+    localStorage.getItem("currentUser") || "null"
+  );
 
   useEffect(() => {
-
-    const token =
-      localStorage.getItem("token");
-
-    if (!token) {
-
+    if (!localStorage.getItem("token")) {
       navigate("/");
-
-      return;
     }
-
-    const storedUser = JSON.parse(
-      localStorage.getItem("currentUser")
-    );
-
-    if (storedUser) {
-      setCurrentUser(storedUser);
-    }
-
   }, [navigate]);
 
-
-
-
-
-  // FETCH OPPORTUNITIES
-
-
   useEffect(() => {
-
-    const loadOpportunities = async () => {
-
-      const data = await fetchPublic(
-        "/opportunities"
-      );
-
-      if (Array.isArray(data)) {
-        setOpportunities(data);
-      }
+    const load = async () => {
+      const data = await fetchPublic("/opportunities");
+      if (Array.isArray(data)) setOpportunities(data);
     };
-
-    loadOpportunities();
-
+    load();
   }, []);
 
+  const filteredOpportunities = opportunities.filter((item) => {
+    const matchesSearch = item.title
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "All" || item.category === selectedCategory;
+    const matchesBranch =
+      selectedBranch === "All" ||
+      item.eligibleBranches?.includes("All") ||
+      item.eligibleBranches?.includes(selectedBranch);
+    const matchesYear =
+      selectedYear === "All" ||
+      item.eligibleYears?.includes("All") ||
+      item.eligibleYears?.includes(selectedYear);
+    return matchesSearch && matchesCategory && matchesBranch && matchesYear;
+  });
 
-
-
-
-  // FILTERING
-
-
-  const filteredOpportunities =
-    opportunities.filter((item) => {
-
-      const matchesSearch =
-
-        item.title
-          ?.toLowerCase()
-          .includes(
-            searchTerm.toLowerCase()
-          );
-
-
-
-      const matchesCategory =
-
-        selectedCategory === "All" ||
-
-        item.category === selectedCategory;
-
-
-
-      const matchesBranch =
-
-        selectedBranch === "All" ||
-
-        item.eligibleBranches?.includes("All") ||
-
-        item.eligibleBranches?.includes(
-          selectedBranch
-        );
-
-
-
-      const matchesYear =
-
-        selectedYear === "All" ||
-
-        item.eligibleYears?.includes("All") ||
-
-        item.eligibleYears?.includes(
-          selectedYear
-        );
-
-
-
-      return (
-
-        matchesSearch &&
-
-        matchesCategory &&
-
-        matchesBranch &&
-
-        matchesYear
-
-      );
-
-    });
-
-
-
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory("All");
+    setSelectedBranch("All");
+    setSelectedYear("All");
+  };
 
   return (
-
     <>
-
       <Navbar />
 
-
-
       <div className="home-container">
-
         <div className="home-inner">
 
-
-
-
           {/* HEADER */}
-
           <div className="top-bar">
-
             <div>
-
               <h1 className="home-title">
-                Welcome back, {currentUser?.name}
+                Welcome back,{" "}
+                {currentUser?.prefix ? `${currentUser.prefix} ` : ""}
+                {currentUser?.name}
               </h1>
-
-            <p className="home-subtitle">
-
-              {currentUser?.role === "Faculty"
-
-                ? "Manage opportunities, collaborations and projects across campus."
-
-                : "Discover internships, research opportunities, faculty projects and paid gigs."
-
-              }
-
-            </p>
-
-
-
-              {/* {currentUser && (
-
-                <div className="user-header">
-
-
-
-
-                  <span
-                    className={`role-badge ${currentUser.role}`}
-                  >
-
-                    {currentUser.role}
-
-                  </span>
-
-                </div>
-
-              )} */}
-
+              <p className="home-subtitle">
+                {currentUser?.role === "Faculty"
+                  ? "Manage opportunities, collaborations and projects across campus."
+                  : "Discover internships, research opportunities, faculty projects and paid gigs."}
+              </p>
             </div>
-
-
-
-            {/* ACTIONS */}
-
-            <div className="top-actions">
-
-              {/* here i had the create opportunity for faculty directly from the home page but now i moved it to the faculty corner */}
-
-            </div>
-
           </div>
-
-
-
-
 
           {/* FILTERS */}
-
           <div className="filter-wrapper">
-
-            {/* SEARCH */}
-
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search opportunities..."
-
-              value={searchTerm}
-
-              onChange={(e) =>
-                setSearchTerm(e.target.value)
-              }
-            />
-
-
-
-            {/* CATEGORY */}
+            <div className="search-box">
+              <IconSearch className="search-icon" />
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search opportunities..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
             <select
-              id="categoryFilter"
               className="category-select"
-
               value={selectedCategory}
-
-              onChange={(e) =>
-                setSelectedCategory(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setSelectedCategory(e.target.value)}
             >
-
-              <option value="All">
-                All Categories
-              </option>
-
-              <option value="Internship">
-                Internship
-              </option>
-
-              <option value="Research">
-                Research
-              </option>
-
-              <option value="Paid Gig">
-                Paid Gig
-              </option>
-
-              <option value="Faculty Project">
-                Faculty Project
-              </option>
-
+              <option value="All">All Categories</option>
+              <option value="Internship">Internship</option>
+              <option value="Research">Research</option>
+              <option value="Paid Gig">Paid Gig</option>
+              <option value="Faculty Project">Faculty Project</option>
             </select>
-
-
-
-            {/* BRANCH */}
 
             <select
               className="category-select"
-
               value={selectedBranch}
-
-              onChange={(e) =>
-                setSelectedBranch(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setSelectedBranch(e.target.value)}
             >
-
-              <option value="All">
-                All Branches
-              </option>
-
-              <option value="COE">COE</option>
-              <option value="COPC">COPC</option>
-              <option value="COBS">COBS</option>
-              <option value="DSAI">DSAI</option>
-              <option value="EEC">EEC</option>
-              <option value="ECE">ECE</option>
-              <option value="ENC">ENC</option>
-              <option value="RAI">RAI</option>
-              <option value="EVD">EVD</option>
-              <option value="EIC">EIC</option>
-              <option value="MEE">MEE</option>
-              <option value="MEC">MEC</option>
-              <option value="CHE">CHE</option>
-              <option value="CIE">CIE</option>
-              <option value="CCA">CCA</option>
-              <option value="ELE">ELE</option>
-              <option value="BME">BME</option>
-              <option value="BT">BT</option>
-
+              <option value="All">All Branches</option>
+              {BRANCH_OPTIONS.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
             </select>
-
-
-
-            {/* YEAR */}
 
             <select
               className="category-select"
-
               value={selectedYear}
-
-              onChange={(e) =>
-                setSelectedYear(
-                  e.target.value
-                )
-              }
+              onChange={(e) => setSelectedYear(e.target.value)}
             >
-
-              <option value="All">
-                All Years
-              </option>
-
-              <option value="1">
-                1st Year
-              </option>
-
-              <option value="2">
-                2nd Year
-              </option>
-
-              <option value="3">
-                3rd Year
-              </option>
-
-              <option value="4">
-                4th Year
-              </option>
-
+              <option value="All">All Years</option>
+              {YEAR_OPTIONS.map((y) => (
+                <option key={y} value={String(y)}>
+                  {y === 1 ? "1st" : y === 2 ? "2nd" : y === 3 ? "3rd" : "4th"}{" "}
+                  Year
+                </option>
+              ))}
             </select>
 
-
-
-            {/* CLEAR */}
-
-            <button
-              className="clear-btn"
-
-              onClick={() => {
-
-                setSearchTerm("");
-
-                setSelectedCategory("All");
-
-                setSelectedBranch("All");
-
-                setSelectedYear("All");
-
-              }}
-            >
-
+            <button className="clear-btn" onClick={clearFilters}>
               Clear
-
             </button>
-
           </div>
 
+          {/* SECTION HEADER */}
+          <div className="explore-header">
+            <h2 className="section-title">Explore Opportunities</h2>
+            <span className="result-count">
+              {filteredOpportunities.length}{" "}
+              {filteredOpportunities.length === 1
+                ? "opportunity"
+                : "opportunities"}
+            </span>
+          </div>
 
-
-
-
-          {/* TITLE */}
-
-          <h2 className="section-title">
-
-            Explore Opportunities
-
-          </h2>
-
-
-
-
-
-          {/* OPPORTUNITIES */}
-
+          {/* GRID */}
           <div className="opportunities-grid">
-
             {filteredOpportunities.length === 0 ? (
-
               <div className="no-results">
-
-                <h3 id="no_opportunity_found">
-                  No opportunities found
-                </h3>
-
-                <p id="no_opportunity_message">
-                  Try changing filters or search terms.
-                </p>
-
+                <h3>No opportunities found</h3>
+                <p>Try changing the filters or search terms.</p>
               </div>
-
             ) : (
-
               filteredOpportunities.map((item) => (
-
                 <div
                   className="opportunity-card"
-
                   key={item._id}
-
-                  onClick={() =>
-                    navigate(
-                      `/opportunity/${item._id}`
-                    )
-                  }
+                  onClick={() => navigate(`/opportunity/${item._id}`)}
                 >
-
-
-
-
-                  {/* TOP */}
-
-                  <div className="card-top">
-
-                    <h3 className="opportunity-title">
-                      {item.title}
-                    </h3>
-
-
-
+                  <div className="oc-header">
                     <span
-                      className={`badge ${item.category?.replace(
-                        " ",
-                        "-"
-                      )}`}
+                      className={`badge ${item.category?.replace(" ", "-")}`}
                     >
-
                       {item.category}
-
                     </span>
-
+                    <DeadlineChip deadline={item.deadline} />
                   </div>
 
+                  <h3 className="oc-title">{item.title}</h3>
 
-
-
-                  {/* FACULTY INFO */}
-
-                  <div className="faculty-info-row">
-
-                    <div className="faculty-avatar">
-
-                      {item.postedBy?.name
-                        ?.charAt(0)
-                        ?.toUpperCase()}
-
-                    </div>
-
-
-
-                    <div className="faculty-details">
-
-                      <span className="faculty-name">
-
-                        {item.postedBy?.name ||
-                          "Faculty"}
-
+                  <div className="oc-faculty">
+                    <Avatar
+                      name={item.postedBy?.name}
+                      image={item.postedBy?.profileImage}
+                      size={28}
+                    />
+                    <span className="oc-faculty-name">
+                      {item.postedBy?.prefix ? `${item.postedBy.prefix} ` : ""}
+                      {item.postedBy?.name || "Faculty"}
+                    </span>
+                    {item.postedBy?.department && (
+                      <span className="oc-faculty-dept">
+                        · {item.postedBy.department}
                       </span>
-
-
-
-                      <span className="faculty-department">
-
-                        {item.postedBy?.department ||
-                          "Department"}
-
-                      </span>
-
-                    </div>
-
+                    )}
                   </div>
 
+                  <p className="oc-desc">{item.description}</p>
 
-
-
-                  {/* DESCRIPTION */}
-
-                  <p className="card-description">
-
-                    {item.description?.length > 140
-
-                      ? item.description.slice(
-                          0,
-                          140
-                        ) + "..."
-
-                      : item.description}
-
-                  </p>
-
-
-
-
-                  {/* TAGS */}
-
-                  {item.tags?.length > 0 && (
-
-                    <div className="tags-row">
-
+                  {item.tags?.filter((t) => t.trim() !== "").length > 0 && (
+                    <div className="oc-tags">
                       {item.tags
-
-                        .filter(
-                          (tag) =>
-                            tag.trim() !== ""
-                        )
-
+                        .filter((tag) => tag.trim() !== "")
+                        .slice(0, 3)
                         .map((tag, index) => (
-
-                          <span
-                            key={index}
-                            className="tag-pill"
-                          >
-
+                          <span key={index} className="oc-tag">
                             {tag}
-
                           </span>
-
                         ))}
-
                     </div>
-
                   )}
 
-
-
-
-                  {/* ELIGIBILITY */}
-
-                  <div className="eligibility-row">
-
-                    <div className="eligibility-box">
-
-                      <span className="footer-label">
-                        Branches
+                  <div className="oc-footer">
+                    <div className="oc-eligibility">
+                      <span>
+                        <span className="oc-elig-label">Branches</span>{" "}
+                        {summarize(item.eligibleBranches)}
                       </span>
-
-                      <p>
-                        {item.eligibleBranches?.join(", ")}
-                      </p>
-
-                    </div>
-
-
-
-                    <div className="eligibility-box">
-
-                      <span className="footer-label">
-                        Years
+                      <span>
+                        <span className="oc-elig-label">Years</span>{" "}
+                        {summarize(item.eligibleYears)}
                       </span>
-
-                      <p>
-                        {item.eligibleYears?.join(", ")}
-                      </p>
-
                     </div>
-
-
-
-                    <div className="eligibility-box">
-
-                      <span className="footer-label">
-                        Gender
-                      </span>
-
-                      <p>
-                        {item.eligibleGender || "Any"}
-                      </p>
-
-                    </div>
-
+                    <span className="oc-cta">View details →</span>
                   </div>
-
-
-
-
-                  {/* FOOTER */}
-
-                  <div className="card-footer">
-
-                    <div className="deadline-box">
-
-                      <span className="footer-label">
-                        Deadline
-                      </span>
-
-                      <span className="deadline-text">
-
-                        {item.deadline
-
-                          ? new Date(
-                              item.deadline
-                            ).toLocaleDateString()
-
-                          : "No deadline"}
-
-                      </span>
-
-                    </div>
-
-
-
-                    <div className="posted-box">
-
-                      <span className="footer-label">
-                        Posted by
-                      </span>
-
-                      <span
-                        className={`role-badge ${item.postedBy?.role}`}
-                      >
-
-                        {item.postedBy?.role || "Faculty"}
-
-                      </span>
-
-                    </div>
-
-                  </div>
-
                 </div>
-
               ))
-
             )}
-
           </div>
-
         </div>
-
       </div>
-
     </>
   );
 }
