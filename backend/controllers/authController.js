@@ -3,8 +3,11 @@ import {
   loginUserService,
   getProfileService,
   updateProfileService,
+  updateProfileImageService,
+  removeProfileImageService,
 } from "../services/authService.js";
 
+import { AppError } from "../utils/AppError.js";
 import { respondError } from "../utils/respondError.js";
 
 // Controller — request handling and response formatting only.
@@ -42,8 +45,41 @@ export const loginUser = async (req, res) => {
           name: result.user.name,
           email: result.user.email,
           role: result.user.role,
+          prefix: result.user.prefix || "",
+          profileImage: result.user.profileImage || "",
         },
       },
+    });
+  } catch (error) {
+    respondError(res, error);
+  }
+};
+
+// PATCH /api/auth/profile/image
+export const updateProfileImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      throw new AppError("No image uploaded", 400);
+    }
+    const profile = await updateProfileImageService(req.user.id, req.file);
+    res.json({
+      success: true,
+      message: "Profile image updated",
+      profile,
+    });
+  } catch (error) {
+    respondError(res, error);
+  }
+};
+
+// DELETE /api/auth/profile/image
+export const removeProfileImage = async (req, res) => {
+  try {
+    const profile = await removeProfileImageService(req.user.id);
+    res.json({
+      success: true,
+      message: "Profile image removed",
+      profile,
     });
   } catch (error) {
     respondError(res, error);

@@ -1,7 +1,10 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import fs from "fs";
+import path from "path";
 import User from "../models/User.js";
 import { AppError } from "../utils/AppError.js";
+import { AVATAR_DIR } from "../middleware/uploadAvatar.js";
 
 import {
   findUserByEmail,
@@ -9,6 +12,17 @@ import {
   findUserById,
   updateUserProfile,
 } from "../repositories/authRepository.js";
+
+// Removes a previously stored avatar from disk (best effort).
+const removeAvatarFile = (imagePath) => {
+  if (!imagePath || !imagePath.startsWith("/uploads/avatars/")) return;
+  const filePath = path.join(AVATAR_DIR, path.basename(imagePath));
+  fs.unlink(filePath, (err) => {
+    if (err && err.code !== "ENOENT") {
+      console.error("Could not delete avatar file:", err.message);
+    }
+  });
+};
 
 export const registerUserService = async (
   userData
@@ -108,3 +122,27 @@ export const updateProfileService =
 
     return user;
   };
+
+export const updateProfileImageService = async (userId, file) => {
+  const existing = await findUserById(userId);
+  if (!existing) {
+    throw new AppError("User not found", 404);
+  }
+
+  // Replace the previous avatar, cleaning up the old file.
+  if (existing.profileImage) removeAvatarFile(existing.profileImage);
+
+  const imageUrl = `/uploads/avatars/${file.filename}`;
+  return updateUserProfile(userId, { profileImage: imageUrl });
+};
+
+export const removeProfileImageService = async (userId) => {
+  const existing = await findUserById(userId);
+  if (!existing) {
+    throw new AppError("User not found", 404);
+  }
+
+  if (existing.profileImage) removeAvatarFile(existing.profileImage);
+
+  return updateUserProfile(userId, { profileImage: "" });
+};

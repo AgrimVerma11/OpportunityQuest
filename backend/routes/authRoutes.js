@@ -21,9 +21,24 @@ import {
 import {
   getProfile,
   updateProfile,
+  updateProfileImage,
+  removeProfileImage,
 } from "../controllers/authController.js";
 
+import { uploadAvatar } from "../middleware/uploadAvatar.js";
+
 const router = express.Router();
+
+// Parses the avatar from a multipart request and turns multer errors
+// (wrong type / too large) into clean 400s.
+const handleAvatarUpload = (req, res, next) => {
+  uploadAvatar.single("image")(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    next();
+  });
+};
 
 
 
@@ -58,6 +73,19 @@ router.put(
     updateProfileValidation
   ),
   updateProfile
+);
+
+router.post(
+  "/profile/image",
+  authMiddleware,
+  handleAvatarUpload,
+  updateProfileImage
+);
+
+router.delete(
+  "/profile/image",
+  authMiddleware,
+  removeProfileImage
 );
 
 
