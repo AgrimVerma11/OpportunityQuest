@@ -57,16 +57,47 @@ const userSchema = new mongoose.Schema(
       type: Number,
       min: 1,
       max: 4,
-    }, 
+    },
 
-    
+    // Student society / club involvement.
+    society: {
+      name: { type: String, trim: true, default: "" },
+      position: { type: String, trim: true, default: "" },
+    },
+
+    // A couple of notable student projects.
+    projects: {
+      type: [
+        {
+          title: { type: String, trim: true, maxlength: 120 },
+          description: { type: String, trim: true, maxlength: 500 },
+        },
+      ],
+      default: [],
+    },
+
+
     // FACULTY FIELDS
-    
+
+
+    // Title prefix for faculty (e.g. Dr.) — not every faculty holds a doctorate.
+    prefix: {
+      type: String,
+      enum: ["", "Dr.", "Prof."],
+      default: "",
+    },
 
     department: {
       type: String,
       trim: true,
       default: "",
+    },
+
+    office: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: 120,
     },
 
     interests: {
@@ -83,7 +114,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
-      maxlength: 500,
+      maxlength: 1000,
     },
 
     profileImage: {
