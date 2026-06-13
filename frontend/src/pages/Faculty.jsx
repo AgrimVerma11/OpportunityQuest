@@ -32,6 +32,7 @@ function formatDate(value) {
 function OpportunityCard({
   item,
   onView,
+  onApplicants,
   onEdit,
   onExtend,
   onArchive,
@@ -86,6 +87,13 @@ function OpportunityCard({
           onClick={() => onView(item._id)}
         >
           View
+        </button>
+
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => onApplicants(item._id)}
+        >
+          Applicants{item.applicationsCount ? ` · ${item.applicationsCount}` : ""}
         </button>
 
         {item.status !== "Closed" && (
@@ -398,6 +406,7 @@ function Faculty() {
 
   const cardProps = {
     onView: handleView,
+    onApplicants: (id) => navigate(`/opportunity/${id}/applicants`),
     onEdit: handleEdit,
     onArchive: handleArchive,
     onUnarchive: handleOpenUnarchive,
