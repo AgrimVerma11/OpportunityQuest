@@ -12,7 +12,7 @@ export const findActiveOpportunities = () =>
     deadline: { $gt: new Date() },
     isDeleted: { $ne: true },
   })
-    .populate("postedBy", "name role department")
+    .populate("postedBy", "name role department prefix profileImage")
     .sort({ createdAt: -1 });
 
 // Every (non-deleted) opportunity created by a given faculty member.
@@ -24,10 +24,18 @@ export const findByOwner = (ownerId) =>
 export const findById = (id) => Opportunity.findById(id);
 
 export const findByIdWithOwner = (id) =>
-  Opportunity.findById(id).populate("postedBy", "name role department");
+  Opportunity.findById(id).populate(
+    "postedBy",
+    "name role department prefix profileImage"
+  );
 
 // Persist a loaded document after the service has mutated it.
 export const save = (opportunity) => opportunity.save();
+
+// Adjust the denormalized application counter (kept as a best-effort cache;
+// dashboards read the live count from the applications collection).
+export const incrementApplicationsCount = (id, delta) =>
+  Opportunity.findByIdAndUpdate(id, { $inc: { applicationsCount: delta } });
 
 export const aggregateCategoryStats = () =>
   Opportunity.aggregate([
