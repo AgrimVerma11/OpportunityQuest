@@ -7,6 +7,8 @@ import CreateOpportunity from "./pages/CreateOpportunity";
 import OpportunityDetail from "./pages/OpportunityDetail";
 import Faculty from "./pages/Faculty";
 import EditOpportunity from "./pages/EditOpportunity";
+import MyApplications from "./pages/MyApplications";
+import Applicants from "./pages/Applicants";
 import Footer from "./pages/Footer";
 
 function App() {
@@ -36,6 +38,16 @@ function App() {
       <Route
         path="/opportunity/:id"
         element={<OpportunityDetail />}
+      />
+
+      <Route
+        path="/opportunity/:id/applicants"
+        element={<Applicants />}
+      />
+
+      <Route
+        path="/my-applications"
+        element={<MyApplications />}
       />
 
       <Route
