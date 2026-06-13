@@ -1,0 +1,111 @@
+.applications-container {
+  background: var(--color-bg);
+  padding: var(--space-6) var(--page-pad) var(--space-8);
+  min-height: 70vh;
+}
+
+.applications-inner {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.applications-hero {
+  margin-bottom: var(--space-6);
+}
+
+.applications-hero h1 {
+  font-size: var(--text-h1);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.6px;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.applications-hero p {
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.applications-loading {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.applications-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.application-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  transition: box-shadow var(--transition);
+}
+
+.application-row:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.application-main {
+  min-width: 0;
+}
+
+.application-title-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+}
+
+.application-title-line h3 {
+  font-size: var(--text-h3);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.application-meta {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.application-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.applications-empty {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8) var(--space-7);
+  text-align: center;
+}
+
+.applications-empty h2 {
+  font-size: var(--text-h3);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.applications-empty p {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-5);
+}
+
+@media (max-width: 640px) {
+  .applications-container { padding: var(--space-5) var(--space-4) var(--space-7); }
+  .application-row { flex-direction: column; align-items: flex-start; }
+  .application-actions { align-self: stretch; }
+}
