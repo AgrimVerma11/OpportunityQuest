@@ -7,6 +7,8 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import opportunityRoutes from "./routes/opportunityRoutes.js";
+import applicationRoutes from "./routes/applicationRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import sanitize from "./middleware/sanitizeMiddleware.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiters.js";
 
@@ -66,6 +68,10 @@ app.get("/api/test", (req, res) => {
 app.use("/api/auth", authLimiter, authRoutes);
 
 app.use("/api/opportunities", opportunityRoutes);
+
+app.use("/api/applications", applicationRoutes);
+
+app.use("/api/users", userRoutes);
 
 // Protected route (JWT test)
 app.get("/api/protected", authMiddleware, (req, res) => {
