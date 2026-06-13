@@ -1,4 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import Avatar from "../components/Avatar";
 import "./Navbar.css";
 
 function Navbar() {
@@ -44,6 +45,17 @@ function Navbar() {
                 Faculty Corner
               </Link>
             )}
+
+            {currentUser?.role === "Student" && (
+              <Link
+                to="/my-applications"
+                className={`nav-link${
+                  isActive("/my-applications") ? " active" : ""
+                }`}
+              >
+                My Applications
+              </Link>
+            )}
           </>
         )}
       </div>
@@ -51,11 +63,16 @@ function Navbar() {
       {!isAuthPage && (
         <div className="nav-right">
           <Link to="/profile" className="user-chip">
-            <div className="user-avatar">
-              {currentUser?.name?.charAt(0)?.toUpperCase()}
-            </div>
+            <Avatar
+              name={currentUser?.name}
+              image={currentUser?.profileImage}
+              size={36}
+            />
             <div className="user-info">
-              <span className="user-name">{currentUser?.name}</span>
+              <span className="user-name">
+                {currentUser?.prefix ? `${currentUser.prefix} ` : ""}
+                {currentUser?.name}
+              </span>
               <span className={`user-role ${currentUser?.role}`}>
                 {currentUser?.role}
               </span>
