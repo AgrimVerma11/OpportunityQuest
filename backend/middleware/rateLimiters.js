@@ -22,3 +22,14 @@ export const authLimiter = rateLimit({
     "Too many authentication attempts. Please try again in a few minutes."
   ),
 });
+
+// Guards the apply endpoint against rapid-fire submissions.
+export const applyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: jsonResponse(
+    "Too many application attempts. Please try again in a few minutes."
+  ),
+});
