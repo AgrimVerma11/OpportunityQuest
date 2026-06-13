@@ -1,0 +1,17 @@
+.profile-modal-card {
+  max-width: 520px;
+  text-align: left;
+  align-items: stretch;
+  gap: var(--space-4);
+}
+
+.pv-loading {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  padding: var(--space-5) 0;
+  text-align: center;
+}
+
+.pv-close {
+  align-self: flex-end;
+}
