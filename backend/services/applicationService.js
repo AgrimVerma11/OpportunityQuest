@@ -1,0 +1,325 @@
+import fs from "fs";
+import path from "path";
+
+import * as applicationRepo from "../repositories/applicationRepository.js";
+import * as opportunityRepo from "../repositories/opportunityRepository.js";
+import * as userRepo from "../repositories/userRepository.js";
+import { AppError } from "../utils/AppError.js";
+import { RESUME_DIR } from "../middleware/uploadResume.js";
+import {
+  APPLICATION_STATUS,
+  STATUS_TRANSITIONS,
+  WITHDRAWABLE_STATUSES,
+  REAPPLY_COOLDOWN_HOURS,
+} from "../constants/applicationConstants.js";
+
+const COOLDOWN_MS = REAPPLY_COOLDOWN_HOURS * 60 * 60 * 1000;
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+// Strict eligibility: branch, year and gender must all match (unless the
+// opportunity opens that dimension to "All" / "Any").
+const isEligible = (student, opportunity) => {
+  const branchOk =
+    opportunity.eligibleBranches.includes("All") ||
+    (!!student.branch && opportunity.eligibleBranches.includes(student.branch));
+
+  const yearOk =
+    opportunity.eligibleYears.includes("All") ||
+    (student.year != null &&
+      opportunity.eligibleYears.includes(String(student.year)));
+
+  const genderOk =
+    opportunity.eligibleGender === "Any" ||
+    opportunity.eligibleGender === student.gender;
+
+  return branchOk && yearOk && genderOk;
+};
+
+const buildResume = (file) =>
+  file
+    ? {
+        originalName: file.originalname,
+        filename: file.filename,
+        uploadedAt: new Date(),
+      }
+    : null;
+
+const removeResumeFile = (filename) => {
+  if (!filename) return;
+  // basename guards against any path traversal in stored names.
+  const filePath = path.join(RESUME_DIR, path.basename(filename));
+  fs.unlink(filePath, (err) => {
+    if (err) console.error("Could not delete resume file:", err.message);
+  });
+};
+
+// Loads an application and asserts the requester may access it:
+// the owning student, or the faculty who posted the opportunity.
+const loadAuthorizedApplication = async (applicationId, user) => {
+  const application = await applicationRepo.findByIdPopulated(applicationId);
+
+  if (!application) {
+    throw new AppError("Application not found", 404);
+  }
+
+  const isOwningStudent =
+    application.student?._id?.toString() === user.id;
+  const isOwningFaculty =
+    application.opportunity?.postedBy?.toString() === user.id;
+
+  if (!isOwningStudent && !isOwningFaculty) {
+    throw new AppError("You are not authorized to view this application", 403);
+  }
+
+  return { application, isOwningStudent, isOwningFaculty };
+};
+
+// ── Student: apply ───────────────────────────────────────────────
+
+export const applyToOpportunity = async (studentId, body, resumeFile) => {
+  const opportunity = await opportunityRepo.findById(body.opportunityId);
+
+  if (!opportunity || opportunity.isDeleted) {
+    removeResumeFile(resumeFile?.filename);
+    throw new AppError("Opportunity not found", 404);
+  }
+
+  if (opportunity.status !== "Active") {
+    removeResumeFile(resumeFile?.filename);
+    throw new AppError("This opportunity is not accepting applications", 400);
+  }
+
+  if (new Date(opportunity.deadline) <= new Date()) {
+    removeResumeFile(resumeFile?.filename);
+    throw new AppError("The application deadline has passed", 400);
+  }
+
+  const student = await userRepo.findById(studentId);
+  if (!student || !isEligible(student, opportunity)) {
+    removeResumeFile(resumeFile?.filename);
+    throw new AppError(
+      "You do not meet the eligibility criteria for this opportunity",
+      403
+    );
+  }
+
+  const existing = await applicationRepo.findOne({
+    student: studentId,
+    opportunity: opportunity._id,
+  });
+
+  const resume = buildResume(resumeFile);
+
+  if (existing) {
+    if (existing.status !== APPLICATION_STATUS.WITHDRAWN) {
+      removeResumeFile(resumeFile?.filename);
+      throw new AppError("You have already applied to this opportunity", 409);
+    }
+
+    // Re-apply: enforce the cooldown window.
+    const elapsed = existing.withdrawnAt
+      ? Date.now() - new Date(existing.withdrawnAt).getTime()
+      : COOLDOWN_MS;
+    if (elapsed < COOLDOWN_MS) {
+      removeResumeFile(resumeFile?.filename);
+      const hoursLeft = Math.ceil((COOLDOWN_MS - elapsed) / (60 * 60 * 1000));
+      throw new AppError(
+        `You can re-apply to this opportunity in about ${hoursLeft} hour(s)`,
+        429
+      );
+    }
+
+    if (resume && existing.resume) removeResumeFile(existing.resume.filename);
+
+    existing.status = APPLICATION_STATUS.APPLIED;
+    existing.coverLetter = body.coverLetter;
+    if (resume) existing.resume = resume;
+    existing.withdrawnAt = null;
+    existing.statusHistory.push({
+      status: APPLICATION_STATUS.APPLIED,
+      changedAt: new Date(),
+      changedBy: studentId,
+    });
+
+    await applicationRepo.save(existing);
+    await opportunityRepo.incrementApplicationsCount(opportunity._id, 1);
+    await userRepo.incrementApplicationsSubmitted(studentId, 1);
+    return existing;
+  }
+
+  let application;
+  try {
+    application = await applicationRepo.create({
+      student: studentId,
+      opportunity: opportunity._id,
+      coverLetter: body.coverLetter,
+      resume,
+      status: APPLICATION_STATUS.APPLIED,
+      statusHistory: [
+        {
+          status: APPLICATION_STATUS.APPLIED,
+          changedAt: new Date(),
+          changedBy: studentId,
+        },
+      ],
+    });
+  } catch (err) {
+    removeResumeFile(resumeFile?.filename);
+    // Unique index race: a parallel request already created the application.
+    if (err.code === 11000) {
+      throw new AppError("You have already applied to this opportunity", 409);
+    }
+    throw err;
+  }
+
+  await opportunityRepo.incrementApplicationsCount(opportunity._id, 1);
+  await userRepo.incrementApplicationsSubmitted(studentId, 1);
+  return application;
+};
+
+// ── Student: my applications ─────────────────────────────────────
+
+export const getMyApplications = (studentId) =>
+  applicationRepo.findByStudent(studentId);
+
+// ── Shared: single application (faculty view marks it Viewed) ─────
+
+export const getApplicationForUser = async (applicationId, user) => {
+  const { application, isOwningFaculty } = await loadAuthorizedApplication(
+    applicationId,
+    user
+  );
+
+  if (isOwningFaculty && application.status === APPLICATION_STATUS.APPLIED) {
+    application.status = APPLICATION_STATUS.VIEWED;
+    application.statusHistory.push({
+      status: APPLICATION_STATUS.VIEWED,
+      changedAt: new Date(),
+      changedBy: user.id,
+    });
+    await applicationRepo.save(application);
+  }
+
+  return application;
+};
+
+// ── Shared: resume access ────────────────────────────────────────
+
+export const getResumeForUser = async (applicationId, user) => {
+  const { application } = await loadAuthorizedApplication(applicationId, user);
+
+  if (!application.resume?.filename) {
+    throw new AppError("No resume on file for this application", 404);
+  }
+
+  const filePath = path.join(
+    RESUME_DIR,
+    path.basename(application.resume.filename)
+  );
+
+  if (!fs.existsSync(filePath)) {
+    throw new AppError("Resume file is no longer available", 404);
+  }
+
+  return { filePath, originalName: application.resume.originalName };
+};
+
+// ── Faculty: applicants for an opportunity ───────────────────────
+
+export const getApplicantsForOpportunity = async (
+  opportunityId,
+  facultyId,
+  status
+) => {
+  const opportunity = await opportunityRepo.findById(opportunityId);
+
+  if (!opportunity || opportunity.isDeleted) {
+    throw new AppError("Opportunity not found", 404);
+  }
+
+  if (opportunity.postedBy.toString() !== facultyId) {
+    throw new AppError(
+      "You are not authorized to view these applicants",
+      403
+    );
+  }
+
+  return applicationRepo.findByOpportunity(opportunityId, status);
+};
+
+// ── Faculty: update status ───────────────────────────────────────
+
+export const updateApplicationStatus = async (
+  applicationId,
+  facultyId,
+  newStatus
+) => {
+  const application = await applicationRepo.findById(applicationId);
+
+  if (!application) {
+    throw new AppError("Application not found", 404);
+  }
+
+  const opportunity = await opportunityRepo.findById(application.opportunity);
+  if (!opportunity || opportunity.postedBy.toString() !== facultyId) {
+    throw new AppError(
+      "You are not authorized to update this application",
+      403
+    );
+  }
+
+  const allowed = STATUS_TRANSITIONS[application.status] || [];
+  if (!allowed.includes(newStatus)) {
+    throw new AppError(
+      `Cannot change status from ${application.status} to ${newStatus}`,
+      400
+    );
+  }
+
+  application.status = newStatus;
+  application.statusHistory.push({
+    status: newStatus,
+    changedAt: new Date(),
+    changedBy: facultyId,
+  });
+
+  await applicationRepo.save(application);
+  return application;
+};
+
+// ── Student: withdraw ────────────────────────────────────────────
+
+export const withdrawApplication = async (applicationId, studentId) => {
+  const application = await applicationRepo.findById(applicationId);
+
+  if (!application) {
+    throw new AppError("Application not found", 404);
+  }
+
+  if (application.student.toString() !== studentId) {
+    throw new AppError(
+      "You are not authorized to withdraw this application",
+      403
+    );
+  }
+
+  if (!WITHDRAWABLE_STATUSES.includes(application.status)) {
+    throw new AppError(
+      "This application can no longer be withdrawn",
+      400
+    );
+  }
+
+  application.status = APPLICATION_STATUS.WITHDRAWN;
+  application.withdrawnAt = new Date();
+  application.statusHistory.push({
+    status: APPLICATION_STATUS.WITHDRAWN,
+    changedAt: new Date(),
+    changedBy: studentId,
+  });
+
+  await applicationRepo.save(application);
+  await opportunityRepo.incrementApplicationsCount(application.opportunity, -1);
+  await userRepo.incrementApplicationsSubmitted(studentId, -1);
+};
