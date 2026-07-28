@@ -14,6 +14,7 @@ import {
   updateUserProfile,
 } from "../repositories/authRepository.js";
 import * as organizationRepo from "../repositories/organizationRepository.js";
+import { verifyGoogleCredential } from "../config/googleClient.js";
 
 // Removes a previously stored avatar from disk (best effort).
 const removeAvatarFile = (imagePath) => {
@@ -24,6 +25,35 @@ const removeAvatarFile = (imagePath) => {
       console.error("Could not delete avatar file:", err.message);
     }
   });
+};
+
+// Signs the app's session token. A user's id, role and organization do not
+// change mid-session, so they are safe to carry in it.
+const signToken = (user) =>
+  jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+      organizationId: user.organizationId,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+// Refuses sign-in for an account that is not usable, with a specific message.
+const assertCanSignIn = (user) => {
+  if (user.accountStatus === ACCOUNT_STATUS.PENDING) {
+    throw new AppError("Your account is awaiting coordinator approval.", 403);
+  }
+  if (user.accountStatus === ACCOUNT_STATUS.REJECTED) {
+    throw new AppError(
+      "Your account request was not approved. Please contact your coordinator.",
+      403
+    );
+  }
+  if (user.accountStatus === ACCOUNT_STATUS.SUSPENDED) {
+    throw new AppError("Your account has been suspended.", 403);
+  }
 };
 
 export const registerUserService = async (
@@ -81,6 +111,14 @@ export const loginUserService = async (
     throw new AppError("Invalid email or password", 401);
   }
 
+  // A Google-only account has no password to compare against.
+  if (!user.password) {
+    throw new AppError(
+      "This account uses Google sign-in. Please continue with Google.",
+      400
+    );
+  }
+
   const isMatch =
     await bcrypt.compare(
       password,
@@ -91,37 +129,80 @@ export const loginUserService = async (
     throw new AppError("Invalid email or password", 401);
   }
 
-  // Gate sign-in on the account's status. Faculty cannot sign in until a
-  // coordinator approves; a rejected or suspended account is refused.
-  if (user.accountStatus === ACCOUNT_STATUS.PENDING) {
-    throw new AppError("Your account is awaiting coordinator approval.", 403);
-  }
-  if (user.accountStatus === ACCOUNT_STATUS.REJECTED) {
-    throw new AppError(
-      "Your account request was not approved. Please contact your coordinator.",
-      403
-    );
-  }
-  if (user.accountStatus === ACCOUNT_STATUS.SUSPENDED) {
-    throw new AppError("Your account has been suspended.", 403);
-  }
-
-  const token = jwt.sign(
-    {
-      id: user._id,
-      role: user.role,
-      organizationId: user.organizationId,
-    },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: "7d",
-    }
-  );
+  assertCanSignIn(user);
 
   return {
-    token,
+    token: signToken(user),
     user,
   };
+};
+
+// Sign in (or register) with Google. Verifies the credential, restricts to a
+// recognized institutional domain, links the Google identity to an existing
+// account or — with onboarding details — creates a new one. Faculty created
+// this way are still Pending: Google proves the domain, not that the person is
+// faculty; the coordinator's approval is unchanged.
+export const authenticateWithGoogle = async (credential, onboarding = {}) => {
+  const { email, emailVerified, name, googleId } =
+    await verifyGoogleCredential(credential);
+
+  if (!email || !emailVerified) {
+    throw new AppError(
+      "Your Google account email could not be verified.",
+      400
+    );
+  }
+
+  const domain = email.split("@")[1];
+  const organization = domain
+    ? await organizationRepo.findByEmailDomain(domain)
+    : null;
+  if (!organization) {
+    throw new AppError(
+      "Sign-in is restricted to recognized institutional accounts.",
+      400
+    );
+  }
+
+  const existing = await findUserByEmail(email);
+
+  if (existing) {
+    // Link the Google identity to the existing account on first use.
+    if (!existing.googleId) {
+      await updateUserProfile(existing._id, { googleId });
+    }
+    assertCanSignIn(existing);
+    return { status: "signed-in", token: signToken(existing), user: existing };
+  }
+
+  // No account yet — we need the role (and role-specific details) to create one.
+  if (!onboarding.role) {
+    return { status: "needs-onboarding", email, name };
+  }
+
+  const accountStatus =
+    onboarding.role === ROLES.FACULTY
+      ? ACCOUNT_STATUS.PENDING
+      : ACCOUNT_STATUS.ACTIVE;
+
+  const created = await createUser({
+    organizationId: organization._id,
+    name: onboarding.name?.trim() || name || email.split("@")[0],
+    email,
+    googleId,
+    role: onboarding.role,
+    gender: onboarding.gender || "Other",
+    branch: onboarding.branch || "",
+    year: onboarding.year || undefined,
+    department: onboarding.department || "",
+    employeeId: onboarding.employeeId || "",
+    accountStatus,
+  });
+
+  if (accountStatus === ACCOUNT_STATUS.PENDING) {
+    return { status: "pending", email };
+  }
+  return { status: "signed-in", token: signToken(created), user: created };
 };
 
 

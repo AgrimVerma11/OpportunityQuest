@@ -1,10 +1,17 @@
 import request from "supertest";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { createApp } from "../app.js";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
+import { verifyGoogleCredential } from "../config/googleClient.js";
+
+// Google token verification is mocked so the tests exercise the account-linking
+// and creation logic without a real Google round-trip.
+vi.mock("../config/googleClient.js", () => ({
+  verifyGoogleCredential: vi.fn(),
+}));
 
 const app = createApp();
 
@@ -482,5 +489,102 @@ describe("faculty approval", () => {
       .patch(`/api/admin/faculty/${facultyId}/approve`)
       .set("Authorization", `Bearer ${otherCoord.token}`);
     expect(res.status).toBe(404);
+  });
+});
+
+// ── Google sign-in ────────────────────────────────────────────────
+
+describe("google sign-in", () => {
+  const googlePost = (body) =>
+    request(app).post("/api/auth/google").send(body);
+
+  const mockGoogle = (overrides) =>
+    verifyGoogleCredential.mockResolvedValue({
+      email: "person@thapar.edu",
+      emailVerified: true,
+      name: "Test Person",
+      googleId: "google-sub-1",
+      ...overrides,
+    });
+
+  it("asks a brand-new Google user to onboard", async () => {
+    mockGoogle({ email: "fresh@thapar.edu", googleId: "g-fresh" });
+    const res = await googlePost({ credential: "x" });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("needs-onboarding");
+    expect(res.body.email).toBe("fresh@thapar.edu");
+  });
+
+  it("creates and signs in a student on onboarding", async () => {
+    mockGoogle({ email: "gstudent@thapar.edu", googleId: "g-student" });
+    const res = await googlePost({
+      credential: "x",
+      role: "Student",
+      gender: "Male",
+      branch: "COE",
+      year: 2,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("signed-in");
+    expect(res.body.data.token).toBeTruthy();
+  });
+
+  it("creates a faculty as pending, and refuses a second sign-in", async () => {
+    mockGoogle({ email: "gfaculty@thapar.edu", googleId: "g-faculty" });
+    const created = await googlePost({
+      credential: "x",
+      role: "Faculty",
+      gender: "Female",
+      department: "DCSE",
+      employeeId: "EMP-G-1",
+    });
+    expect(created.status).toBe(200);
+    expect(created.body.status).toBe("pending");
+    expect(created.body.data).toBeUndefined();
+
+    const again = await googlePost({ credential: "x" });
+    expect(again.status).toBe(403);
+  });
+
+  it("links Google to an existing password account and signs in", async () => {
+    await registerUser({
+      email: "linkme@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+    });
+    mockGoogle({ email: "linkme@thapar.edu", googleId: "g-link" });
+    const res = await googlePost({ credential: "x" });
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("signed-in");
+    expect(res.body.data.token).toBeTruthy();
+  });
+
+  it("rejects a Google account from an unrecognized domain", async () => {
+    mockGoogle({ email: "someone@gmail.com", googleId: "g-ext" });
+    const res = await googlePost({ credential: "x", role: "Student" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an unverified Google email", async () => {
+    mockGoogle({ email: "unverified@thapar.edu", emailVerified: false });
+    const res = await googlePost({ credential: "x" });
+    expect(res.status).toBe(400);
+  });
+
+  it("tells a Google-only account to use Google when a password is tried", async () => {
+    mockGoogle({ email: "googleonly@thapar.edu", googleId: "g-only" });
+    await googlePost({
+      credential: "x",
+      role: "Student",
+      gender: "Male",
+      branch: "COE",
+      year: 2,
+    });
+
+    const res = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "googleonly@thapar.edu", password: "whatever123" });
+    expect(res.status).toBe(400);
   });
 });

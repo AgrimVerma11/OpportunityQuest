@@ -36,9 +36,15 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
 
+    // Optional: Google-only accounts have no password. Password accounts still
+    // set it (the register validator requires one on that path).
     password: {
       type: String,
-      required: true,
+    },
+
+    // Set for accounts that sign in with Google; absent otherwise.
+    googleId: {
+      type: String,
     },
 
 
@@ -218,6 +224,10 @@ const userSchema = new mongoose.Schema(
 
 // INDEXES
 
+
+// One Google identity maps to one user; sparse so password-only accounts
+// (no googleId) are not indexed and do not collide.
+userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 
 // Search users
 userSchema.index({
