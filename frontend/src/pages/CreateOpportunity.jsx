@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./CreateOpportunity.css";
 import "./EditOpportunity.css";
@@ -11,14 +11,6 @@ function CreateOpportunity() {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const fileInputRef = useRef(null);
-
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-
-  useEffect(() => {
-    if (!currentUser || currentUser.role !== "Faculty") {
-      navigate("/home");
-    }
-  }, []);
 
   const [form, setForm] = useState({
     title: "",

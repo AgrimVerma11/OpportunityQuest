@@ -12,6 +12,7 @@ import {
   patchWithAuth,
   deleteWithAuth,
 } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
 
 // Defined at module scope so React doesn't recreate it on every render.
@@ -178,14 +179,9 @@ function Faculty() {
   const [unarchiveError, setUnarchiveError] = useState("");
   const [unarchiving, setUnarchiving] = useState(false);
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("currentUser"));
-    if (!user || user.role !== "Faculty") {
-      navigate("/home");
-      return;
-    }
     loadMyOpportunities();
     loadProfile();
   }, []);

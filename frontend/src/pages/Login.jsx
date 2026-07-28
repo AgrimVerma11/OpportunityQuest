@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { IconCheck } from "../components/Icons";
+import { useAuth } from "../context/AuthContext";
 import "./Auth.css";
 
 function Login() {
@@ -9,6 +10,7 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -39,9 +41,7 @@ function Login() {
         return;
       }
 
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("currentUser", JSON.stringify(data.data.user));
+      login(data.data.token, data.data.user);
       navigate("/home");
     } catch (error) {
       console.error(error);

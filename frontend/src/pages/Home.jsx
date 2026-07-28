@@ -9,6 +9,7 @@ import { IconSearch, IconClock } from "../components/Icons";
 import { BRANCH_OPTIONS, YEAR_OPTIONS } from "../constants/profileOptions";
 
 import { fetchPublic } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
 
 // Days remaining until a deadline (negative if past). Drives the urgency chip.
@@ -51,16 +52,7 @@ function Home() {
   const [opportunities, setOpportunities] = useState([]);
 
   const navigate = useNavigate();
-
-  const currentUser = JSON.parse(
-    localStorage.getItem("currentUser") || "null"
-  );
-
-  useEffect(() => {
-    if (!localStorage.getItem("token")) {
-      navigate("/");
-    }
-  }, [navigate]);
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     const load = async () => {

@@ -10,6 +10,7 @@ import EditOpportunity from "./pages/EditOpportunity";
 import MyApplications from "./pages/MyApplications";
 import Applicants from "./pages/Applicants";
 import Footer from "./pages/Footer";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   const location = useLocation();
@@ -19,48 +20,82 @@ function App() {
 
   return (
     <div className="page-shell">
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-      <Route path="/home" element={<Home />} />
+        {/* Any signed-in user */}
+        <Route
+          path="/home"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/opportunity/:id"
+          element={
+            <ProtectedRoute>
+              <OpportunityDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/create-opportunity"
-        element={<CreateOpportunity />}
-      />
+        {/* Faculty only */}
+        <Route
+          path="/create-opportunity"
+          element={
+            <ProtectedRoute role="Faculty">
+              <CreateOpportunity />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit-opportunity/:id"
+          element={
+            <ProtectedRoute role="Faculty">
+              <EditOpportunity />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/opportunity/:id/applicants"
+          element={
+            <ProtectedRoute role="Faculty">
+              <Applicants />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/faculty"
+          element={
+            <ProtectedRoute role="Faculty">
+              <Faculty />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/edit-opportunity/:id"
-        element={<EditOpportunity />}
-      />
-
-      <Route
-        path="/opportunity/:id"
-        element={<OpportunityDetail />}
-      />
-
-      <Route
-        path="/opportunity/:id/applicants"
-        element={<Applicants />}
-      />
-
-      <Route
-        path="/my-applications"
-        element={<MyApplications />}
-      />
-
-      <Route
-        path="/faculty"
-        element={<Faculty />}
-      />
-
-      <Route
-        path="/profile"
-        element={<Profile />}
-      />
-    </Routes>
-    {!isAuthPage && <Footer />}
+        {/* Student only */}
+        <Route
+          path="/my-applications"
+          element={
+            <ProtectedRoute role="Student">
+              <MyApplications />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+      {!isAuthPage && <Footer />}
     </div>
   );
 }

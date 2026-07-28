@@ -8,6 +8,7 @@ import {
   patchWithAuth,
   BACKEND_URL,
 } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
 import Navbar from "./Navbar";
 import StatusBadge from "../components/StatusBadge";
@@ -37,7 +38,7 @@ function OpportunityDetail() {
   const navigate = useNavigate();
   const confirm = useConfirm();
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+  const { user: currentUser } = useAuth();
 
   const [opportunity, setOpportunity] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -81,6 +82,7 @@ function OpportunityDetail() {
       }
     };
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleResumeChange = (e) => {
