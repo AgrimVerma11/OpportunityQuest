@@ -32,9 +32,9 @@ const toMinimalProfile = (u) => ({
   branch: u.branch || "",
 });
 
-export const getPublicProfile = async (userId) => {
+export const getPublicProfile = async (userId, organizationId) => {
   const user = await userRepo.findById(userId);
-  if (!user) {
+  if (!user || user.organizationId.toString() !== organizationId) {
     throw new AppError("Profile not found", 404);
   }
 

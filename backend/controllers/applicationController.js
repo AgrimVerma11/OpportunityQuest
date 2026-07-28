@@ -9,7 +9,8 @@ export const apply = async (req, res) => {
     const application = await applicationService.applyToOpportunity(
       req.user.id,
       req.body,
-      req.file
+      req.file,
+      req.user.organizationId
     );
     res.status(201).json({
       success: true,

@@ -1,7 +1,8 @@
 import request from "supertest";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 
 import { createApp } from "../app.js";
+import Organization from "../models/Organization.js";
 
 const app = createApp();
 
@@ -79,6 +80,15 @@ const applyTo = (token, opportunityId, coverLetter) =>
       "coverLetter",
       coverLetter || "I am genuinely interested in contributing to this work."
     );
+
+// Every registration resolves to an organization by email domain, so the suite
+// provisions the institutional org before each test.
+beforeEach(async () => {
+  await Organization.create({
+    name: "Thapar Institute",
+    emailDomains: ["thapar.edu"],
+  });
+});
 
 // ── Health ────────────────────────────────────────────────────────
 
@@ -199,8 +209,10 @@ describe("core application flow", () => {
 
     const opportunity = await createOpportunity(faculty.token);
 
-    // Public feed shows the active opportunity.
-    const feed = await request(app).get("/api/opportunities");
+    // The feed, scoped to the caller's organization, shows the opportunity.
+    const feed = await request(app)
+      .get("/api/opportunities")
+      .set("Authorization", `Bearer ${student.token}`);
     expect(feed.status).toBe(200);
     expect(feed.body.success).toBe(true);
     expect(feed.body.opportunities.some((o) => o._id === opportunity._id)).toBe(
@@ -290,5 +302,55 @@ describe("application state machine", () => {
       .set("Authorization", `Bearer ${faculty.token}`)
       .send({ status: "Rejected" });
     expect(illegal.status).toBe(400);
+  });
+});
+
+// ── Tenant isolation ──────────────────────────────────────────────
+
+describe("multi-tenancy", () => {
+  it("never leaks opportunities, detail, apply or profiles across organizations", async () => {
+    // A Thapar faculty member posts an opportunity.
+    const faculty = await asFaculty();
+    const opportunity = await createOpportunity(faculty.token);
+
+    // A student in a different organization.
+    await Organization.create({
+      name: "Other University",
+      emailDomains: ["other.edu"],
+    });
+    const outsider = await registerAndLogin({
+      email: "student@other.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+    });
+
+    // The outsider's feed does not include the Thapar opportunity.
+    const feed = await request(app)
+      .get("/api/opportunities")
+      .set("Authorization", `Bearer ${outsider.token}`);
+    expect(feed.status).toBe(200);
+    expect(
+      feed.body.opportunities.some((o) => o._id === opportunity._id)
+    ).toBe(false);
+
+    // Fetching it by id, applying to it, and viewing the poster's profile all
+    // read as not-found across the tenant boundary.
+    const detail = await request(app)
+      .get(`/api/opportunities/${opportunity._id}`)
+      .set("Authorization", `Bearer ${outsider.token}`);
+    expect(detail.status).toBe(404);
+
+    const apply = await request(app)
+      .post("/api/applications")
+      .set("Authorization", `Bearer ${outsider.token}`)
+      .field("opportunityId", opportunity._id)
+      .field("coverLetter", "I would like to apply to this role from another org.");
+    expect(apply.status).toBe(404);
+
+    const profile = await request(app)
+      .get(`/api/users/${faculty.user.id}`)
+      .set("Authorization", `Bearer ${outsider.token}`);
+    expect(profile.status).toBe(404);
   });
 });

@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "seed": "node seed.js",
+    "migrate:orgs": "node scripts/backfillOrganizations.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

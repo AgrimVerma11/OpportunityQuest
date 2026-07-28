@@ -77,10 +77,21 @@ const loadAuthorizedApplication = async (applicationId, user) => {
 
 // ── Student: apply ───────────────────────────────────────────────
 
-export const applyToOpportunity = async (studentId, body, resumeFile) => {
+export const applyToOpportunity = async (
+  studentId,
+  body,
+  resumeFile,
+  organizationId
+) => {
   const opportunity = await opportunityRepo.findById(body.opportunityId);
 
-  if (!opportunity || opportunity.isDeleted) {
+  // The org check keeps a student from applying to another tenant's
+  // opportunity by posting its id directly; it reads as "not found".
+  if (
+    !opportunity ||
+    opportunity.isDeleted ||
+    opportunity.organizationId.toString() !== organizationId
+  ) {
     removeResumeFile(resumeFile?.filename);
     throw new AppError("Opportunity not found", 404);
   }
@@ -153,6 +164,7 @@ export const applyToOpportunity = async (studentId, body, resumeFile) => {
     application = await applicationRepo.create({
       student: studentId,
       opportunity: opportunity._id,
+      organizationId: opportunity.organizationId,
       coverLetter: body.coverLetter,
       resume,
       status: APPLICATION_STATUS.APPLIED,

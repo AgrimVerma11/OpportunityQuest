@@ -23,12 +23,13 @@ const loadOwnedOpportunity = async (id, userId) => {
   return opportunity;
 };
 
-export const createOpportunity = (data, userId) =>
+export const createOpportunity = (data, userId, organizationId) =>
   opportunityRepo.createOpportunity({
     title: data.title,
     description: data.description,
     category: data.category,
     postedBy: userId,
+    organizationId,
     eligibleBranches: data.eligibleBranches?.length
       ? data.eligibleBranches
       : ["All"],
@@ -39,14 +40,14 @@ export const createOpportunity = (data, userId) =>
     deadline: data.deadline,
   });
 
-export const getActiveOpportunities = () =>
-  opportunityRepo.findActiveOpportunities();
+export const getActiveOpportunities = (organizationId) =>
+  opportunityRepo.findActiveOpportunities(organizationId);
 
 export const getMyOpportunities = (userId) =>
   opportunityRepo.findByOwner(userId);
 
-export const getOpportunityById = async (id) => {
-  const opportunity = await opportunityRepo.findByIdWithOwner(id);
+export const getOpportunityById = async (id, organizationId) => {
+  const opportunity = await opportunityRepo.findByIdWithOwner(id, organizationId);
 
   if (!opportunity || opportunity.isDeleted) {
     throw new AppError("Opportunity not found", 404);
@@ -205,4 +206,5 @@ export const deleteAttachment = async (id, userId, attachmentId) => {
   await opportunityRepo.save(opportunity);
 };
 
-export const getCategoryStats = () => opportunityRepo.aggregateCategoryStats();
+export const getCategoryStats = (organizationId) =>
+  opportunityRepo.aggregateCategoryStats(organizationId);
