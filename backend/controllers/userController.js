@@ -5,7 +5,10 @@ import { respondError } from "../utils/respondError.js";
 // (e.g. a student viewing the faculty who posted an opportunity).
 export const getPublicProfile = async (req, res) => {
   try {
-    const profile = await userService.getPublicProfile(req.params.id);
+    const profile = await userService.getPublicProfile(
+      req.params.id,
+      req.user.organizationId
+    );
     res.json({ success: true, profile });
   } catch (error) {
     respondError(res, error);

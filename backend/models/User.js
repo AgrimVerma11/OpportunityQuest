@@ -7,6 +7,14 @@ const userSchema = new mongoose.Schema(
     // BASIC INFO
     
 
+    // TENANT
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+      index: true,
+    },
+
     name: {
       type: String,
       required: true,

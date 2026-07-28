@@ -1,13 +1,16 @@
+import mongoose from "mongoose";
 import Opportunity from "../models/Opportunity.js";
 
 // Repository — the only place that talks to the Opportunity collection.
-// No business rules here; just database operations.
+// No business rules here; just database operations. Every read is scoped to a
+// single organization so tenants never see one another's records.
 
 export const createOpportunity = (data) => Opportunity.create(data);
 
-// Public feed: active, not past deadline, not soft-deleted.
-export const findActiveOpportunities = () =>
+// Feed for one organization: active, not past deadline, not soft-deleted.
+export const findActiveOpportunities = (organizationId) =>
   Opportunity.find({
+    organizationId,
     status: "Active",
     deadline: { $gt: new Date() },
     isDeleted: { $ne: true },
@@ -23,8 +26,8 @@ export const findByOwner = (ownerId) =>
 
 export const findById = (id) => Opportunity.findById(id);
 
-export const findByIdWithOwner = (id) =>
-  Opportunity.findById(id).populate(
+export const findByIdWithOwner = (id, organizationId) =>
+  Opportunity.findOne({ _id: id, organizationId }).populate(
     "postedBy",
     "name role department prefix profileImage"
   );
@@ -37,9 +40,14 @@ export const save = (opportunity) => opportunity.save();
 export const incrementApplicationsCount = (id, delta) =>
   Opportunity.findByIdAndUpdate(id, { $inc: { applicationsCount: delta } });
 
-export const aggregateCategoryStats = () =>
+export const aggregateCategoryStats = (organizationId) =>
   Opportunity.aggregate([
-    { $match: { isDeleted: { $ne: true } } },
+    {
+      $match: {
+        organizationId: new mongoose.Types.ObjectId(organizationId),
+        isDeleted: { $ne: true },
+      },
+    },
     { $group: { _id: "$category", count: { $sum: 1 } } },
     { $sort: { count: -1 } },
   ]);

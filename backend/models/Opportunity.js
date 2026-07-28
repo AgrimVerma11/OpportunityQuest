@@ -6,6 +6,14 @@ const opportunitySchema = new mongoose.Schema(
     // BASIC INFO
     
 
+    // TENANT
+    organizationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+      index: true,
+    },
+
     title: {
       type: String,
       required: true,
@@ -202,6 +210,9 @@ opportunitySchema.index({
   description: "text",
   tags: "text",
 });
+
+// Tenant-scoped feed: active, in-date opportunities for one organization.
+opportunitySchema.index({ organizationId: 1, status: 1, deadline: 1 });
 
 // Filtering indexes
 opportunitySchema.index({ category: 1 });

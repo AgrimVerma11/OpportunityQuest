@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import {
-  fetchPublic,
   fetchWithAuth,
   uploadWithAuth,
   patchWithAuth,
@@ -55,7 +54,7 @@ function OpportunityDetail() {
   useEffect(() => {
     const load = async () => {
       try {
-        const response = await fetchPublic(`/opportunities/${id}`);
+        const response = await fetchWithAuth(`/opportunities/${id}`);
         if (response.success) setOpportunity(response.opportunity);
       } catch (error) {
         console.error(error);

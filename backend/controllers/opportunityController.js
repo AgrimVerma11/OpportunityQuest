@@ -9,7 +9,8 @@ export const createOpportunity = async (req, res) => {
   try {
     const opportunity = await opportunityService.createOpportunity(
       req.body,
-      req.user.id
+      req.user.id,
+      req.user.organizationId
     );
 
     res.status(201).json({
@@ -25,7 +26,9 @@ export const createOpportunity = async (req, res) => {
 // GET ALL OPPORTUNITIES (public feed — active, not expired, not deleted)
 export const getOpportunities = async (req, res) => {
   try {
-    const opportunities = await opportunityService.getActiveOpportunities();
+    const opportunities = await opportunityService.getActiveOpportunities(
+      req.user.organizationId
+    );
     res.json({ success: true, opportunities });
   } catch (error) {
     handleError(res, error);
@@ -53,7 +56,8 @@ export const getMyOpportunities = async (req, res) => {
 export const getOpportunityById = async (req, res) => {
   try {
     const opportunity = await opportunityService.getOpportunityById(
-      req.params.id
+      req.params.id,
+      req.user.organizationId
     );
     res.status(200).json({ success: true, opportunity });
   } catch (error) {
@@ -172,7 +176,9 @@ export const deleteAttachment = async (req, res) => {
 // CATEGORY STATS
 export const getCategoryStats = async (req, res) => {
   try {
-    const stats = await opportunityService.getCategoryStats();
+    const stats = await opportunityService.getCategoryStats(
+      req.user.organizationId
+    );
     res.json(stats);
   } catch (error) {
     handleError(res, error);

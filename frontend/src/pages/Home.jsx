@@ -8,7 +8,7 @@ import Avatar from "../components/Avatar";
 import { IconSearch, IconClock } from "../components/Icons";
 import { BRANCH_OPTIONS, YEAR_OPTIONS } from "../constants/profileOptions";
 
-import { fetchPublic } from "../utils/api";
+import { fetchWithAuth } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 
 
@@ -56,7 +56,7 @@ function Home() {
 
   useEffect(() => {
     const load = async () => {
-      const data = await fetchPublic("/opportunities");
+      const data = await fetchWithAuth("/opportunities");
       if (data?.success && Array.isArray(data.opportunities)) {
         setOpportunities(data.opportunities);
       }

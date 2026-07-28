@@ -12,12 +12,7 @@ import {
   findUserById,
   updateUserProfile,
 } from "../repositories/authRepository.js";
-
-// Registration is restricted to a single institutional email domain. Read at
-// call time (not import) so it reflects the loaded environment. Phase 3 will
-// replace this with a per-organization lookup.
-const institutionalDomain = () =>
-  (process.env.ALLOWED_EMAIL_DOMAIN || "thapar.edu").toLowerCase();
+import * as organizationRepo from "../repositories/organizationRepository.js";
 
 // Removes a previously stored avatar from disk (best effort).
 const removeAvatarFile = (imagePath) => {
@@ -34,10 +29,14 @@ export const registerUserService = async (
   userData
 ) => {
 
-  const domain = institutionalDomain();
-  if (!userData.email.endsWith(`@${domain}`)) {
+  const domain = userData.email.split("@")[1];
+  const organization = domain
+    ? await organizationRepo.findByEmailDomain(domain)
+    : null;
+
+  if (!organization) {
     throw new AppError(
-      `Registration is restricted to ${domain} email addresses.`,
+      "Registration is restricted to recognized institutional email addresses.",
       400
     );
   }
@@ -54,6 +53,7 @@ export const registerUserService = async (
 
   const user = await createUser({
     ...userData,
+    organizationId: organization._id,
     password: hashedPassword,
   });
 
@@ -87,6 +87,7 @@ export const loginUserService = async (
     {
       id: user._id,
       role: user.role,
+      organizationId: user.organizationId,
     },
     process.env.JWT_SECRET,
     {

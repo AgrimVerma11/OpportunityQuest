@@ -47,9 +47,9 @@ router.post(
 );
 
 
-// GET ALL OPPORTUNITIES
+// GET ALL OPPORTUNITIES (tenant-scoped feed)
 
-router.get("/", getOpportunities);
+router.get("/", authMiddleware, getOpportunities);
 
 
 // GET MY OPPORTUNITIES
@@ -64,12 +64,12 @@ router.get(
 
 // CATEGORY STATS
 
-router.get("/stats/categories", getCategoryStats);
+router.get("/stats/categories", authMiddleware, getCategoryStats);
 
 
 // GET OPPORTUNITY BY ID
 
-router.get("/:id", getOpportunityById);
+router.get("/:id", authMiddleware, getOpportunityById);
 
 
 // UPDATE OPPORTUNITY
