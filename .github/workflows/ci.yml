@@ -32,7 +32,11 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
+      # npm install (not npm ci): vitest's bundler pulls in platform-specific
+      # optional dependencies whose lockfile entries differ between the Mac used
+      # for development and the Linux CI runner, which trips npm ci's strict
+      # check. npm install reconciles them for the runner's platform.
+      - run: npm install
       - run: npm test
 
   frontend:
