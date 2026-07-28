@@ -8,6 +8,7 @@ import authMiddleware from "./middleware/authMiddleware.js";
 import opportunityRoutes from "./routes/opportunityRoutes.js";
 import applicationRoutes from "./routes/applicationRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import sanitize from "./middleware/sanitizeMiddleware.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiters.js";
 
@@ -75,6 +76,7 @@ export function createApp() {
   app.use("/api/opportunities", opportunityRoutes);
   app.use("/api/applications", applicationRoutes);
   app.use("/api/users", userRoutes);
+  app.use("/api/admin", adminRoutes);
 
   // Protected route (JWT smoke test).
   app.get("/api/protected", authMiddleware, (req, res) => {

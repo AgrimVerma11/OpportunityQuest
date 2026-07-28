@@ -8,6 +8,7 @@
     "dev": "node --watch server.js",
     "seed": "node seed.js",
     "migrate:orgs": "node scripts/backfillOrganizations.js",
+    "provision:coordinator": "node scripts/provisionCoordinator.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

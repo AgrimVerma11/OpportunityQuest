@@ -81,6 +81,29 @@ async function seed() {
     },
   ]);
 
+  await User.create({
+    organizationId,
+    name: "Neha Gupta",
+    email: "coordinator@thapar.edu",
+    password: passwordHash,
+    role: "Coordinator",
+    gender: "Female",
+    accountStatus: "Active",
+  });
+
+  // A faculty account still awaiting approval, to exercise the coordinator queue.
+  await User.create({
+    organizationId,
+    name: "Vikram Mehta",
+    email: "pending@thapar.edu",
+    password: passwordHash,
+    role: "Faculty",
+    gender: "Male",
+    department: "DCSE",
+    employeeId: "EMP-9001",
+    accountStatus: "Pending",
+  });
+
   const [research] = await Opportunity.create([
     {
       organizationId,
@@ -133,7 +156,9 @@ async function seed() {
 
   console.log("Seed complete:");
   console.log(`  Organization: ${organization.name}`);
-  console.log(`  Faculty:  prof@thapar.edu / ${DEMO_PASSWORD}`);
+  console.log(`  Coordinator: coordinator@thapar.edu / ${DEMO_PASSWORD}`);
+  console.log(`  Faculty:  prof@thapar.edu / ${DEMO_PASSWORD}  (active)`);
+  console.log(`  Faculty:  pending@thapar.edu / ${DEMO_PASSWORD}  (awaiting approval)`);
   console.log(`  Student:  rahul@thapar.edu / ${DEMO_PASSWORD}  (COE, applied to Research)`);
   console.log(`  Student:  priya@thapar.edu / ${DEMO_PASSWORD}  (ECE)`);
   console.log(`  Opportunities: 2, Applications: 1`);
