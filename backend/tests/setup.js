@@ -10,11 +10,20 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
+// When TEST_MONGO_URI is provided (CI points it at a MongoDB service container)
+// we connect to that. Otherwise we spin up a throwaway in-memory instance, so
+// local runs stay zero-config. TEST_MONGO_URI is used instead of MONGO_URI on
+// purpose, so a developer's real database connection can never be targeted.
 let mongod;
 
 beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  await mongoose.connect(mongod.getUri());
+  const externalUri = process.env.TEST_MONGO_URI;
+  if (externalUri) {
+    await mongoose.connect(externalUri);
+  } else {
+    mongod = await MongoMemoryServer.create();
+    await mongoose.connect(mongod.getUri());
+  }
 });
 
 afterEach(async () => {
