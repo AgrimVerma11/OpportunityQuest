@@ -17,8 +17,8 @@ function Login() {
     if (!email.endsWith("@thapar.edu")) {
       newErrors.email = "Only thapar.edu email addresses are allowed.";
     }
-    if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters.";
+    if (!password) {
+      newErrors.password = "Password is required.";
     }
 
     setErrors(newErrors);

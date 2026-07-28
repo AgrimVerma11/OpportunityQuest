@@ -65,7 +65,9 @@ function Home() {
   useEffect(() => {
     const load = async () => {
       const data = await fetchPublic("/opportunities");
-      if (Array.isArray(data)) setOpportunities(data);
+      if (data?.success && Array.isArray(data.opportunities)) {
+        setOpportunities(data.opportunities);
+      }
     };
     load();
   }, []);

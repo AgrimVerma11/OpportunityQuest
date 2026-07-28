@@ -27,7 +27,7 @@ export const registerValidation = Joi.object({
     }),
 
   password: Joi.string()
-    .min(6)
+    .min(8)
     .max(30)
     .required(),
 

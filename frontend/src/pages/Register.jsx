@@ -37,8 +37,8 @@ function Register() {
       newErrors.email = "Only thapar.edu emails are allowed.";
     }
 
-    if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters.";
+    if (formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters.";
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -150,7 +150,7 @@ function Register() {
               name="password"
               id="registerPassword"
               type="password"
-              placeholder="At least 6 characters"
+              placeholder="At least 8 characters"
               onChange={handleChange}
             />
             {errors.password && <span className="auth-error">{errors.password}</span>}

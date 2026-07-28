@@ -138,6 +138,37 @@ describe("auth", () => {
     const res = await request(app).get("/api/protected");
     expect(res.status).toBe(401);
   });
+
+  it("rejects registration from a non-institutional email domain", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      name: "Outsider",
+      email: "someone@gmail.com",
+      password: "password123",
+      confirmPassword: "password123",
+      role: "Student",
+      gender: "Male",
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a password shorter than eight characters", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      name: "Shortpass",
+      email: "shortpass@thapar.edu",
+      password: "pass12",
+      confirmPassword: "pass12",
+      role: "Student",
+      gender: "Male",
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a request whose Authorization header is not a Bearer token", async () => {
+    const res = await request(app)
+      .get("/api/protected")
+      .set("Authorization", "token abc123");
+    expect(res.status).toBe(401);
+  });
 });
 
 // ── Authorization (RBAC) ──────────────────────────────────────────
@@ -171,8 +202,10 @@ describe("core application flow", () => {
     // Public feed shows the active opportunity.
     const feed = await request(app).get("/api/opportunities");
     expect(feed.status).toBe(200);
-    expect(Array.isArray(feed.body)).toBe(true);
-    expect(feed.body.some((o) => o._id === opportunity._id)).toBe(true);
+    expect(feed.body.success).toBe(true);
+    expect(feed.body.opportunities.some((o) => o._id === opportunity._id)).toBe(
+      true
+    );
 
     // Student applies.
     const apply = await applyTo(student.token, opportunity._id);
