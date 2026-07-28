@@ -9,6 +9,7 @@ import Faculty from "./pages/Faculty";
 import EditOpportunity from "./pages/EditOpportunity";
 import MyApplications from "./pages/MyApplications";
 import Applicants from "./pages/Applicants";
+import Approvals from "./pages/Approvals";
 import Footer from "./pages/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -91,6 +92,16 @@ function App() {
           element={
             <ProtectedRoute role="Student">
               <MyApplications />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Coordinator only */}
+        <Route
+          path="/approvals"
+          element={
+            <ProtectedRoute role="Coordinator">
+              <Approvals />
             </ProtectedRoute>
           }
         />

@@ -56,6 +56,17 @@ function Navbar() {
                 My Applications
               </Link>
             )}
+
+            {currentUser?.role === "Coordinator" && (
+              <Link
+                to="/approvals"
+                className={`nav-link${
+                  isActive("/approvals") ? " active" : ""
+                }`}
+              >
+                Approvals
+              </Link>
+            )}
           </>
         )}
       </div>

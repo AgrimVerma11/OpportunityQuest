@@ -42,7 +42,7 @@ function Login() {
       }
 
       login(data.data.token, data.data.user);
-      navigate("/home");
+      navigate(data.data.user.role === "Coordinator" ? "/approvals" : "/home");
     } catch (error) {
       console.error(error);
       setErrors({ email: "Server error. Please try again." });
