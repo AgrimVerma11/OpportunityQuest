@@ -1,6 +1,7 @@
 import {
   registerUserService,
   loginUserService,
+  authenticateWithGoogle,
   getProfileService,
   updateProfileService,
   updateProfileImageService,
@@ -49,6 +50,51 @@ export const loginUser = async (req, res) => {
           profileImage: result.user.profileImage || "",
         },
       },
+    });
+  } catch (error) {
+    respondError(res, error);
+  }
+};
+
+// POST /api/auth/google
+export const googleAuth = async (req, res) => {
+  try {
+    const { credential, ...onboarding } = req.body;
+    const result = await authenticateWithGoogle(credential, onboarding);
+
+    if (result.status === "signed-in") {
+      return res.json({
+        success: true,
+        status: "signed-in",
+        message: "Login successful",
+        data: {
+          token: result.token,
+          user: {
+            id: result.user._id,
+            name: result.user.name,
+            email: result.user.email,
+            role: result.user.role,
+            prefix: result.user.prefix || "",
+            profileImage: result.user.profileImage || "",
+          },
+        },
+      });
+    }
+
+    if (result.status === "needs-onboarding") {
+      return res.json({
+        success: true,
+        status: "needs-onboarding",
+        email: result.email,
+        name: result.name,
+      });
+    }
+
+    // Faculty created via Google — awaiting coordinator approval.
+    return res.json({
+      success: true,
+      status: "pending",
+      message: "Your account is awaiting coordinator approval.",
     });
   } catch (error) {
     respondError(res, error);

@@ -83,3 +83,24 @@ export const loginValidation = Joi.object({
     .required(),
 
 });
+
+
+
+
+// GOOGLE SIGN-IN / ONBOARDING VALIDATION
+
+
+export const googleAuthValidation = Joi.object({
+
+  credential: Joi.string().required(),
+
+  // Present only on the onboarding (account-creation) call.
+  role: Joi.string().valid("Student", "Faculty"),
+  name: Joi.string().trim().min(2).max(60),
+  gender: Joi.string().valid("Male", "Female", "Other"),
+  branch: Joi.string().allow("", null),
+  year: Joi.number().allow("", null),
+  department: Joi.string().allow("", null),
+  employeeId: Joi.string().trim().max(50).allow("", null),
+
+});

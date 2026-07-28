@@ -3,6 +3,7 @@ import express from "express";
 import {
   registerUser,
   loginUser,
+  googleAuth,
 } from "../controllers/authController.js";
 
 import validate from "../middleware/validateMiddleware.js";
@@ -10,6 +11,7 @@ import validate from "../middleware/validateMiddleware.js";
 import {
   registerValidation,
   loginValidation,
+  googleAuthValidation,
 } from "../validators/authValidator.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -58,6 +60,13 @@ router.post(
   "/login",
   validate(loginValidation),
   loginUser
+);
+
+// Google sign-in / onboarding
+router.post(
+  "/google",
+  validate(googleAuthValidation),
+  googleAuth
 );
 
 router.get(
