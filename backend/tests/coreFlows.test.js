@@ -3,6 +3,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 import { createApp } from "../app.js";
 import Organization from "../models/Organization.js";
+import User from "../models/User.js";
+import bcrypt from "bcryptjs";
 
 const app = createApp();
 
@@ -11,7 +13,7 @@ const futureISO = (days = 30) =>
 
 // ── Fixtures ──────────────────────────────────────────────────────
 
-async function registerAndLogin(overrides = {}) {
+async function registerUser(overrides = {}) {
   const payload = {
     name: "Test Person",
     password: "password123",
@@ -21,26 +23,42 @@ async function registerAndLogin(overrides = {}) {
     ...overrides,
   };
   if (!payload.email) {
-    throw new Error("registerAndLogin requires an explicit email");
+    throw new Error("registerUser requires an explicit email");
   }
-
-  const register = await request(app).post("/api/auth/register").send(payload);
-  expect(register.status).toBe(201);
-
-  const login = await request(app)
-    .post("/api/auth/login")
-    .send({ email: payload.email, password: payload.password });
-  expect(login.status).toBe(200);
-
-  return { token: login.body.data.token, user: login.body.data.user };
+  const res = await request(app).post("/api/auth/register").send(payload);
+  expect(res.status).toBe(201);
+  return payload;
 }
 
-const asFaculty = () =>
-  registerAndLogin({
+async function loginUser(email, password = "password123") {
+  const res = await request(app)
+    .post("/api/auth/login")
+    .send({ email, password });
+  expect(res.status).toBe(200);
+  return { token: res.body.data.token, user: res.body.data.user };
+}
+
+// Register and sign in — for accounts that are usable immediately (students).
+async function registerAndLogin(overrides = {}) {
+  const payload = await registerUser(overrides);
+  return loginUser(payload.email, payload.password);
+}
+
+// Faculty start Pending. Activate directly so tests that just need a working
+// faculty member don't depend on the approval flow, which has its own tests.
+const asFaculty = async () => {
+  await registerUser({
     email: "prof@thapar.edu",
     role: "Faculty",
     department: "DCSE",
+    employeeId: "EMP-1001",
   });
+  await User.updateOne(
+    { email: "prof@thapar.edu" },
+    { accountStatus: "Active" }
+  );
+  return loginUser("prof@thapar.edu");
+};
 
 const asStudent = (extra = {}) =>
   registerAndLogin({
@@ -50,6 +68,22 @@ const asStudent = (extra = {}) =>
     year: 2,
     ...extra,
   });
+
+// Coordinators are provisioned, not self-registered, so create one directly.
+async function createCoordinator(email = "coord@thapar.edu", domain = "thapar.edu") {
+  const org = await Organization.findOne({ emailDomains: domain });
+  const passwordHash = await bcrypt.hash("password123", 10);
+  await User.create({
+    organizationId: org._id,
+    name: "Coordinator",
+    email,
+    password: passwordHash,
+    role: "Coordinator",
+    gender: "Other",
+    accountStatus: "Active",
+  });
+  return loginUser(email);
+}
 
 async function createOpportunity(token, overrides = {}) {
   const res = await request(app)
@@ -352,5 +386,101 @@ describe("multi-tenancy", () => {
       .get(`/api/users/${faculty.user.id}`)
       .set("Authorization", `Bearer ${outsider.token}`);
     expect(profile.status).toBe(404);
+  });
+});
+
+// ── Faculty approval ──────────────────────────────────────────────
+
+describe("faculty approval", () => {
+  it("keeps a pending faculty out until a coordinator approves", async () => {
+    // Faculty registers, is Pending, and cannot sign in.
+    await registerUser({
+      email: "newprof@thapar.edu",
+      role: "Faculty",
+      department: "DCSE",
+      employeeId: "EMP-2002",
+    });
+    const blocked = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "newprof@thapar.edu", password: "password123" });
+    expect(blocked.status).toBe(403);
+
+    // A coordinator sees them in the pending list and approves.
+    const coordinator = await createCoordinator();
+    const pending = await request(app)
+      .get("/api/admin/faculty/pending")
+      .set("Authorization", `Bearer ${coordinator.token}`);
+    expect(pending.status).toBe(200);
+    expect(pending.body.count).toBe(1);
+
+    const facultyId = pending.body.faculty[0]._id;
+    const approve = await request(app)
+      .patch(`/api/admin/faculty/${facultyId}/approve`)
+      .set("Authorization", `Bearer ${coordinator.token}`);
+    expect(approve.status).toBe(200);
+
+    // Now the faculty can sign in.
+    const ok = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "newprof@thapar.edu", password: "password123" });
+    expect(ok.status).toBe(200);
+  });
+
+  it("blocks a rejected faculty from signing in", async () => {
+    await registerUser({
+      email: "badprof@thapar.edu",
+      role: "Faculty",
+      department: "DCSE",
+      employeeId: "EMP-3003",
+    });
+    const coordinator = await createCoordinator();
+    const pending = await request(app)
+      .get("/api/admin/faculty/pending")
+      .set("Authorization", `Bearer ${coordinator.token}`);
+    const facultyId = pending.body.faculty[0]._id;
+
+    const reject = await request(app)
+      .patch(`/api/admin/faculty/${facultyId}/reject`)
+      .set("Authorization", `Bearer ${coordinator.token}`)
+      .send({ reason: "Could not verify faculty status" });
+    expect(reject.status).toBe(200);
+
+    const blocked = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "badprof@thapar.edu", password: "password123" });
+    expect(blocked.status).toBe(403);
+  });
+
+  it("forbids a non-coordinator from the approval endpoints", async () => {
+    const student = await asStudent();
+    const res = await request(app)
+      .get("/api/admin/faculty/pending")
+      .set("Authorization", `Bearer ${student.token}`);
+    expect(res.status).toBe(403);
+  });
+
+  it("does not let a coordinator approve faculty in another organization", async () => {
+    await registerUser({
+      email: "thaparprof@thapar.edu",
+      role: "Faculty",
+      department: "DCSE",
+      employeeId: "EMP-4004",
+    });
+    const thaparCoord = await createCoordinator();
+    const pending = await request(app)
+      .get("/api/admin/faculty/pending")
+      .set("Authorization", `Bearer ${thaparCoord.token}`);
+    const facultyId = pending.body.faculty[0]._id;
+
+    await Organization.create({
+      name: "Other University",
+      emailDomains: ["other.edu"],
+    });
+    const otherCoord = await createCoordinator("coord@other.edu", "other.edu");
+
+    const res = await request(app)
+      .patch(`/api/admin/faculty/${facultyId}/approve`)
+      .set("Authorization", `Bearer ${otherCoord.token}`);
+    expect(res.status).toBe(404);
   });
 });

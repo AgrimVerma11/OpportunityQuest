@@ -5,6 +5,7 @@ import path from "path";
 import User from "../models/User.js";
 import { AppError } from "../utils/AppError.js";
 import { AVATAR_DIR } from "../middleware/uploadAvatar.js";
+import { ROLES, ACCOUNT_STATUS } from "../constants/userConstants.js";
 
 import {
   findUserByEmail,
@@ -51,9 +52,16 @@ export const registerUserService = async (
   const hashedPassword =
     await bcrypt.hash(userData.password, 10);
 
+  // Students are usable immediately; faculty wait for a coordinator.
+  const accountStatus =
+    userData.role === ROLES.FACULTY
+      ? ACCOUNT_STATUS.PENDING
+      : ACCOUNT_STATUS.ACTIVE;
+
   const user = await createUser({
     ...userData,
     organizationId: organization._id,
+    accountStatus,
     password: hashedPassword,
   });
 
@@ -81,6 +89,21 @@ export const loginUserService = async (
 
   if (!isMatch) {
     throw new AppError("Invalid email or password", 401);
+  }
+
+  // Gate sign-in on the account's status. Faculty cannot sign in until a
+  // coordinator approves; a rejected or suspended account is refused.
+  if (user.accountStatus === ACCOUNT_STATUS.PENDING) {
+    throw new AppError("Your account is awaiting coordinator approval.", 403);
+  }
+  if (user.accountStatus === ACCOUNT_STATUS.REJECTED) {
+    throw new AppError(
+      "Your account request was not approved. Please contact your coordinator.",
+      403
+    );
+  }
+  if (user.accountStatus === ACCOUNT_STATUS.SUSPENDED) {
+    throw new AppError("Your account has been suspended.", 403);
   }
 
   const token = jwt.sign(

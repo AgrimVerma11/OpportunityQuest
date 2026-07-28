@@ -58,6 +58,11 @@ export const registerValidation = Joi.object({
   interests: Joi.string()
     .allow("", null),
 
+  employeeId: Joi.string()
+    .trim()
+    .max(50)
+    .allow("", null),
+
 });
 
 

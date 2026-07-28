@@ -1,4 +1,9 @@
 import mongoose from "mongoose";
+import {
+  USER_ROLES,
+  ACCOUNT_STATUS,
+  ACCOUNT_STATUSES,
+} from "../constants/userConstants.js";
 
 const userSchema = new mongoose.Schema(
 
@@ -42,8 +47,43 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["Student", "Faculty"],
+      enum: USER_ROLES,
       required: true,
+    },
+
+    // ACCOUNT LIFECYCLE
+    // Students are Active on creation; faculty start Pending until a coordinator
+    // approves them. Rejected and Suspended are coordinator-set states.
+    accountStatus: {
+      type: String,
+      enum: ACCOUNT_STATUSES,
+      default: ACCOUNT_STATUS.ACTIVE,
+      index: true,
+    },
+
+    // A verifiable signal (e.g. employee id) a coordinator can check when
+    // deciding whether a faculty registration is genuine.
+    employeeId: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    approvedAt: {
+      type: Date,
+      default: null,
+    },
+
+    rejectionReason: {
+      type: String,
+      trim: true,
+      default: "",
     },
 
     gender: {
