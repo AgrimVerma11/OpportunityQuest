@@ -14,11 +14,13 @@ function Register() {
     branch: "",
     year: "",
     department: "",
+    employeeId: "",
     interests: "",
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -54,8 +56,14 @@ function Register() {
       }
     }
 
-    if (formData.role === "Faculty" && !formData.department) {
-      newErrors.department = "Please select your department.";
+    if (formData.role === "Faculty") {
+      if (!formData.department) {
+        newErrors.department = "Please select your department.";
+      }
+      if (!formData.employeeId.trim()) {
+        newErrors.employeeId =
+          "Employee ID is required so a coordinator can verify you.";
+      }
     }
 
     setErrors(newErrors);
@@ -76,7 +84,11 @@ function Register() {
         return;
       }
 
-      navigate("/");
+      if (formData.role === "Faculty") {
+        setSubmitted(true);
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       console.error(err);
       setErrors({ email: "Server error. Please try again." });
@@ -111,6 +123,33 @@ function Register() {
 
       {/* ── RIGHT — form ── */}
       <div className="auth-right">
+        {submitted ? (
+          <div className="auth-form">
+            <div className="auth-form-header">
+              <h2>Request submitted</h2>
+              <p>Your faculty account is with the coordinator for review.</p>
+            </div>
+            <p
+              style={{
+                color: "var(--color-text-secondary)",
+                fontSize: "0.875rem",
+                lineHeight: 1.6,
+                marginBottom: "1.25rem",
+              }}
+            >
+              You&rsquo;ll be able to sign in once it&rsquo;s approved. We&rsquo;ll
+              keep it under your Thapar email — come back and sign in when
+              it&rsquo;s ready.
+            </p>
+            <button
+              type="button"
+              className="auth-submit"
+              onClick={() => navigate("/")}
+            >
+              Back to sign in
+            </button>
+          </div>
+        ) : (
         <form className="auth-form" onSubmit={handleSubmit}>
 
           <div className="auth-form-header">
@@ -253,6 +292,18 @@ function Register() {
               </div>
 
               <div className="auth-field">
+                <label htmlFor="registerEmployeeId">Employee ID</label>
+                <input
+                  name="employeeId"
+                  id="registerEmployeeId"
+                  placeholder="Your institutional employee ID"
+                  onChange={handleChange}
+                  value={formData.employeeId}
+                />
+                {errors.employeeId && <span className="auth-error">{errors.employeeId}</span>}
+              </div>
+
+              <div className="auth-field">
                 <label htmlFor="registerInterests">Research Interests <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span></label>
                 <textarea
                   name="interests"
@@ -274,6 +325,7 @@ function Register() {
           </p>
 
         </form>
+        )}
       </div>
     </div>
   );
