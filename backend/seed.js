@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
 import connectDB from "./config/db.js";
+import Organization from "./models/Organization.js";
 import User from "./models/User.js";
 import Opportunity from "./models/Opportunity.js";
 import Application from "./models/Application.js";
@@ -10,9 +11,10 @@ import { APPLICATION_STATUS } from "./constants/applicationConstants.js";
 
 dotenv.config();
 
-// Deterministic development seed. Wipes and repopulates the users, opportunities
-// and applications collections with a small, known dataset so local work and
-// staging share the same starting point. Refuses to run against production.
+// Deterministic development seed. Wipes and repopulates the collections with a
+// small, known dataset — one organization and the users, opportunities and
+// applications that belong to it — so local work and staging share the same
+// starting point. Refuses to run against production.
 
 const DEMO_PASSWORD = "password123";
 
@@ -29,14 +31,22 @@ async function seed() {
   console.log(`Seeding database: ${mongoose.connection.host}/${mongoose.connection.name}`);
 
   await Promise.all([
+    Organization.deleteMany({}),
     User.deleteMany({}),
     Opportunity.deleteMany({}),
     Application.deleteMany({}),
   ]);
 
+  const organization = await Organization.create({
+    name: "Thapar Institute of Engineering and Technology",
+    emailDomains: ["thapar.edu"],
+  });
+  const organizationId = organization._id;
+
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
   const faculty = await User.create({
+    organizationId,
     name: "Ananya Rao",
     email: "prof@thapar.edu",
     password: passwordHash,
@@ -48,8 +58,9 @@ async function seed() {
     interests: "Distributed Systems, Databases",
   });
 
-  const [studentCOE, studentECE] = await User.create([
+  const [studentCOE] = await User.create([
     {
+      organizationId,
       name: "Rahul Sharma",
       email: "rahul@thapar.edu",
       password: passwordHash,
@@ -59,6 +70,7 @@ async function seed() {
       year: 2,
     },
     {
+      organizationId,
       name: "Priya Singh",
       email: "priya@thapar.edu",
       password: passwordHash,
@@ -71,6 +83,7 @@ async function seed() {
 
   const [research] = await Opportunity.create([
     {
+      organizationId,
       title: "Research Assistant — Distributed Systems",
       description:
         "Support an ongoing research project on consensus protocols. Involves reading papers, running experiments and writing up results.",
@@ -84,6 +97,7 @@ async function seed() {
       status: "Active",
     },
     {
+      organizationId,
       title: "Summer Internship — Backend Engineering",
       description:
         "Build and maintain internal tooling for the department. Node.js and MongoDB experience preferred but not required.",
@@ -99,6 +113,7 @@ async function seed() {
   ]);
 
   await Application.create({
+    organizationId,
     student: studentCOE._id,
     opportunity: research._id,
     coverLetter:
@@ -117,6 +132,7 @@ async function seed() {
   });
 
   console.log("Seed complete:");
+  console.log(`  Organization: ${organization.name}`);
   console.log(`  Faculty:  prof@thapar.edu / ${DEMO_PASSWORD}`);
   console.log(`  Student:  rahul@thapar.edu / ${DEMO_PASSWORD}  (COE, applied to Research)`);
   console.log(`  Student:  priya@thapar.edu / ${DEMO_PASSWORD}  (ECE)`);
