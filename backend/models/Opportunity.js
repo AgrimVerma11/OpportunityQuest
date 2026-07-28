@@ -231,11 +231,11 @@ opportunitySchema.index({
   deadline: 1,
 });
 
-// Recommendation/filter optimization
-opportunitySchema.index({
-  eligibleBranches: 1,
-  eligibleYears: 1,
-});
+// NB: eligibleBranches and eligibleYears are both arrays, and MongoDB cannot
+// build a compound index spanning two array fields ("parallel arrays"). Such an
+// index silently fails to build in a warm dev DB but breaks the very first
+// insert on a clean database. Eligibility filtering is done client-side today;
+// if it moves server-side, index each array field on its own, not together.
 
 // Trending / sorting
 opportunitySchema.index({
