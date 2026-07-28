@@ -1,175 +1,108 @@
-const API_BASE =
-  import.meta.env.VITE_API_URL;
+const API_BASE = import.meta.env.VITE_API_URL;
 
-export const BACKEND_URL =
-  (import.meta.env.VITE_API_URL || "http://localhost:5174/api").replace("/api", "");
+export const BACKEND_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5174/api"
+).replace("/api", "");
+
+const authHeader = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// A 401 from an authenticated request means the session is missing or expired.
+// Clear the stale session and send the user back to the login screen, rather
+// than letting the page silently render empty.
+const handleUnauthorized = (res) => {
+  if (res.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("isLoggedIn");
+    if (window.location.pathname !== "/") {
+      window.location.href = "/";
+    }
+  }
+  return res;
+};
 
 // GET with token
-export const fetchWithAuth = async (
-  endpoint
-) => {
-
-  const token =
-    localStorage.getItem("token");
-
-  const res = await fetch(
-    `${API_BASE}${endpoint}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
+export const fetchWithAuth = async (endpoint) => {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    headers: { ...authHeader() },
+  });
+  handleUnauthorized(res);
   return res.json();
 };
 
 // POST with token
-export const postWithAuth = async (
-  endpoint,
-  data
-) => {
-
-  const token =
-    localStorage.getItem("token");
-
-  const res = await fetch(
-    `${API_BASE}${endpoint}`,
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type":
-          "application/json",
-
-        Authorization:
-          `Bearer ${token}`,
-      },
-
-      body: JSON.stringify(data),
-    }
-  );
-
+export const postWithAuth = async (endpoint, data) => {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(data),
+  });
+  handleUnauthorized(res);
   return res.json();
 };
 
-// PUBLIC GET
-export const fetchPublic = async (
-  endpoint
-) => {
-
-  const res = await fetch(
-    `${API_BASE}${endpoint}`
-  );
-
+// PUBLIC GET — no token, so no session handling.
+export const fetchPublic = async (endpoint) => {
+  const res = await fetch(`${API_BASE}${endpoint}`);
   return res.json();
 };
 
 // PATCH with token
-export const patchWithAuth = async (
-  endpoint,
-  data = {}
-) => {
-
-  const token =
-    localStorage.getItem("token");
-
-  const res = await fetch(
-    `${API_BASE}${endpoint}`,
-    {
-      method: "PATCH",
-
-      headers: {
-        "Content-Type":
-          "application/json",
-
-        Authorization:
-          `Bearer ${token}`,
-      },
-
-      body: JSON.stringify(data),
-    }
-  );
-
+export const patchWithAuth = async (endpoint, data = {}) => {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(data),
+  });
+  handleUnauthorized(res);
   return res.json();
 };
-
-
 
 // DELETE with token
-export const deleteWithAuth = async (
-  endpoint
-) => {
-
-  const token =
-    localStorage.getItem("token");
-
-  const res = await fetch(
-    `${API_BASE}${endpoint}`,
-    {
-      method: "DELETE",
-
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
-    }
-  );
-
+export const deleteWithAuth = async (endpoint) => {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: "DELETE",
+    headers: { ...authHeader() },
+  });
+  handleUnauthorized(res);
   return res.json();
 };
 
-// MULTIPART UPLOAD with token (for file uploads — do NOT set Content-Type manually)
+// MULTIPART UPLOAD with token — do NOT set Content-Type manually; the browser
+// sets the multipart boundary.
 export const uploadWithAuth = async (endpoint, formData) => {
-  const token = localStorage.getItem("token");
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { ...authHeader() },
     body: formData,
   });
+  handleUnauthorized(res);
   return res.json();
 };
 
 // PUT with token
-export const putWithAuth = async (
-  endpoint,
-  data
-) => {
-
-  const token =
-    localStorage.getItem("token");
-
-  const res = await fetch(
-    `${API_BASE}${endpoint}`,
-    {
-      method: "PUT",
-
-      headers: {
-        "Content-Type":
-          "application/json",
-
-        Authorization:
-          `Bearer ${token}`,
-      },
-
-      body: JSON.stringify(data),
-    }
-  );
-
+export const putWithAuth = async (endpoint, data) => {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(data),
+  });
+  handleUnauthorized(res);
   return res.json();
 };
 
-// Open a protected file (e.g. a resume) in a new tab. The route needs the
-// auth header, so we fetch it as a blob rather than linking to it directly.
+// Open a protected file (e.g. a resume) in a new tab. The route needs the auth
+// header, so we fetch it as a blob rather than linking to it directly.
 export const openAuthedFile = async (endpoint) => {
-  const token = localStorage.getItem("token");
   const res = await fetch(`${API_BASE}${endpoint}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { ...authHeader() },
   });
 
   if (!res.ok) {
+    handleUnauthorized(res);
     let message = "Unable to open file";
     try {
       const data = await res.json();
