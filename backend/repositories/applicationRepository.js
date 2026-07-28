@@ -1,5 +1,4 @@
 import Application from "../models/Application.js";
-import { APPLICATION_STATUS } from "../constants/applicationConstants.js";
 
 // Repository — the only place that talks to the Application collection.
 
@@ -34,11 +33,3 @@ export const findByOpportunity = (opportunityId, status) => {
 };
 
 export const save = (application) => application.save();
-
-// Live count of active (non-withdrawn) applications — the source of truth for
-// dashboards, independent of the denormalized counter on the opportunity.
-export const countActiveByOpportunity = (opportunityId) =>
-  Application.countDocuments({
-    opportunity: opportunityId,
-    status: { $ne: APPLICATION_STATUS.WITHDRAWN },
-  });

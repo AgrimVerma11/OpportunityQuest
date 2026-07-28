@@ -13,6 +13,12 @@ import {
   updateUserProfile,
 } from "../repositories/authRepository.js";
 
+// Registration is restricted to a single institutional email domain. Read at
+// call time (not import) so it reflects the loaded environment. Phase 3 will
+// replace this with a per-organization lookup.
+const institutionalDomain = () =>
+  (process.env.ALLOWED_EMAIL_DOMAIN || "thapar.edu").toLowerCase();
+
 // Removes a previously stored avatar from disk (best effort).
 const removeAvatarFile = (imagePath) => {
   if (!imagePath || !imagePath.startsWith("/uploads/avatars/")) return;
@@ -27,6 +33,14 @@ const removeAvatarFile = (imagePath) => {
 export const registerUserService = async (
   userData
 ) => {
+
+  const domain = institutionalDomain();
+  if (!userData.email.endsWith(`@${domain}`)) {
+    throw new AppError(
+      `Registration is restricted to ${domain} email addresses.`,
+      400
+    );
+  }
 
   const existingUser =
     await findUserByEmail(userData.email);

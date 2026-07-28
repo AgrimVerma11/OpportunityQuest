@@ -26,7 +26,7 @@ export const createOpportunity = async (req, res) => {
 export const getOpportunities = async (req, res) => {
   try {
     const opportunities = await opportunityService.getActiveOpportunities();
-    res.json(opportunities);
+    res.json({ success: true, opportunities });
   } catch (error) {
     handleError(res, error);
   }

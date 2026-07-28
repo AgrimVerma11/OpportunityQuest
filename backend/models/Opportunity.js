@@ -116,19 +116,7 @@ const opportunitySchema = new mongoose.Schema(
       min: 0,
     },
 
-    viewsCount: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
 
-    savesCount: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    
     // FUTURE FEATURES
     
 
@@ -240,7 +228,6 @@ opportunitySchema.index({
 // Trending / sorting
 opportunitySchema.index({
   applicationsCount: -1,
-  viewsCount: -1,
 });
 
 
