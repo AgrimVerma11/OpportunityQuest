@@ -12,6 +12,7 @@ import {
   deleteWithAuth,
   BACKEND_URL,
 } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
 const BRANCHES = [
   "All", "COE", "COPC", "COBS", "DSAI", "EEC", "ECE",
@@ -27,7 +28,7 @@ function EditOpportunity() {
   const confirm = useConfirm();
   const fileInputRef = useRef(null);
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const { user: currentUser } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,11 +49,8 @@ function EditOpportunity() {
   });
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== "Faculty") {
-      navigate("/home");
-      return;
-    }
     loadOpportunity();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadOpportunity = async () => {

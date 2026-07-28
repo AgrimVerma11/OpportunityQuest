@@ -52,16 +52,8 @@ function Applicants() {
   const [actionError, setActionError] = useState("");
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (!localStorage.getItem("token")) {
-      navigate("/");
-      return;
-    }
-    if (user?.role !== "Faculty") {
-      navigate("/home");
-      return;
-    }
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const load = async () => {

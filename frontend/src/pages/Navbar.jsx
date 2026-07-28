@@ -1,19 +1,19 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Avatar from "../components/Avatar";
+import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const { user: currentUser, logout } = useAuth();
 
   const isAuthPage =
     location.pathname === "/" ||
     location.pathname === "/register";
 
   const handleLogout = () => {
-    localStorage.clear();
+    logout();
     navigate("/");
   };
 

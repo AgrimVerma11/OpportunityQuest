@@ -19,15 +19,6 @@ function MyApplications() {
   const [actionError, setActionError] = useState("");
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (!localStorage.getItem("token")) {
-      navigate("/");
-      return;
-    }
-    if (user?.role !== "Student") {
-      navigate("/home");
-      return;
-    }
     load();
   }, []);
 

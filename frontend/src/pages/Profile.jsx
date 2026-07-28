@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { useAuth } from "../context/AuthContext";
 import Avatar from "../components/Avatar";
 import AvatarCropper from "../components/AvatarCropper";
 import {
@@ -23,7 +23,7 @@ import "./Profile.css";
 const EMPTY_PROJECT = { title: "", description: "" };
 
 function Profile() {
-  const navigate = useNavigate();
+  const { updateUser } = useAuth();
   const fileInputRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
@@ -36,12 +36,8 @@ function Profile() {
   const [cropFile, setCropFile] = useState(null);
 
   useEffect(() => {
-    if (!localStorage.getItem("token")) {
-      navigate("/");
-      return;
-    }
     loadProfile();
-  }, [navigate]);
+  }, []);
 
   const loadProfile = async () => {
     try {
@@ -117,7 +113,7 @@ function Profile() {
       if (res.success) {
         setProfile(res.profile);
         setDraft((d) => ({ ...d, profileImage: res.profile.profileImage }));
-        syncCurrentUser({ profileImage: res.profile.profileImage });
+        updateUser({ profileImage: res.profile.profileImage });
       } else {
         setSaveError(res.message || "Could not upload image.");
       }
@@ -137,7 +133,7 @@ function Profile() {
       if (res.success) {
         setProfile(res.profile);
         setDraft((d) => ({ ...d, profileImage: "" }));
-        syncCurrentUser({ profileImage: "" });
+        updateUser({ profileImage: "" });
       } else {
         setSaveError(res.message || "Could not remove image.");
       }
@@ -146,17 +142,6 @@ function Profile() {
       setSaveError("Could not remove image. Please try again.");
     } finally {
       setUploadingImage(false);
-    }
-  };
-
-  // Keep the navbar's cached user in sync for name / prefix / image.
-  const syncCurrentUser = (patch) => {
-    const current = JSON.parse(localStorage.getItem("currentUser") || "null");
-    if (current) {
-      localStorage.setItem(
-        "currentUser",
-        JSON.stringify({ ...current, ...patch })
-      );
     }
   };
 
@@ -213,7 +198,7 @@ function Profile() {
         setProfile(result.profile);
         setDraft(result.profile);
         setEditMode(false);
-        syncCurrentUser({
+        updateUser({
           name: result.profile.name,
           prefix: result.profile.prefix || "",
         });
