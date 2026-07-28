@@ -3,12 +3,17 @@ import rateLimit from "express-rate-limit";
 const jsonResponse = (message) => (req, res) =>
   res.status(429).json({ success: false, message });
 
+// Rate limiting is bypassed under the test runner so integration tests can
+// drive the auth/apply flows repeatedly without tripping the ceilings.
+const skipInTest = () => process.env.NODE_ENV === "test";
+
 // Applied to the whole API — a generous ceiling that only trips on abuse (later on will be tightened even further - note -> google auth to be added).
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
   handler: jsonResponse("Too many requests. Please try again later."),
 });
 
@@ -18,6 +23,7 @@ export const authLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
   handler: jsonResponse(
     "Too many authentication attempts. Please try again in a few minutes."
   ),
@@ -29,6 +35,7 @@ export const applyLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: skipInTest,
   handler: jsonResponse(
     "Too many application attempts. Please try again in a few minutes."
   ),
