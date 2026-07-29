@@ -10,6 +10,7 @@ import bcrypt from "bcryptjs";
 import { verifyGoogleCredential } from "../config/googleClient.js";
 import * as storage from "../lib/storage/index.js";
 import { avatarKey, resumeKey } from "../lib/storage/keys.js";
+import { ResilientStore } from "../middleware/resilientStore.js";
 
 // Google token verification is mocked so the tests exercise the account-linking
 // and creation logic without a real Google round-trip.
@@ -798,5 +799,63 @@ describe("resume storage", () => {
       .get(`/api/applications/${applicationId}/resume`)
       .set("Authorization", `Bearer ${outsider.token}`);
     expect(denied.status).toBe(403);
+  });
+});
+
+// ── Rate-limit resilient store ────────────────────────────────────
+
+describe("rate-limit resilient store", () => {
+  it("passes through the wrapped store's result when it succeeds", async () => {
+    const inner = {
+      increment: async () => ({ totalHits: 5, resetTime: undefined }),
+    };
+    const store = new ResilientStore(inner);
+    store.init({ windowMs: 1000 });
+
+    const info = await store.increment("key");
+    expect(info.totalHits).toBe(5);
+  });
+
+  it("fails open (allows the request) when the wrapped store errors", async () => {
+    const inner = {
+      increment: async () => {
+        throw new Error("redis unreachable");
+      },
+    };
+    const store = new ResilientStore(inner);
+    store.init({ windowMs: 1000 });
+
+    const info = await store.increment("key");
+    // A single hit, well under any ceiling, so the request proceeds.
+    expect(info.totalHits).toBe(1);
+    expect(info.resetTime).toBeInstanceOf(Date);
+  });
+
+  it("swallows errors from best-effort operations", async () => {
+    const inner = {
+      decrement: async () => {
+        throw new Error("redis unreachable");
+      },
+      resetKey: async () => {
+        throw new Error("redis unreachable");
+      },
+    };
+    const store = new ResilientStore(inner);
+
+    await expect(store.decrement("key")).resolves.toBeUndefined();
+    await expect(store.resetKey("key")).resolves.toBeUndefined();
+  });
+
+  it("does not leave an unhandled rejection when the store's init fails", async () => {
+    // The wrapped store's init loads a Lua script and rejects if the client
+    // isn't connected — this must be handled, not crash the process.
+    const inner = {
+      init: () => Promise.reject(new Error("not connected yet")),
+    };
+    const store = new ResilientStore(inner);
+
+    expect(() => store.init({ windowMs: 1000 })).not.toThrow();
+    // Give the rejected init promise a tick to settle; it must be handled.
+    await new Promise((resolve) => setTimeout(resolve, 10));
   });
 });
