@@ -62,17 +62,24 @@ export const getApplication = async (req, res) => {
 };
 
 // GET /api/applications/:id/resume  (owning student or faculty)
+// The file is streamed through this authorized route rather than served from a
+// public URL, so access control stays with the application, not with whoever
+// holds a link.
 export const getResume = async (req, res) => {
   try {
-    const { filePath, originalName } =
+    const { stream, contentLength, originalName } =
       await applicationService.getResumeForUser(req.params.id, req.user);
 
     res.setHeader("Content-Type", "application/pdf");
+    if (contentLength != null) res.setHeader("Content-Length", contentLength);
     res.setHeader(
       "Content-Disposition",
       `inline; filename="${encodeURIComponent(originalName)}"`
     );
-    res.sendFile(filePath);
+
+    // If the underlying object errors mid-stream, abort rather than hang.
+    stream.on("error", () => res.destroy());
+    stream.pipe(res);
   } catch (error) {
     respondError(res, error);
   }

@@ -4,12 +4,14 @@ import {
   APPLICATION_STATUSES,
 } from "../constants/applicationConstants.js";
 
-// Resume metadata. The file itself lives in private storage (not the public
-// uploads mount) and is delivered only through an authorized route.
+// Resume metadata. The file itself lives in the private storage area (never the
+// public uploads mount) and is delivered only through an authorized route. `key`
+// is its storage key — an object key in R2, or a path under the private root on
+// local disk.
 const resumeSchema = new mongoose.Schema(
   {
     originalName: { type: String, required: true },
-    filename: { type: String, required: true },
+    key: { type: String, required: true },
     uploadedAt: { type: Date, default: Date.now },
   },
   { _id: false }

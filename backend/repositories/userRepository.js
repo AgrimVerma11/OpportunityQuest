@@ -21,7 +21,9 @@ export const findPendingFacultyByOrg = (organizationId) =>
     .sort({ createdAt: 1 });
 
 export const setAccountStatus = (id, update) =>
-  User.findByIdAndUpdate(id, update, { new: true }).select("-password");
+  User.findByIdAndUpdate(id, update, { returnDocument: "after" }).select(
+    "-password"
+  );
 
 export const incrementApplicationsSubmitted = (id, delta) =>
   User.findByIdAndUpdate(id, { $inc: { applicationsSubmitted: delta } });

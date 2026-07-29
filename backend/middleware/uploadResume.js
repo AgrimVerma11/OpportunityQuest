@@ -1,26 +1,8 @@
 import multer from "multer";
-import path from "path";
-import fs from "fs";
-import crypto from "crypto";
 
-// Resumes are personal data. They are stored in a private directory that is
-// NOT part of the public /uploads static mount, and are served only through
-// an authorized streaming route.
-export const RESUME_DIR = path.join(process.cwd(), "storage", "resumes");
-
-if (!fs.existsSync(RESUME_DIR)) {
-  fs.mkdirSync(RESUME_DIR, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, RESUME_DIR),
-  filename: (req, file, cb) => {
-    // Server-generated, unguessable name; no user input in the path.
-    const unique = `${Date.now()}-${crypto.randomBytes(12).toString("hex")}`;
-    cb(null, `${unique}.pdf`);
-  },
-});
-
+// Resumes are personal data. They are parsed into memory and handed to the
+// storage port, which writes them to a private area — never publicly served,
+// only streamed back through an authorized route.
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === "application/pdf") {
     cb(null, true);
@@ -30,7 +12,7 @@ const fileFilter = (req, file, cb) => {
 };
 
 export const uploadResume = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter,
 });

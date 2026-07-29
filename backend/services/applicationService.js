@@ -1,11 +1,9 @@
-import fs from "fs";
-import path from "path";
-
 import * as applicationRepo from "../repositories/applicationRepository.js";
 import * as opportunityRepo from "../repositories/opportunityRepository.js";
 import * as userRepo from "../repositories/userRepository.js";
 import { AppError } from "../utils/AppError.js";
-import { RESUME_DIR } from "../middleware/uploadResume.js";
+import * as storage from "../lib/storage/index.js";
+import { resumeKey } from "../lib/storage/keys.js";
 import {
   APPLICATION_STATUS,
   STATUS_TRANSITIONS,
@@ -36,22 +34,24 @@ const isEligible = (student, opportunity) => {
   return branchOk && yearOk && genderOk;
 };
 
-const buildResume = (file) =>
-  file
-    ? {
-        originalName: file.originalname,
-        filename: file.filename,
-        uploadedAt: new Date(),
-      }
-    : null;
+// Persists an uploaded resume to the private storage area and returns the
+// subdocument to attach, or null when the applicant supplied no file. The file
+// arrives as an in-memory buffer, so nothing is written until the application
+// itself is about to be — a rejected application leaves no orphaned object.
+const storeResume = async (file) => {
+  if (!file) return null;
+  const key = resumeKey();
+  await storage.put(key, { body: file.buffer, contentType: file.mimetype });
+  return { originalName: file.originalname, key, uploadedAt: new Date() };
+};
 
-const removeResumeFile = (filename) => {
-  if (!filename) return;
-  // basename guards against any path traversal in stored names.
-  const filePath = path.join(RESUME_DIR, path.basename(filename));
-  fs.unlink(filePath, (err) => {
-    if (err) console.error("Could not delete resume file:", err.message);
-  });
+const removeResume = async (key) => {
+  if (!key) return;
+  try {
+    await storage.remove(key);
+  } catch (err) {
+    console.error("Could not delete resume:", err.message);
+  }
 };
 
 // Loads an application and asserts the requester may access it:
@@ -92,23 +92,19 @@ export const applyToOpportunity = async (
     opportunity.isDeleted ||
     opportunity.organizationId.toString() !== organizationId
   ) {
-    removeResumeFile(resumeFile?.filename);
     throw new AppError("Opportunity not found", 404);
   }
 
   if (opportunity.status !== "Active") {
-    removeResumeFile(resumeFile?.filename);
     throw new AppError("This opportunity is not accepting applications", 400);
   }
 
   if (new Date(opportunity.deadline) <= new Date()) {
-    removeResumeFile(resumeFile?.filename);
     throw new AppError("The application deadline has passed", 400);
   }
 
   const student = await userRepo.findById(studentId);
   if (!student || !isEligible(student, opportunity)) {
-    removeResumeFile(resumeFile?.filename);
     throw new AppError(
       "You do not meet the eligibility criteria for this opportunity",
       403
@@ -120,28 +116,29 @@ export const applyToOpportunity = async (
     opportunity: opportunity._id,
   });
 
-  const resume = buildResume(resumeFile);
+  if (existing && existing.status !== APPLICATION_STATUS.WITHDRAWN) {
+    throw new AppError("You have already applied to this opportunity", 409);
+  }
 
   if (existing) {
-    if (existing.status !== APPLICATION_STATUS.WITHDRAWN) {
-      removeResumeFile(resumeFile?.filename);
-      throw new AppError("You have already applied to this opportunity", 409);
-    }
-
-    // Re-apply: enforce the cooldown window.
+    // Re-apply: enforce the cooldown window before storing anything.
     const elapsed = existing.withdrawnAt
       ? Date.now() - new Date(existing.withdrawnAt).getTime()
       : COOLDOWN_MS;
     if (elapsed < COOLDOWN_MS) {
-      removeResumeFile(resumeFile?.filename);
       const hoursLeft = Math.ceil((COOLDOWN_MS - elapsed) / (60 * 60 * 1000));
       throw new AppError(
         `You can re-apply to this opportunity in about ${hoursLeft} hour(s)`,
         429
       );
     }
+  }
 
-    if (resume && existing.resume) removeResumeFile(existing.resume.filename);
+  // Every eligibility and duplicate check has passed — persist the resume now.
+  const resume = await storeResume(resumeFile);
+
+  if (existing) {
+    const previousResumeKey = existing.resume?.key;
 
     existing.status = APPLICATION_STATUS.APPLIED;
     existing.coverLetter = body.coverLetter;
@@ -154,6 +151,7 @@ export const applyToOpportunity = async (
     });
 
     await applicationRepo.save(existing);
+    if (resume && previousResumeKey) await removeResume(previousResumeKey);
     await opportunityRepo.incrementApplicationsCount(opportunity._id, 1);
     await userRepo.incrementApplicationsSubmitted(studentId, 1);
     return existing;
@@ -177,7 +175,7 @@ export const applyToOpportunity = async (
       ],
     });
   } catch (err) {
-    removeResumeFile(resumeFile?.filename);
+    if (resume) await removeResume(resume.key);
     // Unique index race: a parallel request already created the application.
     if (err.code === 11000) {
       throw new AppError("You have already applied to this opportunity", 409);
@@ -221,20 +219,16 @@ export const getApplicationForUser = async (applicationId, user) => {
 export const getResumeForUser = async (applicationId, user) => {
   const { application } = await loadAuthorizedApplication(applicationId, user);
 
-  if (!application.resume?.filename) {
+  if (!application.resume?.key) {
     throw new AppError("No resume on file for this application", 404);
   }
 
-  const filePath = path.join(
-    RESUME_DIR,
-    path.basename(application.resume.filename)
-  );
-
-  if (!fs.existsSync(filePath)) {
+  const object = await storage.getStream(application.resume.key);
+  if (!object) {
     throw new AppError("Resume file is no longer available", 404);
   }
 
-  return { filePath, originalName: application.resume.originalName };
+  return { ...object, originalName: application.resume.originalName };
 };
 
 // ── Faculty: applicants for an opportunity ───────────────────────
