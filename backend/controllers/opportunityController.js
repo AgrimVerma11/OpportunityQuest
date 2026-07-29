@@ -26,10 +26,11 @@ export const createOpportunity = async (req, res) => {
 // GET ALL OPPORTUNITIES (public feed — active, not expired, not deleted)
 export const getOpportunities = async (req, res) => {
   try {
-    const opportunities = await opportunityService.getActiveOpportunities(
-      req.user.organizationId
+    const result = await opportunityService.getActiveOpportunities(
+      req.user.organizationId,
+      req.query
     );
-    res.json({ success: true, opportunities });
+    res.json({ success: true, ...result });
   } catch (error) {
     handleError(res, error);
   }
