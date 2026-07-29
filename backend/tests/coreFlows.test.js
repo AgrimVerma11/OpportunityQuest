@@ -588,3 +588,58 @@ describe("google sign-in", () => {
     expect(res.status).toBe(400);
   });
 });
+
+// ── Feed pagination & search ──────────────────────────────────────
+
+describe("feed pagination and search", () => {
+  it("paginates, filters and searches the feed on the server", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+
+    for (let i = 1; i <= 13; i++) {
+      await createOpportunity(faculty.token, {
+        title: `Research Assistant ${i}`,
+        category: "Research",
+        eligibleBranches: ["All"],
+      });
+    }
+    await createOpportunity(faculty.token, {
+      title: "Backend Internship",
+      category: "Internship",
+      eligibleBranches: ["ECE"],
+    });
+    await createOpportunity(faculty.token, {
+      title: "Machine Learning Gig",
+      category: "Paid Gig",
+      eligibleBranches: ["COE"],
+    });
+    // 15 opportunities in total.
+
+    const feed = (query) =>
+      request(app)
+        .get(`/api/opportunities${query}`)
+        .set("Authorization", `Bearer ${student.token}`);
+
+    const page1 = await feed("?page=1&limit=12");
+    expect(page1.status).toBe(200);
+    expect(page1.body.opportunities.length).toBe(12);
+    expect(page1.body.pagination.total).toBe(15);
+    expect(page1.body.pagination.hasMore).toBe(true);
+
+    const page2 = await feed("?page=2&limit=12");
+    expect(page2.body.opportunities.length).toBe(3);
+    expect(page2.body.pagination.hasMore).toBe(false);
+
+    const internships = await feed("?category=Internship");
+    expect(internships.body.pagination.total).toBe(1);
+    expect(internships.body.opportunities[0].title).toBe("Backend Internship");
+
+    // The ECE-only opportunity plus every "All" one; the COE-only gig excluded.
+    const ece = await feed("?branch=ECE&limit=50");
+    expect(ece.body.pagination.total).toBe(14);
+
+    const search = await feed("?search=Machine");
+    expect(search.body.pagination.total).toBe(1);
+    expect(search.body.opportunities[0].title).toBe("Machine Learning Gig");
+  });
+});

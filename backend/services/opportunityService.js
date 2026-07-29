@@ -40,8 +40,24 @@ export const createOpportunity = (data, userId, organizationId) =>
     deadline: data.deadline,
   });
 
-export const getActiveOpportunities = (organizationId) =>
-  opportunityRepo.findActiveOpportunities(organizationId);
+export const getActiveOpportunities = (organizationId, query = {}) => {
+  const page = Math.max(1, parseInt(query.page, 10) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(query.limit, 10) || 12));
+
+  const clean = (value) => (value && value !== "All" ? String(value).trim() : "");
+  const filters = {
+    search: query.search ? String(query.search).trim().slice(0, 100) : "",
+    category: clean(query.category),
+    branch: clean(query.branch),
+    year: clean(query.year),
+  };
+
+  return opportunityRepo.findActiveOpportunities(organizationId, {
+    page,
+    limit,
+    filters,
+  });
+};
 
 export const getMyOpportunities = (userId) =>
   opportunityRepo.findByOwner(userId);

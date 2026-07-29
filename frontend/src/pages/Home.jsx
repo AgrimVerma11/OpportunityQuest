@@ -49,37 +49,72 @@ function Home() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedBranch, setSelectedBranch] = useState("All");
   const [selectedYear, setSelectedYear] = useState("All");
+
   const [opportunities, setOpportunities] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
 
-  useEffect(() => {
-    const load = async () => {
-      const data = await fetchWithAuth("/opportunities");
-      if (data?.success && Array.isArray(data.opportunities)) {
-        setOpportunities(data.opportunities);
-      }
-    };
-    load();
-  }, []);
+  const buildQuery = (pageNum) => {
+    const params = new URLSearchParams({ page: String(pageNum), limit: "12" });
+    if (searchTerm.trim()) params.set("search", searchTerm.trim());
+    if (selectedCategory !== "All") params.set("category", selectedCategory);
+    if (selectedBranch !== "All") params.set("branch", selectedBranch);
+    if (selectedYear !== "All") params.set("year", selectedYear);
+    return params.toString();
+  };
 
-  const filteredOpportunities = opportunities.filter((item) => {
-    const matchesSearch = item.title
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      selectedCategory === "All" || item.category === selectedCategory;
-    const matchesBranch =
-      selectedBranch === "All" ||
-      item.eligibleBranches?.includes("All") ||
-      item.eligibleBranches?.includes(selectedBranch);
-    const matchesYear =
-      selectedYear === "All" ||
-      item.eligibleYears?.includes("All") ||
-      item.eligibleYears?.includes(selectedYear);
-    return matchesSearch && matchesCategory && matchesBranch && matchesYear;
-  });
+  const loadPage = async (pageNum, append) => {
+    const data = await fetchWithAuth(`/opportunities?${buildQuery(pageNum)}`);
+    if (!data?.success || !Array.isArray(data.opportunities)) {
+      throw new Error(data?.message || "Unexpected response from the server.");
+    }
+    setOpportunities((prev) =>
+      append ? [...prev, ...data.opportunities] : data.opportunities
+    );
+    // Tolerate a response without paging metadata rather than crash.
+    setTotal(data.pagination?.total ?? data.opportunities.length);
+    setHasMore(Boolean(data.pagination?.hasMore));
+    setPage(pageNum);
+  };
+
+  // Any filter or search change resets to the first page. The search is
+  // debounced so typing does not fire a request on every keystroke. Loading is
+  // always cleared, so a failed request can never leave the feed spinning.
+  useEffect(() => {
+    setLoading(true);
+    setError("");
+    const timer = setTimeout(async () => {
+      try {
+        await loadPage(1, false);
+      } catch (err) {
+        console.error(err);
+        setError("Couldn't load opportunities. Please try again in a moment.");
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, selectedCategory, selectedBranch, selectedYear]);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      await loadPage(page + 1, true);
+    } catch (err) {
+      console.error(err);
+      setError("Couldn't load more opportunities.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const clearFilters = () => {
     setSearchTerm("");
@@ -172,87 +207,120 @@ function Home() {
           <div className="explore-header">
             <h2 className="section-title">Explore Opportunities</h2>
             <span className="result-count">
-              {filteredOpportunities.length}{" "}
-              {filteredOpportunities.length === 1
-                ? "opportunity"
-                : "opportunities"}
+              {total} {total === 1 ? "opportunity" : "opportunities"}
             </span>
           </div>
 
-          {/* GRID */}
-          <div className="opportunities-grid">
-            {filteredOpportunities.length === 0 ? (
+          {/* RESULTS */}
+          {loading ? (
+            <div className="home-loading">
+              <div className="home-spinner" />
+              <p className="home-loading-text">Loading opportunities…</p>
+            </div>
+          ) : error ? (
+            <div className="opportunities-grid">
+              <div className="no-results">
+                <h3>Something went wrong</h3>
+                <p>{error}</p>
+              </div>
+            </div>
+          ) : opportunities.length === 0 ? (
+            <div className="opportunities-grid">
               <div className="no-results">
                 <h3>No opportunities found</h3>
                 <p>Try changing the filters or search terms.</p>
               </div>
-            ) : (
-              filteredOpportunities.map((item) => (
-                <div
-                  className="opportunity-card"
-                  key={item._id}
-                  onClick={() => navigate(`/opportunity/${item._id}`)}
-                >
-                  <div className="oc-header">
-                    <span
-                      className={`badge ${item.category?.replace(" ", "-")}`}
-                    >
-                      {item.category}
-                    </span>
-                    <DeadlineChip deadline={item.deadline} />
-                  </div>
-
-                  <h3 className="oc-title">{item.title}</h3>
-
-                  <div className="oc-faculty">
-                    <Avatar
-                      name={item.postedBy?.name}
-                      image={item.postedBy?.profileImage}
-                      size={28}
-                    />
-                    <span className="oc-faculty-name">
-                      {item.postedBy?.prefix ? `${item.postedBy.prefix} ` : ""}
-                      {item.postedBy?.name || "Faculty"}
-                    </span>
-                    {item.postedBy?.department && (
-                      <span className="oc-faculty-dept">
-                        · {item.postedBy.department}
+            </div>
+          ) : (
+            <>
+              <div className="opportunities-grid">
+                {opportunities.map((item) => (
+                  <div
+                    className="opportunity-card"
+                    key={item._id}
+                    onClick={() => navigate(`/opportunity/${item._id}`)}
+                  >
+                    <div className="oc-header">
+                      <span
+                        className={`badge ${item.category?.replace(" ", "-")}`}
+                      >
+                        {item.category}
                       </span>
+                      <DeadlineChip deadline={item.deadline} />
+                    </div>
+
+                    <h3 className="oc-title">{item.title}</h3>
+
+                    <div className="oc-faculty">
+                      <Avatar
+                        name={item.postedBy?.name}
+                        image={item.postedBy?.profileImage}
+                        size={28}
+                      />
+                      <span className="oc-faculty-name">
+                        {item.postedBy?.prefix
+                          ? `${item.postedBy.prefix} `
+                          : ""}
+                        {item.postedBy?.name || "Faculty"}
+                      </span>
+                      {item.postedBy?.department && (
+                        <span className="oc-faculty-dept">
+                          · {item.postedBy.department}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="oc-desc">{item.description}</p>
+
+                    {item.tags?.filter((t) => t.trim() !== "").length > 0 && (
+                      <div className="oc-tags">
+                        {item.tags
+                          .filter((tag) => tag.trim() !== "")
+                          .slice(0, 3)
+                          .map((tag, index) => (
+                            <span key={index} className="oc-tag">
+                              {tag}
+                            </span>
+                          ))}
+                      </div>
                     )}
-                  </div>
 
-                  <p className="oc-desc">{item.description}</p>
-
-                  {item.tags?.filter((t) => t.trim() !== "").length > 0 && (
-                    <div className="oc-tags">
-                      {item.tags
-                        .filter((tag) => tag.trim() !== "")
-                        .slice(0, 3)
-                        .map((tag, index) => (
-                          <span key={index} className="oc-tag">
-                            {tag}
-                          </span>
-                        ))}
+                    <div className="oc-footer">
+                      <div className="oc-eligibility">
+                        <span>
+                          <span className="oc-elig-label">Branches</span>{" "}
+                          {summarize(item.eligibleBranches)}
+                        </span>
+                        <span>
+                          <span className="oc-elig-label">Years</span>{" "}
+                          {summarize(item.eligibleYears)}
+                        </span>
+                      </div>
+                      <span className="oc-cta">View details →</span>
                     </div>
-                  )}
-
-                  <div className="oc-footer">
-                    <div className="oc-eligibility">
-                      <span>
-                        <span className="oc-elig-label">Branches</span>{" "}
-                        {summarize(item.eligibleBranches)}
-                      </span>
-                      <span>
-                        <span className="oc-elig-label">Years</span>{" "}
-                        {summarize(item.eligibleYears)}
-                      </span>
-                    </div>
-                    <span className="oc-cta">View details →</span>
                   </div>
+                ))}
+              </div>
+
+              {hasMore && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    marginTop: "var(--space-6)",
+                  }}
+                >
+                  <button
+                    className="btn btn-secondary"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore ? "Loading…" : "Load more"}
+                  </button>
                 </div>
-              ))
-            )}
-          </div>
+              )}
+            </>
+          )}
         </div>
       </div>
     </>

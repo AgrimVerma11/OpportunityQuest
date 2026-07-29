@@ -7,16 +7,49 @@ import Opportunity from "../models/Opportunity.js";
 
 export const createOpportunity = (data) => Opportunity.create(data);
 
-// Feed for one organization: active, not past deadline, not soft-deleted.
-export const findActiveOpportunities = (organizationId) =>
-  Opportunity.find({
+// Escapes user text so it is safe to use inside a regular expression.
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Feed for one organization: active, in-date, not soft-deleted — filtered and
+// paginated on the server. Returns the requested page plus paging metadata,
+// rather than the entire collection.
+export const findActiveOpportunities = async (
+  organizationId,
+  { page, limit, filters = {} }
+) => {
+  const query = {
     organizationId,
     status: "Active",
     deadline: { $gt: new Date() },
     isDeleted: { $ne: true },
-  })
-    .populate("postedBy", "name role department prefix profileImage")
-    .sort({ createdAt: -1 });
+  };
+
+  if (filters.category) query.category = filters.category;
+  if (filters.branch) query.eligibleBranches = { $in: ["All", filters.branch] };
+  if (filters.year) query.eligibleYears = { $in: ["All", filters.year] };
+  if (filters.search) {
+    query.title = { $regex: escapeRegex(filters.search), $options: "i" };
+  }
+
+  const [opportunities, total] = await Promise.all([
+    Opportunity.find(query)
+      .populate("postedBy", "name role department prefix profileImage")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Opportunity.countDocuments(query),
+  ]);
+
+  return {
+    opportunities,
+    pagination: {
+      page,
+      limit,
+      total,
+      hasMore: page * limit < total,
+    },
+  };
+};
 
 // Every (non-deleted) opportunity created by a given faculty member.
 export const findByOwner = (ownerId) =>
