@@ -11,7 +11,8 @@ const opportunitySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
-      index: true,
+      // Not indexed on its own: the compound feed index below leads with
+      // organizationId, so its prefix already serves org-scoped queries.
     },
 
     title: {
@@ -203,44 +204,33 @@ const opportunitySchema = new mongoose.Schema(
 
 
 // INDEXES
+//
+// Right-sized to the queries the repository actually runs. The schema
+// previously carried a full-text index and several single-field / non-org-led
+// indexes (category, status, deadline, applicationsCount, category+status+
+// deadline) for filtering and "trending" features that do not exist — every one
+// taxed writes for no read, and none could serve the org-scoped feed. They were
+// removed. Reintroduce an index next to the query that needs it.
 
-
-// Full text search
-opportunitySchema.index({
-  title: "text",
-  description: "text",
-  tags: "text",
-});
-
-// Tenant-scoped feed: active, in-date opportunities for one organization.
+// The feed: active, in-date opportunities for one organization, optionally
+// filtered by category/branch/year and searched by title. Leads with
+// organizationId so its prefix also serves the per-org category-stats
+// aggregate. The equality on status and range on deadline are index-bounded;
+// the small org-scoped result is then sorted by createdAt in memory.
 opportunitySchema.index({ organizationId: 1, status: 1, deadline: 1 });
 
-// Filtering indexes
-opportunitySchema.index({ category: 1 });
-
-opportunitySchema.index({ status: 1 });
-
-opportunitySchema.index({ deadline: 1 });
-
+// A faculty member's own postings ("my opportunities").
 opportunitySchema.index({ postedBy: 1 });
 
-// Multi-field optimized querying
-opportunitySchema.index({
-  category: 1,
-  status: 1,
-  deadline: 1,
-});
-
 // NB: eligibleBranches and eligibleYears are both arrays, and MongoDB cannot
-// build a compound index spanning two array fields ("parallel arrays"). Such an
-// index silently fails to build in a warm dev DB but breaks the very first
-// insert on a clean database. Eligibility filtering is done client-side today;
-// if it moves server-side, index each array field on its own, not together.
+// build a compound index spanning two array fields ("parallel arrays") — it
+// breaks the first insert on a clean database. The feed does filter on them
+// ($in), but only within the already-narrow org+status+deadline result, so the
+// scan is cheap. If either ever needs its own index, index the fields
+// separately, never together.
 
-// Trending / sorting
-opportunitySchema.index({
-  applicationsCount: -1,
-});
+// NB: title/description/tags search uses an escaped regex (partial, as-you-type
+// matching), not $text — so there is intentionally no text index here.
 
 
 

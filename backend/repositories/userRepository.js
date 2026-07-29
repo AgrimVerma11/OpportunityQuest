@@ -7,9 +7,10 @@ import { ROLES, ACCOUNT_STATUS } from "../constants/userConstants.js";
 export const findById = (id) => User.findById(id);
 
 // Tenant-scoped lookup — used when a coordinator acts on an account, so one
-// organization can never approve another's.
-export const findByIdInOrg = (id, organizationId) =>
-  User.findOne({ _id: id, organizationId });
+// organization can never approve another's. Accepts a session so the read can
+// join the same transaction as the write that follows it.
+export const findByIdInOrg = (id, organizationId, session = null) =>
+  User.findOne({ _id: id, organizationId }).session(session);
 
 export const findPendingFacultyByOrg = (organizationId) =>
   User.find({
@@ -20,10 +21,11 @@ export const findPendingFacultyByOrg = (organizationId) =>
     .select("-password")
     .sort({ createdAt: 1 });
 
-export const setAccountStatus = (id, update) =>
-  User.findByIdAndUpdate(id, update, { returnDocument: "after" }).select(
-    "-password"
-  );
+export const setAccountStatus = (id, update, session = null) =>
+  User.findByIdAndUpdate(id, update, {
+    returnDocument: "after",
+    session,
+  }).select("-password");
 
 export const incrementApplicationsSubmitted = (id, delta) =>
   User.findByIdAndUpdate(id, { $inc: { applicationsSubmitted: delta } });

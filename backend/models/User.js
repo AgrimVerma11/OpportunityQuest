@@ -17,7 +17,8 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
-      index: true,
+      // Not indexed on its own: the compound index below leads with
+      // organizationId, so its prefix already serves org-scoped queries.
     },
 
     name: {
@@ -64,7 +65,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ACCOUNT_STATUSES,
       default: ACCOUNT_STATUS.ACTIVE,
-      index: true,
+      // Not indexed on its own (only four values, always queried with org +
+      // role): the compound index below covers it.
     },
 
     // A verifiable signal (e.g. employee id) a coordinator can check when
@@ -229,31 +231,15 @@ const userSchema = new mongoose.Schema(
 // (no googleId) are not indexed and do not collide.
 userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 
-// Search users
-userSchema.index({
-  name: "text",
-});
+// The coordinator's pending-faculty list: one organization's faculty in a given
+// account state, newest first. This is the only multi-field user query today.
+// Its organizationId prefix also serves any org-scoped user lookup.
+userSchema.index({ organizationId: 1, role: 1, accountStatus: 1 });
 
-// Fast filtering
-userSchema.index({
-  role: 1,
-});
-
-userSchema.index({
-  department: 1,
-});
-
-userSchema.index({
-  branch: 1,
-});
-
-userSchema.index({
-  researchDomains: 1,
-});
-
-userSchema.index({
-  skills: 1,
-});
+// NB: single-field indexes on name (text), role, department, branch,
+// researchDomains and skills were removed. They existed for a user directory /
+// search that is not built; each taxed writes for no read. Reintroduce the
+// right index (likely a text or compound one) when that feature lands.
 
 
 
