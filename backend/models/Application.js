@@ -32,7 +32,8 @@ const applicationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
-      index: true,
+      // Stamped for tenancy but not indexed: applications are only ever read by
+      // _id, student, or opportunity (all indexed), never filtered by org alone.
     },
 
     student: {
