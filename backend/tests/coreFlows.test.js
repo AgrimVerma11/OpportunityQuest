@@ -4,6 +4,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createApp } from "../app.js";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
+import AuditLog from "../models/AuditLog.js";
+import * as auditRepo from "../repositories/auditRepository.js";
 import bcrypt from "bcryptjs";
 import { verifyGoogleCredential } from "../config/googleClient.js";
 import * as storage from "../lib/storage/index.js";
@@ -491,6 +493,82 @@ describe("faculty approval", () => {
       .patch(`/api/admin/faculty/${facultyId}/approve`)
       .set("Authorization", `Bearer ${otherCoord.token}`);
     expect(res.status).toBe(404);
+  });
+
+  // Helper: register a pending faculty and return the coordinator + faculty id.
+  const pendingFacultyAndCoordinator = async (email, employeeId) => {
+    await registerUser({
+      email,
+      role: "Faculty",
+      department: "DCSE",
+      employeeId,
+    });
+    const coordinator = await createCoordinator();
+    const pending = await request(app)
+      .get("/api/admin/faculty/pending")
+      .set("Authorization", `Bearer ${coordinator.token}`);
+    return { coordinator, facultyId: pending.body.faculty[0]._id };
+  };
+
+  it("records an audit entry for an approval", async () => {
+    const { coordinator, facultyId } = await pendingFacultyAndCoordinator(
+      "auditapprove@thapar.edu",
+      "EMP-6006"
+    );
+
+    await request(app)
+      .patch(`/api/admin/faculty/${facultyId}/approve`)
+      .set("Authorization", `Bearer ${coordinator.token}`)
+      .expect(200);
+
+    const entries = await AuditLog.find({ targetUser: facultyId });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].action).toBe("faculty.approved");
+    expect(entries[0].actor.toString()).toBe(coordinator.user.id);
+    expect(entries[0].organizationId).toBeTruthy();
+  });
+
+  it("records an audit entry with the reason for a rejection", async () => {
+    const { coordinator, facultyId } = await pendingFacultyAndCoordinator(
+      "auditreject@thapar.edu",
+      "EMP-7007"
+    );
+
+    await request(app)
+      .patch(`/api/admin/faculty/${facultyId}/reject`)
+      .set("Authorization", `Bearer ${coordinator.token}`)
+      .send({ reason: "Employee id did not match the directory" })
+      .expect(200);
+
+    const entries = await AuditLog.find({ targetUser: facultyId });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].action).toBe("faculty.rejected");
+    expect(entries[0].reason).toBe("Employee id did not match the directory");
+  });
+
+  it("rolls back the status change if writing the audit entry fails", async () => {
+    const { coordinator, facultyId } = await pendingFacultyAndCoordinator(
+      "audittx@thapar.edu",
+      "EMP-8008"
+    );
+
+    // Force the audit write inside the transaction to fail.
+    const spy = vi
+      .spyOn(auditRepo, "record")
+      .mockRejectedValueOnce(new Error("audit write failed"));
+
+    const res = await request(app)
+      .patch(`/api/admin/faculty/${facultyId}/approve`)
+      .set("Authorization", `Bearer ${coordinator.token}`);
+    expect(res.status).toBe(500);
+
+    spy.mockRestore();
+
+    // The whole transaction rolled back: the account is still Pending and no
+    // audit entry was persisted.
+    const faculty = await User.findById(facultyId);
+    expect(faculty.accountStatus).toBe("Pending");
+    expect(await AuditLog.countDocuments({ targetUser: facultyId })).toBe(0);
   });
 });
 

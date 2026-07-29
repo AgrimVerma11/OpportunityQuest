@@ -11,12 +11,14 @@ process.env.JWT_SECRET =
 
 import { afterAll, afterEach, beforeAll } from "vitest";
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
 
-// When TEST_MONGO_URI is provided (CI points it at a MongoDB service container)
-// we connect to that. Otherwise we spin up a throwaway in-memory instance, so
-// local runs stay zero-config. TEST_MONGO_URI is used instead of MONGO_URI on
-// purpose, so a developer's real database connection can never be targeted.
+// A throwaway in-memory MongoDB. It runs as a single-node REPLICA SET (not a
+// standalone) because multi-document transactions — used by the faculty
+// approval flow — require one. When TEST_MONGO_URI is provided it is used
+// instead, but it too must point at a replica set for the transactional tests
+// to pass. TEST_MONGO_URI is deliberately separate from MONGO_URI so a
+// developer's real database can never be targeted.
 let mongod;
 
 beforeAll(async () => {
@@ -24,9 +26,26 @@ beforeAll(async () => {
   if (externalUri) {
     await mongoose.connect(externalUri);
   } else {
-    mongod = await MongoMemoryServer.create();
+    mongod = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
     await mongoose.connect(mongod.getUri());
   }
+
+  // Absorb the one-time cost of the replica set electing a primary here — a
+  // hook with a generous timeout — rather than inside the first test that opens
+  // a transaction, where a not-yet-selectable primary can burn the driver's 30s
+  // server-selection timeout and fail the run. A trivial transactional write
+  // forces the primary to be ready before any test runs.
+  const warmup = await mongoose.startSession();
+  try {
+    await warmup.withTransaction(async () => {
+      await mongoose.connection.db
+        .collection("__warmup")
+        .insertOne({ ok: 1 }, { session: warmup });
+    });
+  } finally {
+    await warmup.endSession();
+  }
+  await mongoose.connection.db.collection("__warmup").drop().catch(() => {});
 });
 
 afterEach(async () => {
