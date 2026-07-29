@@ -1,0 +1,115 @@
+/* ─────────────────────────────────────────
+   Continue with Google
+───────────────────────────────────────── */
+
+.google-auth {
+  margin-top: var(--space-4);
+}
+
+/* "or" divider between the password form and the Google button */
+.google-auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  margin-bottom: var(--space-4);
+}
+
+.google-auth-divider::before,
+.google-auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.google-auth-divider span {
+  padding: 0 var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.google-auth-button {
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.google-auth-error {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  margin-top: var(--space-3);
+  text-align: center;
+}
+
+/* ── Onboarding modal (self-contained; auth pages don't load page CSS) ── */
+.google-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 60;
+}
+
+.google-modal-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-5);
+  width: 100%;
+  max-width: 420px;
+}
+
+.google-modal-card h3 {
+  font-size: var(--text-h3);
+  margin-bottom: var(--space-2);
+}
+
+.google-onboard-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--space-4);
+}
+
+.google-onboard-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.google-onboard-form label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  margin-bottom: var(--space-1);
+}
+
+.google-onboard-form select,
+.google-onboard-form input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+  margin-bottom: var(--space-3);
+}
+
+.google-onboard-form select:focus,
+.google-onboard-form input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.google-onboard-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { IconCheck } from "../components/Icons";
+import { useAuth } from "../context/AuthContext";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 import "./Auth.css";
 
 function Register() {
@@ -22,6 +24,7 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -96,6 +99,19 @@ function Register() {
       setLoading(false);
     }
   }
+
+  const handleGoogleSignedIn = (token, user) => {
+    login(token, user);
+    navigate(user.role === "Coordinator" ? "/approvals" : "/home");
+  };
+
+  // A student who just created their account via Google is sent to sign in,
+  // rather than dropped straight into the app.
+  const handleStudentRegistered = () => {
+    navigate("/", {
+      state: { notice: "Account created. Please sign in to continue." },
+    });
+  };
 
   return (
     <div className="auth-split">
@@ -319,6 +335,12 @@ function Register() {
           <button id="registerBtn" type="submit" className="auth-submit" disabled={loading}>
             {loading ? "Creating account…" : "Create Account"}
           </button>
+
+          <GoogleAuthButton
+            onSignedIn={handleGoogleSignedIn}
+            onRegistered={handleStudentRegistered}
+            onPending={() => setSubmitted(true)}
+          />
 
           <p className="auth-redirect">
             Already have an account? <Link to="/">Sign in</Link>
