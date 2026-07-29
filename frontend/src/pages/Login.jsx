@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { IconCheck } from "../components/Icons";
 import { useAuth } from "../context/AuthContext";
+import GoogleAuthButton from "../components/GoogleAuthButton";
 import "./Auth.css";
 
 function Login() {
@@ -10,7 +11,9 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  const notice = location.state?.notice;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -51,6 +54,15 @@ function Login() {
     }
   }
 
+  const handleGoogleSignedIn = (token, user) => {
+    login(token, user);
+    navigate(user.role === "Coordinator" ? "/approvals" : "/home");
+  };
+
+  const handleGooglePending = () => {
+    setErrors({ email: "Your account is awaiting coordinator approval." });
+  };
+
   return (
     <div className="auth-split">
 
@@ -84,6 +96,18 @@ function Login() {
             <p>Sign in with your Thapar account to continue.</p>
           </div>
 
+          {notice && (
+            <p
+              style={{
+                color: "var(--color-success)",
+                fontSize: "0.875rem",
+                marginBottom: "0.75rem",
+              }}
+            >
+              {notice}
+            </p>
+          )}
+
           <div className="auth-field">
             <label htmlFor="loginEmail">Email</label>
             <input
@@ -111,6 +135,12 @@ function Login() {
           <button id="loginBtn" type="submit" className="auth-submit" disabled={loading}>
             {loading ? "Signing in…" : "Sign In"}
           </button>
+
+          <GoogleAuthButton
+            allowRegister={false}
+            onSignedIn={handleGoogleSignedIn}
+            onPending={handleGooglePending}
+          />
 
           <p className="auth-redirect">
             Don't have an account? <Link to="/register">Create one</Link>

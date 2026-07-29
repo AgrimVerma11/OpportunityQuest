@@ -50,6 +50,16 @@ export const fetchPublic = async (endpoint) => {
   return res.json();
 };
 
+// PUBLIC POST — no token (e.g. Google sign-in / onboarding).
+export const postPublic = async (endpoint, data) => {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
 // PATCH with token
 export const patchWithAuth = async (endpoint, data = {}) => {
   const res = await fetch(`${API_BASE}${endpoint}`, {
