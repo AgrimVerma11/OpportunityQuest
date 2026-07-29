@@ -5,7 +5,7 @@ import {
   fetchWithAuth,
   uploadWithAuth,
   patchWithAuth,
-  BACKEND_URL,
+  fileUrl,
 } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -386,7 +386,7 @@ function OpportunityDetail() {
                 {opportunity.attachments.map((att) => (
                   <a
                     key={att._id}
-                    href={`${BACKEND_URL}${att.url}`}
+                    href={fileUrl(att.url)}
                     target="_blank"
                     rel="noreferrer"
                     className="detail-attachment-link"

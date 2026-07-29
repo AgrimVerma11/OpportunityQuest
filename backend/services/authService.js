@@ -1,10 +1,9 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import fs from "fs";
-import path from "path";
 import User from "../models/User.js";
 import { AppError } from "../utils/AppError.js";
-import { AVATAR_DIR } from "../middleware/uploadAvatar.js";
+import * as storage from "../lib/storage/index.js";
+import { avatarKey } from "../lib/storage/keys.js";
 import { ROLES, ACCOUNT_STATUS } from "../constants/userConstants.js";
 
 import {
@@ -16,15 +15,16 @@ import {
 import * as organizationRepo from "../repositories/organizationRepository.js";
 import { verifyGoogleCredential } from "../config/googleClient.js";
 
-// Removes a previously stored avatar from disk (best effort).
-const removeAvatarFile = (imagePath) => {
-  if (!imagePath || !imagePath.startsWith("/uploads/avatars/")) return;
-  const filePath = path.join(AVATAR_DIR, path.basename(imagePath));
-  fs.unlink(filePath, (err) => {
-    if (err && err.code !== "ENOENT") {
-      console.error("Could not delete avatar file:", err.message);
-    }
-  });
+// Removes a previously stored avatar (best effort). profileImage holds the
+// object's public URL; recover the storage key from it to delete the object.
+const removeAvatar = async (imageUrl) => {
+  const key = storage.keyFromPublicUrl(imageUrl);
+  if (!key) return;
+  try {
+    await storage.remove(key);
+  } catch (err) {
+    console.error("Could not delete avatar:", err.message);
+  }
 };
 
 // Signs the app's session token. A user's id, role and organization do not
@@ -248,11 +248,18 @@ export const updateProfileImageService = async (userId, file) => {
     throw new AppError("User not found", 404);
   }
 
-  // Replace the previous avatar, cleaning up the old file.
-  if (existing.profileImage) removeAvatarFile(existing.profileImage);
+  // Store the new image first; only then swap it in and clean up the old one,
+  // so a failed upload never leaves the profile pointing at nothing.
+  const key = avatarKey(file.mimetype);
+  await storage.put(key, { body: file.buffer, contentType: file.mimetype });
 
-  const imageUrl = `/uploads/avatars/${file.filename}`;
-  return updateUserProfile(userId, { profileImage: imageUrl });
+  const previous = existing.profileImage;
+  const updated = await updateUserProfile(userId, {
+    profileImage: storage.publicUrl(key),
+  });
+
+  if (previous) await removeAvatar(previous);
+  return updated;
 };
 
 export const removeProfileImageService = async (userId) => {
@@ -261,7 +268,7 @@ export const removeProfileImageService = async (userId) => {
     throw new AppError("User not found", 404);
   }
 
-  if (existing.profileImage) removeAvatarFile(existing.profileImage);
+  if (existing.profileImage) await removeAvatar(existing.profileImage);
 
   return updateUserProfile(userId, { profileImage: "" });
 };

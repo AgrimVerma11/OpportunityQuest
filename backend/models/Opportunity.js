@@ -170,7 +170,8 @@ const opportunitySchema = new mongoose.Schema(
       type: [
         {
           originalName: { type: String, required: true },
-          filename: { type: String, required: true },
+          // Storage key for deletion; url is the browser-facing address.
+          key: { type: String },
           url: { type: String, required: true },
           uploadedAt: { type: Date, default: Date.now },
         },

@@ -1,8 +1,7 @@
-import fs from "fs";
-import path from "path";
-
 import * as opportunityRepo from "../repositories/opportunityRepository.js";
 import { AppError } from "../utils/AppError.js";
+import * as storage from "../lib/storage/index.js";
+import { attachmentKey } from "../lib/storage/keys.js";
 
 // Service — business rules for the Opportunity domain.
 // Controllers call into here; persistence happens via the repository.
@@ -191,10 +190,13 @@ export const addAttachment = async (id, userId, file) => {
     throw new AppError("No file uploaded", 400);
   }
 
+  const key = attachmentKey();
+  await storage.put(key, { body: file.buffer, contentType: file.mimetype });
+
   opportunity.attachments.push({
     originalName: file.originalname,
-    filename: file.filename,
-    url: `/uploads/${file.filename}`,
+    key,
+    url: storage.publicUrl(key),
     uploadedAt: new Date(),
   });
 
@@ -212,14 +214,19 @@ export const deleteAttachment = async (id, userId, attachmentId) => {
     throw new AppError("Attachment not found", 404);
   }
 
-  // Best-effort removal of the file from disk; DB removal is the source of truth.
-  const filePath = path.join(process.cwd(), "uploads", attachment.filename);
-  fs.unlink(filePath, (err) => {
-    if (err) console.error("Could not delete file from disk:", err.message);
-  });
+  // The DB record is the source of truth: remove it first, then the object.
+  const key = attachment.key || storage.keyFromPublicUrl(attachment.url);
 
   opportunity.attachments.pull(attachmentId);
   await opportunityRepo.save(opportunity);
+
+  if (key) {
+    try {
+      await storage.remove(key);
+    } catch (err) {
+      console.error("Could not delete attachment object:", err.message);
+    }
+  }
 };
 
 export const getCategoryStats = (organizationId) =>

@@ -6,6 +6,8 @@ import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { verifyGoogleCredential } from "../config/googleClient.js";
+import * as storage from "../lib/storage/index.js";
+import { avatarKey, resumeKey } from "../lib/storage/keys.js";
 
 // Google token verification is mocked so the tests exercise the account-linking
 // and creation logic without a real Google round-trip.
@@ -641,5 +643,82 @@ describe("feed pagination and search", () => {
     const search = await feed("?search=Machine");
     expect(search.body.pagination.total).toBe(1);
     expect(search.body.opportunities[0].title).toBe("Machine Learning Gig");
+  });
+});
+
+// ── Object storage ────────────────────────────────────────────────
+
+describe("storage port (local driver)", () => {
+  it("stores an object, streams it back byte-for-byte, then deletes it", async () => {
+    const key = resumeKey();
+    const body = Buffer.from("%PDF-1.4 storage round-trip\n%%EOF");
+
+    await storage.put(key, { body, contentType: "application/pdf" });
+
+    const object = await storage.getStream(key);
+    expect(object).not.toBeNull();
+    const chunks = [];
+    for await (const chunk of object.stream) chunks.push(chunk);
+    expect(Buffer.concat(chunks).equals(body)).toBe(true);
+
+    await storage.remove(key);
+    expect(await storage.getStream(key)).toBeNull();
+  });
+
+  it("recovers a key from the public url it issued", () => {
+    const key = avatarKey("image/png");
+    expect(storage.keyFromPublicUrl(storage.publicUrl(key))).toBe(key);
+    expect(storage.keyFromPublicUrl("https://example.com/not-ours.png")).toBeNull();
+  });
+});
+
+// ── Resume upload & authorized streaming ──────────────────────────
+
+describe("resume storage", () => {
+  const pdf = Buffer.from("%PDF-1.4\n1 0 obj applicant resume\n%%EOF");
+
+  const applyWithResume = (token, opportunityId) =>
+    request(app)
+      .post("/api/applications")
+      .set("Authorization", `Bearer ${token}`)
+      .field("opportunityId", opportunityId)
+      .field("coverLetter", "Please find my resume attached for your review.")
+      .attach("resume", pdf, "resume.pdf");
+
+  it("stores an applied resume and streams it back to the owning faculty", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+
+    const apply = await applyWithResume(student.token, opportunity._id);
+    expect(apply.status).toBe(201);
+    const applicationId = apply.body.application._id;
+
+    const download = await request(app)
+      .get(`/api/applications/${applicationId}/resume`)
+      .set("Authorization", `Bearer ${faculty.token}`);
+    expect(download.status).toBe(200);
+    expect(download.headers["content-type"]).toContain("application/pdf");
+    expect(download.headers["content-length"]).toBe(String(pdf.length));
+  });
+
+  it("denies resume access to an unrelated user", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+
+    const apply = await applyWithResume(student.token, opportunity._id);
+    const applicationId = apply.body.application._id;
+
+    const outsider = await registerAndLogin({
+      email: "outsider@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+    });
+    const denied = await request(app)
+      .get(`/api/applications/${applicationId}/resume`)
+      .set("Authorization", `Bearer ${outsider.token}`);
+    expect(denied.status).toBe(403);
   });
 });

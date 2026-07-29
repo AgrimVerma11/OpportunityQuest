@@ -10,7 +10,7 @@ import {
   putWithAuth,
   uploadWithAuth,
   deleteWithAuth,
-  BACKEND_URL,
+  fileUrl,
 } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -311,7 +311,7 @@ function EditOpportunity() {
               {attachments.map((att) => (
                 <li key={att._id} className="attachment-item">
                   <a
-                    href={`${BACKEND_URL}${att.url}`}
+                    href={fileUrl(att.url)}
                     target="_blank"
                     rel="noreferrer"
                     className="attachment-link"

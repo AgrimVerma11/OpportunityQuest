@@ -1,4 +1,4 @@
-import { BACKEND_URL } from "../utils/api";
+import { fileUrl } from "../utils/api";
 import "./Avatar.css";
 
 // Renders a user's profile image when set, otherwise their initial. Size is in
@@ -11,7 +11,7 @@ export default function Avatar({ name, image, size = 40 }) {
     return (
       <img
         className="avatar avatar-img"
-        src={`${BACKEND_URL}${image}`}
+        src={fileUrl(image)}
         alt={name || "Profile"}
         style={style}
       />

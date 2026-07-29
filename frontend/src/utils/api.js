@@ -4,6 +4,14 @@ export const BACKEND_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:5174/api"
 ).replace("/api", "");
 
+// Resolves a stored public-file reference to a usable URL. In production these
+// are absolute URLs (an object-storage/CDN address) and are used as-is; in local
+// development they are paths relative to the backend and get its origin prefixed.
+export const fileUrl = (value) => {
+  if (!value) return value;
+  return /^https?:\/\//i.test(value) ? value : `${BACKEND_URL}${value}`;
+};
+
 const authHeader = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
