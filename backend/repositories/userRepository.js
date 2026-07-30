@@ -12,6 +12,15 @@ export const findById = (id) => User.findById(id);
 export const findByIdInOrg = (id, organizationId, session = null) =>
   User.findOne({ _id: id, organizationId }).session(session);
 
+// Active coordinators of an organization — the recipients of faculty-approval
+// notifications. Served by the { organizationId, role, accountStatus } index.
+export const findActiveCoordinatorsByOrg = (organizationId) =>
+  User.find({
+    organizationId,
+    role: ROLES.COORDINATOR,
+    accountStatus: ACCOUNT_STATUS.ACTIVE,
+  }).select("_id email name");
+
 export const findPendingFacultyByOrg = (organizationId) =>
   User.find({
     organizationId,

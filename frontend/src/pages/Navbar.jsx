@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Avatar from "../components/Avatar";
+import NotificationBell from "../components/NotificationBell";
 import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
 
@@ -73,6 +74,8 @@ function Navbar() {
 
       {!isAuthPage && (
         <div className="nav-right">
+          <NotificationBell />
+
           <Link to="/profile" className="user-chip">
             <Avatar
               name={currentUser?.name}

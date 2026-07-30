@@ -57,6 +57,29 @@ export const facultyApproval = ({ name }) => {
   };
 };
 
+// A generic wrapper around an in-app notification: its title and body, plus an
+// optional button back into the app. Used as the email "nudge" for notification
+// types that warrant one, so new events don't need bespoke templates.
+export const notification = ({ title, body, actionUrl }) => {
+  const safeTitle = escapeHtml(title);
+  const safeBody = escapeHtml(body || "");
+  const button = actionUrl
+    ? `<a href="${escapeHtml(actionUrl)}" style="display:inline-block;margin-top:8px;padding:10px 18px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">Open Opportunity Quest</a>`
+    : "";
+  return {
+    subject: title,
+    html: layout({
+      heading: safeTitle,
+      bodyHtml: (safeBody ? paragraph(safeBody) : "") + button,
+    }),
+    text:
+      `${title}\n\n` +
+      (body ? `${body}\n\n` : "") +
+      (actionUrl ? `Open Opportunity Quest: ${actionUrl}\n\n` : "") +
+      `— ${BRAND}`,
+  };
+};
+
 export const facultyRejection = ({ name, reason }) => {
   const safeName = escapeHtml(name || "there");
   const safeReason = reason ? escapeHtml(reason) : "";

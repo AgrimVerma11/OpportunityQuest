@@ -899,3 +899,102 @@ describe("rate-limit resilient store", () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
   });
 });
+
+// ── Notifications ─────────────────────────────────────────────────
+
+describe("notifications", () => {
+  const listFor = (token) =>
+    request(app)
+      .get("/api/notifications")
+      .set("Authorization", `Bearer ${token}`);
+
+  const unreadFor = (token) =>
+    request(app)
+      .get("/api/notifications/unread-count")
+      .set("Authorization", `Bearer ${token}`);
+
+  it("notifies the faculty on a new application and the student on a decision", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+
+    // Applying notifies the opportunity's owner.
+    const apply = await applyTo(student.token, opportunity._id);
+    expect(apply.status).toBe(201);
+    const applicationId = apply.body.application._id;
+
+    const facultyNotifs = await listFor(faculty.token);
+    expect(facultyNotifs.status).toBe(200);
+    expect(facultyNotifs.body.notifications).toHaveLength(1);
+    expect(facultyNotifs.body.notifications[0].type).toBe(
+      "application.received"
+    );
+
+    // Faculty views (Applied → Viewed) then shortlists → the student is told.
+    await request(app)
+      .get(`/api/applications/${applicationId}`)
+      .set("Authorization", `Bearer ${faculty.token}`);
+    await request(app)
+      .patch(`/api/applications/${applicationId}/status`)
+      .set("Authorization", `Bearer ${faculty.token}`)
+      .send({ status: "Shortlisted" })
+      .expect(200);
+
+    const studentNotifs = await listFor(student.token);
+    expect(studentNotifs.body.notifications).toHaveLength(1);
+    expect(studentNotifs.body.notifications[0].type).toBe("application.status");
+
+    // Each party sees only their own.
+    expect((await unreadFor(student.token)).body.count).toBe(1);
+    expect((await unreadFor(faculty.token)).body.count).toBe(1);
+  });
+
+  it("marks a notification read and drops the unread count", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+    await applyTo(student.token, opportunity._id);
+
+    const id = (await listFor(faculty.token)).body.notifications[0]._id;
+
+    await request(app)
+      .patch(`/api/notifications/${id}/read`)
+      .set("Authorization", `Bearer ${faculty.token}`)
+      .expect(200);
+
+    expect((await unreadFor(faculty.token)).body.count).toBe(0);
+  });
+
+  it("does not let a user mark someone else's notification read", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+    await applyTo(student.token, opportunity._id);
+
+    const id = (await listFor(faculty.token)).body.notifications[0]._id;
+
+    // The student "marks" the faculty's notification — the call succeeds
+    // (idempotent) but must not actually touch it.
+    await request(app)
+      .patch(`/api/notifications/${id}/read`)
+      .set("Authorization", `Bearer ${student.token}`)
+      .expect(200);
+
+    expect((await unreadFor(faculty.token)).body.count).toBe(1);
+  });
+
+  it("notifies coordinators when a faculty registers", async () => {
+    const coordinator = await createCoordinator();
+    await registerUser({
+      email: "notifyprof@thapar.edu",
+      role: "Faculty",
+      department: "DCSE",
+      employeeId: "EMP-2020",
+    });
+
+    const notifs = await listFor(coordinator.token);
+    expect(
+      notifs.body.notifications.some((n) => n.type === "faculty.pending")
+    ).toBe(true);
+  });
+});

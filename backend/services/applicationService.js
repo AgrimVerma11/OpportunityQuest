@@ -1,6 +1,7 @@
 import * as applicationRepo from "../repositories/applicationRepository.js";
 import * as opportunityRepo from "../repositories/opportunityRepository.js";
 import * as userRepo from "../repositories/userRepository.js";
+import * as notificationService from "./notificationService.js";
 import { AppError } from "../utils/AppError.js";
 import * as storage from "../lib/storage/index.js";
 import { resumeKey } from "../lib/storage/keys.js";
@@ -10,8 +11,23 @@ import {
   WITHDRAWABLE_STATUSES,
   REAPPLY_COOLDOWN_HOURS,
 } from "../constants/applicationConstants.js";
+import { NOTIFICATION_TYPES } from "../constants/notificationConstants.js";
 
 const COOLDOWN_MS = REAPPLY_COOLDOWN_HOURS * 60 * 60 * 1000;
+
+// Tells the opportunity's owner that a student applied. Awaited but never
+// throws (notificationService swallows its own errors), so it can't break the
+// application it announces.
+const notifyNewApplication = (opportunity, studentId) =>
+  notificationService.notify({
+    organizationId: opportunity.organizationId,
+    recipientId: opportunity.postedBy,
+    type: NOTIFICATION_TYPES.APPLICATION_RECEIVED,
+    title: "New application",
+    body: `A student applied to "${opportunity.title}".`,
+    link: `/opportunity/${opportunity._id}/applicants`,
+    actor: studentId,
+  });
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -154,6 +170,7 @@ export const applyToOpportunity = async (
     if (resume && previousResumeKey) await removeResume(previousResumeKey);
     await opportunityRepo.incrementApplicationsCount(opportunity._id, 1);
     await userRepo.incrementApplicationsSubmitted(studentId, 1);
+    await notifyNewApplication(opportunity, studentId);
     return existing;
   }
 
@@ -185,6 +202,7 @@ export const applyToOpportunity = async (
 
   await opportunityRepo.incrementApplicationsCount(opportunity._id, 1);
   await userRepo.incrementApplicationsSubmitted(studentId, 1);
+  await notifyNewApplication(opportunity, studentId);
   return application;
 };
 
@@ -291,6 +309,18 @@ export const updateApplicationStatus = async (
   });
 
   await applicationRepo.save(application);
+
+  // Tell the student their application moved. Awaited but never throws.
+  await notificationService.notify({
+    organizationId: application.organizationId,
+    recipientId: application.student,
+    type: NOTIFICATION_TYPES.APPLICATION_STATUS,
+    title: `Application ${newStatus.toLowerCase()}`,
+    body: `Your application for "${opportunity.title}" is now ${newStatus}.`,
+    link: "/my-applications",
+    actor: facultyId,
+  });
+
   return application;
 };
 
