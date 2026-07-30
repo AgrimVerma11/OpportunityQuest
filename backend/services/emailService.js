@@ -15,6 +15,13 @@ const bestEffort = async (label, to, build) => {
   }
 };
 
+// Turns an in-app link (e.g. "/my-applications") into an absolute URL the email
+// can link back to.
+const appUrl = (link) => {
+  const base = process.env.ALLOWED_ORIGIN || "http://localhost:5173";
+  return link ? `${base}${link}` : base;
+};
+
 export const notifyFacultyApproved = (user) =>
   bestEffort("faculty-approval", user.email, () =>
     templates.facultyApproval({ name: user.name })
@@ -23,4 +30,10 @@ export const notifyFacultyApproved = (user) =>
 export const notifyFacultyRejected = (user, reason) =>
   bestEffort("faculty-rejection", user.email, () =>
     templates.facultyRejection({ name: user.name, reason })
+  );
+
+// The email nudge for an in-app notification (used by notificationService).
+export const sendNotificationEmail = (to, { title, body, link }) =>
+  bestEffort("notification", to, () =>
+    templates.notification({ title, body, actionUrl: appUrl(link) })
   );

@@ -5,6 +5,7 @@ import { AppError } from "../utils/AppError.js";
 import * as storage from "../lib/storage/index.js";
 import { avatarKey } from "../lib/storage/keys.js";
 import { ROLES, ACCOUNT_STATUS } from "../constants/userConstants.js";
+import { NOTIFICATION_TYPES } from "../constants/notificationConstants.js";
 
 import {
   findUserByEmail,
@@ -13,7 +14,32 @@ import {
   updateUserProfile,
 } from "../repositories/authRepository.js";
 import * as organizationRepo from "../repositories/organizationRepository.js";
+import * as userRepo from "../repositories/userRepository.js";
+import * as notificationService from "./notificationService.js";
 import { verifyGoogleCredential } from "../config/googleClient.js";
+
+// Tells an organization's coordinators that a faculty member is awaiting
+// approval. Best-effort: a notification failure must never block a registration.
+const notifyCoordinatorsOfPendingFaculty = async (organizationId, faculty) => {
+  try {
+    const coordinators =
+      await userRepo.findActiveCoordinatorsByOrg(organizationId);
+    if (coordinators.length === 0) return;
+    await notificationService.notifyMany(coordinators, {
+      organizationId,
+      type: NOTIFICATION_TYPES.FACULTY_PENDING,
+      title: "Faculty awaiting approval",
+      body: `${faculty.name} registered and is awaiting your approval.`,
+      link: "/approvals",
+      actor: faculty._id,
+    });
+  } catch (err) {
+    console.error(
+      "Failed to notify coordinators of pending faculty:",
+      err.message
+    );
+  }
+};
 
 // Removes a previously stored avatar (best effort). profileImage holds the
 // object's public URL; recover the storage key from it to delete the object.
@@ -94,6 +120,10 @@ export const registerUserService = async (
     accountStatus,
     password: hashedPassword,
   });
+
+  if (accountStatus === ACCOUNT_STATUS.PENDING) {
+    await notifyCoordinatorsOfPendingFaculty(organization._id, user);
+  }
 
   const userObj = user.toObject();
   delete userObj.password;
@@ -200,6 +230,7 @@ export const authenticateWithGoogle = async (credential, onboarding = {}) => {
   });
 
   if (accountStatus === ACCOUNT_STATUS.PENDING) {
+    await notifyCoordinatorsOfPendingFaculty(organization._id, created);
     return { status: "pending", email };
   }
   return { status: "signed-in", token: signToken(created), user: created };
