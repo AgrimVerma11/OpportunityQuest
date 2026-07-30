@@ -6,6 +6,8 @@ process.env.NODE_ENV = "test";
 // Tests always use the local storage driver — never reach for cloud storage,
 // regardless of what a developer's .env or the CI environment sets.
 process.env.STORAGE_DRIVER = "local";
+// Likewise, emails are logged, never sent, during tests.
+process.env.EMAIL_PROVIDER = "log";
 process.env.JWT_SECRET =
   process.env.JWT_SECRET || "test-only-secret-not-used-in-production";
 

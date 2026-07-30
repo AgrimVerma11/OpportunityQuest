@@ -11,6 +11,7 @@ import { verifyGoogleCredential } from "../config/googleClient.js";
 import * as storage from "../lib/storage/index.js";
 import { avatarKey, resumeKey } from "../lib/storage/keys.js";
 import { ResilientStore } from "../middleware/resilientStore.js";
+import * as emailTransport from "../lib/email/index.js";
 
 // Google token verification is mocked so the tests exercise the account-linking
 // and creation logic without a real Google round-trip.
@@ -570,6 +571,45 @@ describe("faculty approval", () => {
     const faculty = await User.findById(facultyId);
     expect(faculty.accountStatus).toBe("Pending");
     expect(await AuditLog.countDocuments({ targetUser: facultyId })).toBe(0);
+  });
+
+  it("emails the faculty member on approval", async () => {
+    const spy = vi.spyOn(emailTransport, "sendEmail").mockResolvedValue();
+    const { coordinator, facultyId } = await pendingFacultyAndCoordinator(
+      "emailapprove@thapar.edu",
+      "EMP-9009"
+    );
+
+    await request(app)
+      .patch(`/api/admin/faculty/${facultyId}/approve`)
+      .set("Authorization", `Bearer ${coordinator.token}`)
+      .expect(200);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const email = spy.mock.calls[0][0];
+    expect(email.to).toBe("emailapprove@thapar.edu");
+    expect(email.subject).toMatch(/approved/i);
+    spy.mockRestore();
+  });
+
+  it("emails the faculty member, with the reason, on rejection", async () => {
+    const spy = vi.spyOn(emailTransport, "sendEmail").mockResolvedValue();
+    const { coordinator, facultyId } = await pendingFacultyAndCoordinator(
+      "emailreject@thapar.edu",
+      "EMP-1010"
+    );
+
+    await request(app)
+      .patch(`/api/admin/faculty/${facultyId}/reject`)
+      .set("Authorization", `Bearer ${coordinator.token}`)
+      .send({ reason: "Employee id did not match" })
+      .expect(200);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const email = spy.mock.calls[0][0];
+    expect(email.to).toBe("emailreject@thapar.edu");
+    expect(email.text).toContain("Employee id did not match");
+    spy.mockRestore();
   });
 });
 

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 import * as userRepo from "../repositories/userRepository.js";
 import * as auditRepo from "../repositories/auditRepository.js";
+import * as emailService from "./emailService.js";
 import { AppError } from "../utils/AppError.js";
 import { ROLES, ACCOUNT_STATUS } from "../constants/userConstants.js";
 import { AUDIT_ACTIONS } from "../constants/auditConstants.js";
@@ -68,6 +69,16 @@ const decideFaculty = async ({
         session
       );
     });
+
+    // Tell the faculty member — after the decision has committed, and
+    // fire-and-forget: the email is a side effect, never a reason to fail or
+    // delay the response. emailService swallows its own errors.
+    if (action === AUDIT_ACTIONS.FACULTY_APPROVED) {
+      emailService.notifyFacultyApproved(updated);
+    } else {
+      emailService.notifyFacultyRejected(updated, reason);
+    }
+
     return updated;
   } finally {
     await session.endSession();
