@@ -48,5 +48,13 @@ export const WITHDRAWABLE_STATUSES = [
   APPLICATION_STATUS.SHORTLISTED,
 ];
 
+// Statuses in which an application's conversation is open for messaging. A
+// conversation may be started (by faculty) and sent to only while the
+// application is here; outside it (Rejected/Withdrawn) the thread is read-only.
+export const MESSAGEABLE_STATUSES = [
+  APPLICATION_STATUS.SHORTLISTED,
+  APPLICATION_STATUS.SELECTED,
+];
+
 // Hours a student must wait after withdrawing before re-applying.
 export const REAPPLY_COOLDOWN_HOURS = 6;

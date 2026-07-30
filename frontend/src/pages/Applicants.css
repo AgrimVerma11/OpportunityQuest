@@ -310,3 +310,35 @@
   .applicant-row { flex-direction: column; align-items: flex-start; }
   .applicant-actions { align-self: stretch; }
 }
+
+/* Faculty → applicant message composer (in the detail modal) */
+.applicant-message {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+.applicant-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.applicant-composer-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 72px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+.applicant-composer-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+.applicant-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

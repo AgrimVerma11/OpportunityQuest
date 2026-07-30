@@ -45,3 +45,23 @@ export const markAllRead = async (req, res) => {
     respondError(res, error);
   }
 };
+
+// DELETE /api/notifications/:id  (owner-scoped, idempotent)
+export const remove = async (req, res) => {
+  try {
+    await notificationService.remove(req.params.id, req.user.id);
+    res.json({ success: true });
+  } catch (error) {
+    respondError(res, error);
+  }
+};
+
+// DELETE /api/notifications  (clear all of the caller's notifications)
+export const clearAll = async (req, res) => {
+  try {
+    await notificationService.clearAll(req.user.id);
+    res.json({ success: true });
+  } catch (error) {
+    respondError(res, error);
+  }
+};

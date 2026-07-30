@@ -68,6 +68,18 @@ function Navbar() {
                 Approvals
               </Link>
             )}
+
+            {(currentUser?.role === "Student" ||
+              currentUser?.role === "Faculty") && (
+              <Link
+                to="/messages"
+                className={`nav-link${
+                  location.pathname.startsWith("/messages") ? " active" : ""
+                }`}
+              >
+                Messages
+              </Link>
+            )}
           </>
         )}
       </div>

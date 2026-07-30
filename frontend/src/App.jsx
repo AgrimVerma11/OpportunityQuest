@@ -10,6 +10,7 @@ import EditOpportunity from "./pages/EditOpportunity";
 import MyApplications from "./pages/MyApplications";
 import Applicants from "./pages/Applicants";
 import Approvals from "./pages/Approvals";
+import Messages from "./pages/Messages";
 import Footer from "./pages/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -48,6 +49,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <Messages />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages/:id"
+          element={
+            <ProtectedRoute>
+              <Messages />
             </ProtectedRoute>
           }
         />

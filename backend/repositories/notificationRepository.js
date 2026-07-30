@@ -31,3 +31,10 @@ export const markAllRead = (recipientId) =>
     { recipient: recipientId, read: false },
     { read: true, readAt: new Date() }
   );
+
+// Deletes one notification — owner-scoped, so a user can only remove their own.
+export const remove = (id, recipientId) =>
+  Notification.deleteOne({ _id: id, recipient: recipientId });
+
+export const removeAll = (recipientId) =>
+  Notification.deleteMany({ recipient: recipientId });

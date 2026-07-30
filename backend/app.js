@@ -10,6 +10,7 @@ import applicationRoutes from "./routes/applicationRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import conversationRoutes from "./routes/conversationRoutes.js";
 import sanitize from "./middleware/sanitizeMiddleware.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiters.js";
 
@@ -79,6 +80,7 @@ export function createApp() {
   app.use("/api/users", userRoutes);
   app.use("/api/admin", adminRoutes);
   app.use("/api/notifications", notificationRoutes);
+  app.use("/api/conversations", conversationRoutes);
 
   // Protected route (JWT smoke test).
   app.get("/api/protected", authMiddleware, (req, res) => {

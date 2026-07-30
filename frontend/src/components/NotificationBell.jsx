@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { IconBell } from "./Icons";
-import { fetchWithAuth, patchWithAuth } from "../utils/api";
+import { fetchWithAuth, patchWithAuth, deleteWithAuth } from "../utils/api";
 import "./NotificationBell.css";
 
 // Compact relative time: "just now", "5m", "3h", "2d", else a date.
@@ -96,6 +96,18 @@ export default function NotificationBell() {
     patchWithAuth("/notifications/read-all").catch(() => {});
   };
 
+  const dismiss = (n) => {
+    setItems((prev) => prev.filter((x) => x._id !== n._id));
+    if (!n.read) setUnread((u) => Math.max(0, u - 1));
+    deleteWithAuth(`/notifications/${n._id}`).catch(() => {});
+  };
+
+  const clearAll = () => {
+    setItems([]);
+    setUnread(0);
+    deleteWithAuth("/notifications").catch(() => {});
+  };
+
   return (
     <div className="notif" ref={wrapRef}>
       <button
@@ -114,11 +126,18 @@ export default function NotificationBell() {
         <div className="notif-panel">
           <div className="notif-head">
             <span>Notifications</span>
-            {unread > 0 && (
-              <button type="button" className="notif-markall" onClick={markAll}>
-                Mark all read
-              </button>
-            )}
+            <div className="notif-head-actions">
+              {unread > 0 && (
+                <button type="button" className="notif-action" onClick={markAll}>
+                  Mark all read
+                </button>
+              )}
+              {items.length > 0 && (
+                <button type="button" className="notif-action" onClick={clearAll}>
+                  Clear all
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="notif-list">
@@ -128,19 +147,31 @@ export default function NotificationBell() {
               <div className="notif-empty">You&rsquo;re all caught up.</div>
             ) : (
               items.map((n) => (
-                <button
-                  type="button"
+                <div
                   key={n._id}
                   className={`notif-item${n.read ? "" : " unread"}`}
-                  onClick={() => openItem(n)}
                 >
-                  <span className="notif-dot" aria-hidden="true" />
-                  <span className="notif-content">
-                    <span className="notif-title">{n.title}</span>
-                    {n.body && <span className="notif-text">{n.body}</span>}
-                    <span className="notif-time">{timeAgo(n.createdAt)}</span>
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    className="notif-item-main"
+                    onClick={() => openItem(n)}
+                  >
+                    <span className="notif-dot" aria-hidden="true" />
+                    <span className="notif-content">
+                      <span className="notif-title">{n.title}</span>
+                      {n.body && <span className="notif-text">{n.body}</span>}
+                      <span className="notif-time">{timeAgo(n.createdAt)}</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="notif-dismiss"
+                    onClick={() => dismiss(n)}
+                    aria-label="Dismiss notification"
+                  >
+                    ×
+                  </button>
+                </div>
               ))
             )}
           </div>

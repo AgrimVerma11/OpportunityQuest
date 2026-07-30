@@ -56,3 +56,7 @@ export const unreadCount = (userId) => notificationRepo.countUnread(userId);
 export const markRead = (id, userId) => notificationRepo.markRead(id, userId);
 
 export const markAllRead = (userId) => notificationRepo.markAllRead(userId);
+
+export const remove = (id, userId) => notificationRepo.remove(id, userId);
+
+export const clearAll = (userId) => notificationRepo.removeAll(userId);

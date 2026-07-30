@@ -997,4 +997,214 @@ describe("notifications", () => {
       notifs.body.notifications.some((n) => n.type === "faculty.pending")
     ).toBe(true);
   });
+
+  it("deletes a single notification, owner-scoped", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+    await applyTo(student.token, opportunity._id);
+
+    const id = (await listFor(faculty.token)).body.notifications[0]._id;
+
+    // A non-owner cannot delete it (owner-scoped no-op, still 200).
+    await request(app)
+      .delete(`/api/notifications/${id}`)
+      .set("Authorization", `Bearer ${student.token}`)
+      .expect(200);
+    expect((await listFor(faculty.token)).body.notifications).toHaveLength(1);
+
+    // The owner deletes it.
+    await request(app)
+      .delete(`/api/notifications/${id}`)
+      .set("Authorization", `Bearer ${faculty.token}`)
+      .expect(200);
+    expect((await listFor(faculty.token)).body.notifications).toHaveLength(0);
+  });
+
+  it("clears all of the caller's notifications", async () => {
+    const faculty = await asFaculty();
+    const opportunity = await createOpportunity(faculty.token);
+    const student = await asStudent();
+    await applyTo(student.token, opportunity._id);
+    const student2 = await registerAndLogin({
+      email: "s2@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+    });
+    await applyTo(student2.token, opportunity._id);
+
+    expect(
+      (await listFor(faculty.token)).body.notifications.length
+    ).toBeGreaterThanOrEqual(2);
+
+    await request(app)
+      .delete("/api/notifications")
+      .set("Authorization", `Bearer ${faculty.token}`)
+      .expect(200);
+
+    expect((await listFor(faculty.token)).body.notifications).toHaveLength(0);
+    expect((await unreadFor(faculty.token)).body.count).toBe(0);
+  });
+});
+
+// ── Messaging ─────────────────────────────────────────────────────
+
+describe("messaging", () => {
+  const auth = (token) => ({ Authorization: `Bearer ${token}` });
+
+  // Drives an application to Shortlisted — the point a conversation may open.
+  const setupShortlisted = async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+    const apply = await applyTo(student.token, opportunity._id);
+    const applicationId = apply.body.application._id;
+    await request(app)
+      .get(`/api/applications/${applicationId}`)
+      .set(auth(faculty.token));
+    await request(app)
+      .patch(`/api/applications/${applicationId}/status`)
+      .set(auth(faculty.token))
+      .send({ status: "Shortlisted" })
+      .expect(200);
+    return { faculty, student, opportunity, applicationId };
+  };
+
+  it("opens a conversation on a shortlisted applicant; both sides message", async () => {
+    const { faculty, student, applicationId } = await setupShortlisted();
+
+    const start = await request(app)
+      .post("/api/conversations")
+      .set(auth(faculty.token))
+      .send({ applicationId, body: "Hi — are you free to discuss the role?" });
+    expect(start.status).toBe(201);
+    const convoId = start.body.conversation._id;
+
+    // The student sees it in their inbox with one unread.
+    const inbox = await request(app)
+      .get("/api/conversations")
+      .set(auth(student.token));
+    expect(inbox.body.conversations).toHaveLength(1);
+    expect(inbox.body.conversations[0].unread).toBe(1);
+
+    // Opening the thread clears the reader's unread and lets them reply.
+    const thread = await request(app)
+      .get(`/api/conversations/${convoId}`)
+      .set(auth(student.token));
+    expect(thread.status).toBe(200);
+    expect(thread.body.canSend).toBe(true);
+    expect(thread.body.messages).toHaveLength(1);
+
+    await request(app)
+      .post(`/api/conversations/${convoId}/messages`)
+      .set(auth(student.token))
+      .send({ body: "Yes, this week works." })
+      .expect(201);
+
+    // The faculty member now has one unread, the thread has two messages.
+    const facultyInbox = await request(app)
+      .get("/api/conversations")
+      .set(auth(faculty.token));
+    expect(facultyInbox.body.conversations[0].unread).toBe(1);
+  });
+
+  it("refuses to open a conversation before the applicant is shortlisted", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+    const apply = await applyTo(student.token, opportunity._id);
+
+    const res = await request(app)
+      .post("/api/conversations")
+      .set(auth(faculty.token))
+      .send({ applicationId: apply.body.application._id, body: "hi" });
+    expect(res.status).toBe(400);
+  });
+
+  it("freezes the thread to read-only once the application is rejected", async () => {
+    const { faculty, student, applicationId } = await setupShortlisted();
+    const start = await request(app)
+      .post("/api/conversations")
+      .set(auth(faculty.token))
+      .send({ applicationId, body: "Hello" });
+    const convoId = start.body.conversation._id;
+
+    await request(app)
+      .patch(`/api/applications/${applicationId}/status`)
+      .set(auth(faculty.token))
+      .send({ status: "Rejected" })
+      .expect(200);
+
+    // Sending is blocked...
+    const send = await request(app)
+      .post(`/api/conversations/${convoId}/messages`)
+      .set(auth(student.token))
+      .send({ body: "Are you still there?" });
+    expect(send.status).toBe(403);
+
+    // ...but the history is still readable.
+    const thread = await request(app)
+      .get(`/api/conversations/${convoId}`)
+      .set(auth(student.token));
+    expect(thread.status).toBe(200);
+    expect(thread.body.canSend).toBe(false);
+    expect(thread.body.messages).toHaveLength(1);
+  });
+
+  it("hides the conversation from non-participants, including coordinators", async () => {
+    const { faculty, applicationId } = await setupShortlisted();
+    const start = await request(app)
+      .post("/api/conversations")
+      .set(auth(faculty.token))
+      .send({ applicationId, body: "Hi" });
+    const convoId = start.body.conversation._id;
+
+    const outsider = await registerAndLogin({
+      email: "outsider@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+    });
+    const coordinator = await createCoordinator();
+
+    expect(
+      (
+        await request(app)
+          .get(`/api/conversations/${convoId}`)
+          .set(auth(outsider.token))
+      ).status
+    ).toBe(404);
+    expect(
+      (
+        await request(app)
+          .get(`/api/conversations/${convoId}`)
+          .set(auth(coordinator.token))
+      ).status
+    ).toBe(404);
+    expect(
+      (
+        await request(app)
+          .post(`/api/conversations/${convoId}/messages`)
+          .set(auth(outsider.token))
+          .send({ body: "let me in" })
+      ).status
+    ).toBe(404);
+  });
+
+  it("notifies the recipient of a new message", async () => {
+    const { faculty, student, applicationId } = await setupShortlisted();
+    await request(app)
+      .post("/api/conversations")
+      .set(auth(faculty.token))
+      .send({ applicationId, body: "Hello there" })
+      .expect(201);
+
+    const notifs = await request(app)
+      .get("/api/notifications")
+      .set(auth(student.token));
+    expect(
+      notifs.body.notifications.some((n) => n.type === "message.received")
+    ).toBe(true);
+  });
 });
