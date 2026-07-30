@@ -9,6 +9,7 @@ import { useConfirm } from "../components/ConfirmProvider";
 import {
   fetchWithAuth,
   patchWithAuth,
+  postWithAuth,
   openAuthedFile,
 } from "../utils/api";
 
@@ -50,6 +51,9 @@ function Applicants() {
   const [detail, setDetail] = useState(null); // open applicant detail
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [composing, setComposing] = useState(false);
+  const [messageDraft, setMessageDraft] = useState("");
+  const [messageSending, setMessageSending] = useState(false);
 
   useEffect(() => {
     load();
@@ -75,6 +79,8 @@ function Applicants() {
   const openDetail = async (appId) => {
     setDetailLoading(true);
     setActionError("");
+    setComposing(false);
+    setMessageDraft("");
     try {
       const res = await fetchWithAuth(`/applications/${appId}`);
       if (res.success) {
@@ -134,6 +140,31 @@ function Applicants() {
     } catch (err) {
       console.error(err);
       setActionError("Something went wrong. Please try again.");
+    }
+  };
+
+  // Faculty opens (or continues) a private conversation with a shortlisted or
+  // selected applicant, then hands off to the Messages page.
+  const startConversation = async () => {
+    const body = messageDraft.trim();
+    if (!body) return;
+    setMessageSending(true);
+    setActionError("");
+    try {
+      const res = await postWithAuth("/conversations", {
+        applicationId: detail._id,
+        body,
+      });
+      if (res.success) {
+        navigate(`/messages/${res.conversation._id}`);
+      } else {
+        setActionError(res.message || "Could not start the conversation.");
+      }
+    } catch (err) {
+      console.error(err);
+      setActionError("Could not start the conversation.");
+    } finally {
+      setMessageSending(false);
     }
   };
 
@@ -290,6 +321,50 @@ function Applicants() {
                 ))}
               </div>
             </div>
+
+            {(detail.status === "Shortlisted" ||
+              detail.status === "Selected") && (
+              <div className="applicant-section applicant-message">
+                {!composing ? (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setComposing(true)}
+                  >
+                    Message applicant
+                  </button>
+                ) : (
+                  <div className="applicant-composer">
+                    <textarea
+                      className="applicant-composer-input"
+                      placeholder={`Message ${
+                        detail.student?.name || "the applicant"
+                      }…`}
+                      value={messageDraft}
+                      onChange={(e) => setMessageDraft(e.target.value)}
+                      rows={3}
+                    />
+                    <div className="applicant-composer-actions">
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => {
+                          setComposing(false);
+                          setMessageDraft("");
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        disabled={messageSending || !messageDraft.trim()}
+                        onClick={startConversation}
+                      >
+                        {messageSending ? "Sending…" : "Send"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <button
               className="btn btn-ghost btn-sm modal-close"

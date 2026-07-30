@@ -1,0 +1,249 @@
+.msg-container {
+  background: var(--color-bg);
+  padding: var(--space-5) var(--page-pad) var(--space-6);
+}
+
+.msg-shell {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: calc(100vh - 180px);
+  min-height: 440px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Inbox ── */
+.msg-inbox {
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.msg-inbox-head {
+  padding: var(--space-4);
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+.msg-inbox-empty {
+  padding: var(--space-6) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.msg-inbox-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+.msg-inbox-item {
+  width: 100%;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition);
+}
+.msg-inbox-item:hover {
+  background: var(--color-surface-subtle);
+}
+.msg-inbox-item.active {
+  background: var(--color-primary-soft);
+}
+.msg-inbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+.msg-inbox-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.msg-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.msg-inbox-title,
+.msg-inbox-snippet {
+  font-size: var(--text-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.msg-inbox-title {
+  color: var(--color-text-secondary);
+}
+.msg-inbox-snippet {
+  color: var(--color-text-muted);
+}
+.msg-inbox-time {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+/* ── Thread ── */
+.msg-thread {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.msg-thread-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.msg-thread-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.msg-back {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+.msg-thread-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.msg-thread-name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+.msg-thread-sub {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.msg-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-bg);
+}
+.msg-bubble-row {
+  display: flex;
+}
+.msg-bubble-row.mine {
+  justify-content: flex-end;
+}
+.msg-bubble {
+  max-width: 72%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.msg-bubble-row.mine .msg-bubble {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.msg-bubble-body {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg-bubble-row.mine .msg-bubble-body {
+  color: #fff;
+}
+.msg-bubble-time {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  align-self: flex-end;
+}
+.msg-bubble-row.mine .msg-bubble-time {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.msg-composer {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  align-items: flex-end;
+}
+.msg-input {
+  flex: 1;
+  resize: none;
+  min-height: 40px;
+  max-height: 120px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+.msg-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+.msg-readonly {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 860px) {
+  .msg-shell {
+    grid-template-columns: 1fr;
+  }
+  .msg-shell .msg-thread {
+    display: none;
+  }
+  .msg-shell.has-thread .msg-inbox {
+    display: none;
+  }
+  .msg-shell.has-thread .msg-thread {
+    display: flex;
+  }
+  .msg-back {
+    display: inline-block;
+  }
+}
