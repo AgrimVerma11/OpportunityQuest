@@ -12,6 +12,16 @@ import { AUDIT_ACTIONS } from "../constants/auditConstants.js";
 export const listPendingFaculty = (organizationId) =>
   userRepo.findPendingFacultyByOrg(organizationId);
 
+// The coordinator's people directory.
+export const listFaculty = (organizationId) =>
+  userRepo.findFacultyByOrg(organizationId);
+
+export const listStudents = (organizationId, query = {}) => {
+  const page = Math.max(1, parseInt(query.page, 10) || 1);
+  const limit = Math.min(50, Math.max(1, parseInt(query.limit, 10) || 20));
+  return userRepo.findStudentsByOrg(organizationId, { page, limit });
+};
+
 // Asserts a loaded account is a faculty member of this org still awaiting
 // approval. Anything outside the org reads as not-found.
 const assertPendingFaculty = (faculty) => {

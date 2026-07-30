@@ -1208,3 +1208,160 @@ describe("messaging", () => {
     ).toBe(true);
   });
 });
+
+// ── Coordinator analytics ─────────────────────────────────────────
+
+describe("coordinator analytics", () => {
+  const bearer = (token) => ({ Authorization: `Bearer ${token}` });
+
+  it("reports org-scoped KPIs, funnel, category and faculty breakdowns", async () => {
+    const faculty = await asFaculty();
+    const coordinator = await createCoordinator();
+
+    // Two opportunities in two categories.
+    const research = await createOpportunity(faculty.token); // default: Research
+    await createOpportunity(faculty.token, {
+      title: "Backend Internship Programme",
+      category: "Internship",
+    });
+
+    // Two students; one is shortlisted, one stays applied.
+    const student = await asStudent();
+    const student2 = await registerAndLogin({
+      email: "s2@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+    });
+
+    const apply = await applyTo(student.token, research._id);
+    const applicationId = apply.body.application._id;
+    await request(app)
+      .get(`/api/applications/${applicationId}`)
+      .set(bearer(faculty.token));
+    await request(app)
+      .patch(`/api/applications/${applicationId}/status`)
+      .set(bearer(faculty.token))
+      .send({ status: "Shortlisted" })
+      .expect(200);
+    await applyTo(student2.token, research._id);
+
+    // A pending faculty member.
+    await registerUser({
+      email: "pending@thapar.edu",
+      role: "Faculty",
+      department: "DCSE",
+      employeeId: "EMP-7777",
+    });
+
+    const res = await request(app)
+      .get("/api/admin/analytics")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    const a = res.body.analytics;
+
+    expect(a.kpis.students).toBe(2);
+    expect(a.kpis.activeFaculty).toBe(1);
+    expect(a.kpis.pendingFaculty).toBe(1);
+    expect(a.kpis.activeOpportunities).toBe(2);
+    expect(a.kpis.totalApplications).toBe(2);
+
+    expect(a.applicationFunnel.Applied).toBe(1);
+    expect(a.applicationFunnel.Shortlisted).toBe(1);
+    expect(a.applicationFunnel.Selected).toBe(0);
+
+    expect(a.opportunitiesByCategory.Research).toBe(1);
+    expect(a.opportunitiesByCategory.Internship).toBe(1);
+    expect(a.opportunitiesByCategory["Paid Gig"]).toBe(0);
+
+    expect(a.facultyByStatus.Active).toBe(1);
+    expect(a.facultyByStatus.Pending).toBe(1);
+
+    expect(a.topOpportunities[0].applications).toBe(2);
+    expect(a.applicationsTrend).toHaveLength(30);
+    expect(a.applicationsTrend.at(-1).count).toBe(2);
+  });
+
+  it("scopes analytics to the coordinator's own organization", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+    await applyTo(student.token, opportunity._id);
+
+    await Organization.create({
+      name: "Other University",
+      emailDomains: ["other.edu"],
+    });
+    const otherCoord = await createCoordinator("coord@other.edu", "other.edu");
+
+    const res = await request(app)
+      .get("/api/admin/analytics")
+      .set(bearer(otherCoord.token));
+    expect(res.status).toBe(200);
+    expect(res.body.analytics.kpis.students).toBe(0);
+    expect(res.body.analytics.kpis.activeOpportunities).toBe(0);
+    expect(res.body.analytics.kpis.totalApplications).toBe(0);
+  });
+
+  it("forbids a non-coordinator from analytics", async () => {
+    const student = await asStudent();
+    const res = await request(app)
+      .get("/api/admin/analytics")
+      .set(bearer(student.token));
+    expect(res.status).toBe(403);
+  });
+
+  it("lists the organization's faculty roster with dates and status", async () => {
+    await asFaculty(); // an active faculty
+    await registerUser({
+      email: "pending@thapar.edu",
+      role: "Faculty",
+      department: "DCSE",
+      employeeId: "EMP-8888",
+    });
+    const coordinator = await createCoordinator();
+
+    const res = await request(app)
+      .get("/api/admin/faculty")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.count).toBe(2);
+    expect(res.body.faculty.map((f) => f.accountStatus).sort()).toEqual([
+      "Active",
+      "Pending",
+    ]);
+    expect(res.body.faculty[0]).toHaveProperty("createdAt");
+  });
+
+  it("lists the organization's students, paginated", async () => {
+    await asFaculty();
+    const coordinator = await createCoordinator();
+    await asStudent();
+    await registerAndLogin({
+      email: "s2@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+    });
+
+    const res = await request(app)
+      .get("/api/admin/students?page=1&limit=20")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(2);
+    expect(res.body.students).toHaveLength(2);
+    expect(res.body.hasMore).toBe(false);
+  });
+
+  it("forbids a non-coordinator from the roster endpoints", async () => {
+    const student = await asStudent();
+    expect(
+      (await request(app).get("/api/admin/faculty").set(bearer(student.token)))
+        .status
+    ).toBe(403);
+    expect(
+      (await request(app).get("/api/admin/students").set(bearer(student.token)))
+        .status
+    ).toBe(403);
+  });
+});

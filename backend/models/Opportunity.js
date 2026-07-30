@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { OPPORTUNITY_CATEGORIES } from "../constants/opportunityConstants.js";
 
 const opportunitySchema = new mongoose.Schema(
   {
@@ -33,12 +34,7 @@ const opportunitySchema = new mongoose.Schema(
 
     category: {
       type: String,
-      enum: [
-        "Internship",
-        "Research",
-        "Paid Gig",
-        "Faculty Project",
-      ],
+      enum: OPPORTUNITY_CATEGORIES,
       required: true,
     },
 
