@@ -90,4 +90,10 @@ applicationSchema.index({ opportunity: 1, status: 1 });
 // Student "My Applications", newest first.
 applicationSchema.index({ student: 1, createdAt: -1 });
 
+// Coordinator analytics: org-scoped funnel, counts and activity trend. The
+// standalone organizationId index dropped in Phase 5 was speculative; this one
+// serves real queries (the trend needs the createdAt range, and its
+// organizationId prefix serves the funnel/count/top-opportunities matches).
+applicationSchema.index({ organizationId: 1, createdAt: 1 });
+
 export default mongoose.model("Application", applicationSchema);

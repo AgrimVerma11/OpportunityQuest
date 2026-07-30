@@ -14,3 +14,8 @@
 .status-Selected    { background: var(--color-success-soft); color: var(--color-success); }
 .status-Rejected    { background: var(--color-danger-soft);  color: var(--color-danger); }
 .status-Withdrawn   { background: #f1f5f9;                   color: var(--color-text-muted); }
+
+/* Account statuses (faculty roster) */
+.status-Active      { background: var(--color-success-soft); color: var(--color-success); }
+.status-Pending     { background: var(--color-warning-soft); color: var(--color-warning); }
+.status-Suspended   { background: #f1f5f9;                   color: var(--color-text-muted); }

@@ -59,14 +59,24 @@ function Navbar() {
             )}
 
             {currentUser?.role === "Coordinator" && (
-              <Link
-                to="/approvals"
-                className={`nav-link${
-                  isActive("/approvals") ? " active" : ""
-                }`}
-              >
-                Approvals
-              </Link>
+              <>
+                <Link
+                  to="/approvals"
+                  className={`nav-link${
+                    isActive("/approvals") ? " active" : ""
+                  }`}
+                >
+                  Approvals
+                </Link>
+                <Link
+                  to="/analytics"
+                  className={`nav-link${
+                    isActive("/analytics") ? " active" : ""
+                  }`}
+                >
+                  Analytics
+                </Link>
+              </>
             )}
 
             {(currentUser?.role === "Student" ||

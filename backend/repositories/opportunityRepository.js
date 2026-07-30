@@ -73,6 +73,13 @@ export const save = (opportunity) => opportunity.save();
 export const incrementApplicationsCount = (id, delta) =>
   Opportunity.findByIdAndUpdate(id, { $inc: { applicationsCount: delta } });
 
+export const countActive = (organizationId) =>
+  Opportunity.countDocuments({
+    organizationId,
+    status: "Active",
+    isDeleted: { $ne: true },
+  });
+
 export const aggregateCategoryStats = (organizationId) =>
   Opportunity.aggregate([
     {

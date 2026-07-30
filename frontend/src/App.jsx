@@ -11,6 +11,7 @@ import MyApplications from "./pages/MyApplications";
 import Applicants from "./pages/Applicants";
 import Approvals from "./pages/Approvals";
 import Messages from "./pages/Messages";
+import Analytics from "./pages/Analytics";
 import Footer from "./pages/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -119,6 +120,14 @@ function App() {
           element={
             <ProtectedRoute role="Coordinator">
               <Approvals />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute role="Coordinator">
+              <Analytics />
             </ProtectedRoute>
           }
         />

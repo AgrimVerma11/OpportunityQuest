@@ -1,6 +1,9 @@
 import express from "express";
 
 import {
+  getAnalytics,
+  getFaculty,
+  getStudents,
   getPendingFaculty,
   approveFaculty,
   rejectFaculty,
@@ -17,6 +20,13 @@ const router = express.Router();
 
 // Every admin route requires an active coordinator.
 router.use(authMiddleware, authorizeRoles("Coordinator"), requireActiveAccount);
+
+// Org-scoped analytics for the coordinator dashboard.
+router.get("/analytics", getAnalytics);
+
+// People directory for the coordinator's organization.
+router.get("/faculty", getFaculty);
+router.get("/students", getStudents);
 
 // Faculty awaiting approval in the coordinator's organization.
 router.get("/faculty/pending", getPendingFaculty);
