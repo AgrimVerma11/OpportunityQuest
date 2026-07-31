@@ -1,344 +1,176 @@
-.applicants-container {
-  background: var(--color-bg);
-  padding: var(--space-6) var(--page-pad) var(--space-8);
-  min-height: 70vh;
+/* ─────────────────────────────────────────
+   APPLICANTS — masthead + status filter + applicant list; detail in <Modal>.
+───────────────────────────────────────── */
+
+.appl-body {
+  padding-bottom: var(--space-8);
+}
+.appl-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
 }
 
-.applicants-inner {
-  max-width: 920px;
-  margin: 0 auto;
-}
-
-.link-back {
-  background: none;
-  border: none;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  cursor: pointer;
-  padding: 0;
-  margin-bottom: var(--space-4);
-}
-.link-back:hover { color: var(--color-text); }
-
-.applicants-hero {
-  margin-bottom: var(--space-5);
-}
-
-.applicants-hero h1 {
-  font-size: var(--text-h1);
-  font-weight: var(--weight-bold);
-  letter-spacing: -0.6px;
-  color: var(--color-text);
-  margin-bottom: var(--space-1);
-}
-
-.applicants-hero p {
-  font-size: var(--text-body);
-  color: var(--color-text-secondary);
-}
-
-.applicants-loading {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-/* Filter tabs */
-.filter-tabs {
+/* Status filter chips */
+.appl-filters {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-bottom: var(--space-5);
 }
-
-.filter-tab {
+.appl-filter {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   background: var(--color-surface);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: border-color var(--transition), color var(--transition),
-    background var(--transition);
+  transition: background var(--transition), border-color var(--transition),
+    color var(--transition);
 }
-
-.filter-tab:hover { border-color: var(--color-border-strong); }
-
-.filter-tab.active {
+.appl-filter:hover {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-text-faint);
+  color: var(--color-text);
+}
+.appl-filter.active {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: #fff;
+  font-weight: var(--weight-semibold);
 }
-
-.filter-count {
+.appl-filter-count {
   font-size: var(--text-xs);
   font-weight: var(--weight-semibold);
-  opacity: 0.85;
+  opacity: 0.8;
 }
 
 /* List */
-.applicants-list {
+.appl-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
-
-.applicant-row {
+.appl-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
   padding: var(--space-4) var(--space-5);
-  transition: box-shadow var(--transition);
+  transition: box-shadow var(--transition), border-color var(--transition);
 }
-.applicant-row:hover { box-shadow: var(--shadow-sm); }
-
-.applicant-identity {
+.appl-row:hover {
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border-strong);
+}
+.appl-identity {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
 }
-
-.applicant-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: var(--weight-bold);
-  flex-shrink: 0;
-}
-
-.applicant-name-line {
+.appl-name-line {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   margin-bottom: 2px;
 }
-
-.applicant-name {
+.appl-name {
   font-size: var(--text-h3);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
 }
-
-.applicant-meta {
-  display: flex;
-  gap: var(--space-4);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.applicant-actions { flex-shrink: 0; }
-
-.applicants-empty {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-8) var(--space-7);
-  text-align: center;
-}
-.applicants-empty h2 {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-  margin-bottom: var(--space-2);
-}
-.applicants-empty p { font-size: var(--text-sm); color: var(--color-text-secondary); }
-
-/* Detail modal */
-.applicant-modal {
-  max-width: 540px;
-  text-align: left;
-  align-items: stretch;
-}
-
-.applicant-modal-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.applicant-modal-head h3 {
-  font-size: 1.3rem;
-  font-weight: var(--weight-bold);
-  color: var(--color-text);
-}
-
-.applicant-modal-sub {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.applicant-facts {
-  display: flex;
-  gap: var(--space-6);
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.applicant-facts > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: var(--text-sm);
-  color: var(--color-text);
-}
-
-.fact-label {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.applicant-skills {
+.appl-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
 }
 
-.skill-pill {
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-}
-
-.applicant-modal-identity {
+/* Detail modal body */
+.appl-detail {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  flex-direction: column;
+  gap: var(--space-4);
 }
-
-.applicant-status-row {
+.appl-detail-status {
   display: flex;
   justify-content: flex-end;
 }
-
-.applicant-section {
+.appl-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-border);
 }
-
-.applicant-email {
+.appl-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-muted);
+}
+.appl-email {
+  width: fit-content;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--color-primary);
-  text-decoration: none;
-  width: fit-content;
 }
-.applicant-email:hover { text-decoration: underline; }
-
-.applicant-section > p {
+.appl-email:hover {
+  text-decoration: underline;
+}
+.appl-cover {
   font-size: var(--text-sm);
   color: var(--color-text);
-  line-height: 1.6;
-}
-
-.applicant-cover-text {
+  line-height: var(--leading-relaxed);
   white-space: pre-wrap;
 }
-
-.applicant-project {
-  font-size: var(--text-sm);
-  color: var(--color-text);
+.appl-message-start {
+  align-self: flex-start;
 }
-.applicant-project strong { color: var(--color-text); }
-.applicant-project p {
-  color: var(--color-text-secondary);
-  line-height: 1.55;
-  margin-top: 2px;
+.appl-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.appl-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
 }
 
-.applicant-modal-actions {
+/* Modal footer */
+.appl-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  width: 100%;
   flex-wrap: wrap;
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
 }
-
-.status-actions {
+.appl-status-actions {
   display: flex;
   gap: var(--space-2);
 }
-
-.no-resume {
+.appl-no-resume {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
 
-.modal-close { align-self: flex-end; }
-
-.detail-loading-veil {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(15, 23, 42, 0.3);
-  color: #fff;
-  font-size: var(--text-sm);
-  z-index: 1050;
-}
-
 @media (max-width: 640px) {
-  .applicants-container { padding: var(--space-5) var(--space-4) var(--space-7); }
-  .applicant-row { flex-direction: column; align-items: flex-start; }
-  .applicant-actions { align-self: stretch; }
-}
-
-/* Faculty → applicant message composer (in the detail modal) */
-.applicant-message {
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--space-4);
-}
-.applicant-composer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.applicant-composer-input {
-  width: 100%;
-  resize: vertical;
-  min-height: 72px;
-  padding: var(--space-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  color: var(--color-text);
-  background: var(--color-surface);
-}
-.applicant-composer-input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-.applicant-composer-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
+  .appl-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .appl-row .btn {
+    width: 100%;
+  }
 }

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { IconBell } from "./Icons";
+import { IconBell, IconX } from "./Icons";
+import Spinner from "./Spinner";
 import { fetchWithAuth, patchWithAuth, deleteWithAuth } from "../utils/api";
 import "./NotificationBell.css";
 
@@ -142,7 +143,9 @@ export default function NotificationBell() {
 
           <div className="notif-list">
             {loading ? (
-              <div className="notif-empty">Loading…</div>
+              <div className="notif-empty">
+                <Spinner center label="Loading notifications" />
+              </div>
             ) : items.length === 0 ? (
               <div className="notif-empty">You&rsquo;re all caught up.</div>
             ) : (
@@ -169,7 +172,7 @@ export default function NotificationBell() {
                     onClick={() => dismiss(n)}
                     aria-label="Dismiss notification"
                   >
-                    ×
+                    <IconX />
                   </button>
                 </div>
               ))

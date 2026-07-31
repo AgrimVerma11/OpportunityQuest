@@ -2,8 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Navbar from "./Navbar";
+import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
+import CategoryTag from "../components/CategoryTag";
+import Spinner from "../components/Spinner";
+import EmptyState from "../components/EmptyState";
 import { useConfirm } from "../components/ConfirmProvider";
+import { useToast } from "../components/ToastProvider";
+import { IconInbox } from "../components/Icons";
 import { fetchWithAuth, patchWithAuth } from "../utils/api";
 
 import "./MyApplications.css";
@@ -13,10 +19,10 @@ const WITHDRAWABLE = ["Applied", "Viewed", "Shortlisted"];
 function MyApplications() {
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const toast = useToast();
 
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState([]);
-  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     load();
@@ -42,17 +48,16 @@ function MyApplications() {
       tone: "danger",
     });
     if (!ok) return;
-    setActionError("");
     try {
       const res = await patchWithAuth(`/applications/${appId}/withdraw`);
       if (res.success) {
         load();
       } else {
-        setActionError(res.message || "Could not withdraw application.");
+        toast.error(res.message || "Could not withdraw application.");
       }
     } catch (err) {
       console.error(err);
-      setActionError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -60,46 +65,54 @@ function MyApplications() {
     <>
       <Navbar />
 
-      <div className="applications-container">
-        <div className="applications-inner">
-          <div className="applications-hero">
-            <h1>My Applications</h1>
-            <p>Track the opportunities you have applied to and their status.</p>
-          </div>
+      <div className="myapps">
+        <PageHeader
+          title="My applications"
+          subtitle="Track the opportunities you have applied to and their status."
+        />
 
-          {actionError && <div className="action-error-bar">{actionError}</div>}
-
+        <div className="container myapps-body">
           {loading ? (
-            <p className="applications-loading">Loading…</p>
-          ) : applications.length === 0 ? (
-            <div className="applications-empty">
-              <h2>No applications yet</h2>
-              <p>Browse opportunities and apply to ones that fit you.</p>
-              <button className="btn btn-primary" onClick={() => navigate("/home")}>
-                Explore Opportunities
-              </button>
+            <div className="myapps-status">
+              <Spinner center label="Loading your applications" />
             </div>
+          ) : applications.length === 0 ? (
+            <EmptyState
+              icon={<IconInbox />}
+              title="No applications yet"
+              description="Browse opportunities and apply to the ones that fit you."
+              action={
+                <button
+                  className="btn btn-primary"
+                  onClick={() => navigate("/home")}
+                >
+                  Explore opportunities
+                </button>
+              }
+            />
           ) : (
-            <div className="applications-list">
+            <div className="myapps-list">
               {applications.map((app) => {
                 const opp = app.opportunity;
                 const removed = !opp || opp.isDeleted;
                 return (
-                  <div className="application-row" key={app._id}>
-                    <div className="application-main">
-                      <div className="application-title-line">
-                        <h3>{removed ? "Opportunity removed" : opp.title}</h3>
+                  <div className="card myapps-row" key={app._id}>
+                    <div className="myapps-main">
+                      <div className="myapps-title-line">
+                        <h3 className="myapps-title">
+                          {removed ? "Opportunity removed" : opp.title}
+                        </h3>
                         <StatusBadge status={app.status} />
                       </div>
-                      <div className="application-meta">
-                        {!removed && <span>{opp.category}</span>}
+                      <div className="myapps-meta">
+                        {!removed && <CategoryTag category={opp.category} />}
                         <span>
                           Applied {new Date(app.createdAt).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
 
-                    <div className="application-actions">
+                    <div className="myapps-actions">
                       {!removed && (
                         <button
                           className="btn btn-secondary btn-sm"

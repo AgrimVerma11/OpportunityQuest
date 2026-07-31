@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useRef,
   useState,
 } from "react";
@@ -25,8 +26,13 @@ const ConfirmContext = createContext(null);
 export function ConfirmProvider({ children }) {
   const [state, setState] = useState(null);
   const resolver = useRef(null);
+  const trigger = useRef(null);
+  const titleId = useId();
+  const messageId = useId();
 
   const confirm = useCallback((options = {}) => {
+    // Remember what had focus so we can restore it when the dialog closes.
+    trigger.current = document.activeElement;
     return new Promise((resolve) => {
       resolver.current = resolve;
       setState({
@@ -45,6 +51,9 @@ export function ConfirmProvider({ children }) {
       resolver.current(result);
       resolver.current = null;
     }
+    // Return focus to whatever triggered the confirm.
+    trigger.current?.focus?.();
+    trigger.current = null;
   }, []);
 
   // Esc cancels, Enter confirms while the dialog is open.
@@ -67,10 +76,20 @@ export function ConfirmProvider({ children }) {
           className="confirm-overlay"
           onClick={(e) => e.target === e.currentTarget && settle(false)}
         >
-          <div className="confirm-dialog" role="dialog" aria-modal="true">
-            <h3 className="confirm-title">{state.title}</h3>
+          <div
+            className="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={state.message ? messageId : undefined}
+          >
+            <h3 className="confirm-title" id={titleId}>
+              {state.title}
+            </h3>
             {state.message && (
-              <p className="confirm-message">{state.message}</p>
+              <p className="confirm-message" id={messageId}>
+                {state.message}
+              </p>
             )}
             <div className="confirm-actions">
               <button

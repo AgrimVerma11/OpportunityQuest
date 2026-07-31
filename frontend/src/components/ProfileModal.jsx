@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { fetchWithAuth } from "../utils/api";
-import ProfileView from "./ProfileView";
-import "./ProfileModal.css";
 
-// Fetches a user's public profile by id and shows it in a modal.
+import Modal from "./Modal";
+import ProfileView from "./ProfileView";
+import Spinner from "./Spinner";
+import { fetchWithAuth } from "../utils/api";
+
+// Fetches a user's public profile by id and shows it in the shared modal.
 export default function ProfileModal({ userId, onClose }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,22 +28,14 @@ export default function ProfileModal({ userId, onClose }) {
   }, [userId]);
 
   return (
-    <div
-      className="modal-overlay"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="modal-card profile-modal-card">
-        {loading ? (
-          <p className="pv-loading">Loading…</p>
-        ) : profile ? (
-          <ProfileView profile={profile} />
-        ) : (
-          <p className="pv-loading">Profile unavailable.</p>
-        )}
-        <button className="btn btn-secondary btn-sm pv-close" onClick={onClose}>
-          Close
-        </button>
-      </div>
-    </div>
+    <Modal open onClose={onClose} title="Profile" size="md">
+      {loading ? (
+        <Spinner center label="Loading profile" />
+      ) : profile ? (
+        <ProfileView profile={profile} />
+      ) : (
+        <p className="pv-unavailable">Profile unavailable.</p>
+      )}
+    </Modal>
   );
 }

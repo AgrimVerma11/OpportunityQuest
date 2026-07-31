@@ -1,111 +1,71 @@
-.applications-container {
-  background: var(--color-bg);
-  padding: var(--space-6) var(--page-pad) var(--space-8);
-  min-height: 70vh;
+/* ─────────────────────────────────────────
+   MY APPLICATIONS — masthead + a list of application rows.
+───────────────────────────────────────── */
+
+.myapps-body {
+  padding-bottom: var(--space-8);
+}
+.myapps-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
 }
 
-.applications-inner {
-  max-width: 920px;
-  margin: 0 auto;
-}
-
-.applications-hero {
-  margin-bottom: var(--space-6);
-}
-
-.applications-hero h1 {
-  font-size: var(--text-h1);
-  font-weight: var(--weight-bold);
-  letter-spacing: -0.6px;
-  color: var(--color-text);
-  margin-bottom: var(--space-2);
-}
-
-.applications-hero p {
-  font-size: var(--text-body);
-  color: var(--color-text-secondary);
-}
-
-.applications-loading {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-.applications-list {
+.myapps-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
-
-.application-row {
+.myapps-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
   padding: var(--space-4) var(--space-5);
-  transition: box-shadow var(--transition);
+  transition: box-shadow var(--transition), border-color var(--transition);
 }
-
-.application-row:hover {
+.myapps-row:hover {
   box-shadow: var(--shadow-sm);
+  border-color: var(--color-border-strong);
 }
-
-.application-main {
+.myapps-main {
   min-width: 0;
 }
-
-.application-title-line {
+.myapps-title-line {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
 }
-
-.application-title-line h3 {
+.myapps-title {
   font-size: var(--text-h3);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
 }
-
-.application-meta {
+.myapps-meta {
   display: flex;
-  gap: var(--space-4);
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
 }
-
-.application-actions {
+.myapps-actions {
   display: flex;
   gap: var(--space-2);
   flex-shrink: 0;
 }
 
-.applications-empty {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-8) var(--space-7);
-  text-align: center;
-}
-
-.applications-empty h2 {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-  margin-bottom: var(--space-2);
-}
-
-.applications-empty p {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-5);
-}
-
 @media (max-width: 640px) {
-  .applications-container { padding: var(--space-5) var(--space-4) var(--space-7); }
-  .application-row { flex-direction: column; align-items: flex-start; }
-  .application-actions { align-self: stretch; }
+  .myapps-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .myapps-actions {
+    align-self: stretch;
+  }
+  .myapps-actions .btn {
+    flex: 1;
+  }
 }

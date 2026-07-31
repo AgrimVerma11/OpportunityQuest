@@ -3,6 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import Navbar from "./Navbar";
 import Avatar from "../components/Avatar";
+import Spinner from "../components/Spinner";
+import EmptyState from "../components/EmptyState";
+import { IconArrowLeft, IconInbox, IconAlert } from "../components/Icons";
 import { useAuth } from "../context/AuthContext";
 import { fetchWithAuth, postWithAuth } from "../utils/api";
 import "./Messages.css";
@@ -146,7 +149,7 @@ export default function Messages() {
                       <span className="msg-inbox-text">
                         <span className="msg-inbox-name">
                           {c.counterpart?.prefix ? `${c.counterpart.prefix} ` : ""}
-                          {c.counterpart?.name || "—"}
+                          {c.counterpart?.name || "Unknown"}
                           {c.unread > 0 && <span className="msg-unread-dot" />}
                         </span>
                         <span className="msg-inbox-title">
@@ -170,15 +173,23 @@ export default function Messages() {
           <section className="msg-thread">
             {!id ? (
               <div className="msg-thread-empty">
-                <p>Select a conversation to read and reply.</p>
+                <EmptyState
+                  icon={<IconInbox />}
+                  title="No conversation selected"
+                  description="Choose a conversation from the list to read and reply."
+                />
               </div>
             ) : threadLoading && !thread ? (
               <div className="msg-thread-empty">
-                <p>Loading…</p>
+                <Spinner center label="Loading conversation" />
               </div>
             ) : !thread ? (
               <div className="msg-thread-empty">
-                <p>Conversation not found.</p>
+                <EmptyState
+                  icon={<IconAlert />}
+                  title="Conversation not found"
+                  description="This conversation may have been removed."
+                />
               </div>
             ) : (
               <>
@@ -189,7 +200,7 @@ export default function Messages() {
                     onClick={() => navigate("/messages")}
                     aria-label="Back to conversations"
                   >
-                    ←
+                    <IconArrowLeft />
                   </button>
                   <Avatar
                     name={other?.name}
@@ -199,7 +210,7 @@ export default function Messages() {
                   <div className="msg-thread-who">
                     <span className="msg-thread-name">
                       {other?.prefix ? `${other.prefix} ` : ""}
-                      {other?.name || "—"}
+                      {other?.name || "Unknown"}
                     </span>
                     <span className="msg-thread-sub">
                       {thread.conversation.opportunityTitle}

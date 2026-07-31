@@ -2,10 +2,16 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import Navbar from "./Navbar";
+import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import Avatar from "../components/Avatar";
 import ProfileView from "../components/ProfileView";
+import Modal from "../components/Modal";
+import Spinner from "../components/Spinner";
+import EmptyState from "../components/EmptyState";
 import { useConfirm } from "../components/ConfirmProvider";
+import { useToast } from "../components/ToastProvider";
+import { IconArrowLeft } from "../components/Icons";
 import {
   fetchWithAuth,
   patchWithAuth,
@@ -43,6 +49,7 @@ function Applicants() {
   const { id } = useParams();
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const toast = useToast();
 
   const [loading, setLoading] = useState(true);
   const [opportunity, setOpportunity] = useState(null);
@@ -50,7 +57,6 @@ function Applicants() {
   const [filter, setFilter] = useState("All");
   const [detail, setDetail] = useState(null); // open applicant detail
   const [detailLoading, setDetailLoading] = useState(false);
-  const [actionError, setActionError] = useState("");
   const [composing, setComposing] = useState(false);
   const [messageDraft, setMessageDraft] = useState("");
   const [messageSending, setMessageSending] = useState(false);
@@ -75,10 +81,16 @@ function Applicants() {
     }
   };
 
+  const closeDetail = () => {
+    setDetail(null);
+    setDetailLoading(false);
+    setComposing(false);
+    setMessageDraft("");
+  };
+
   // Opening an applicant marks the application as Viewed (server-side).
   const openDetail = async (appId) => {
     setDetailLoading(true);
-    setActionError("");
     setComposing(false);
     setMessageDraft("");
     try {
@@ -92,22 +104,21 @@ function Applicants() {
           )
         );
       } else {
-        setActionError(res.message || "Could not load applicant.");
+        toast.error(res.message || "Could not load applicant.");
+        setDetailLoading(false);
       }
     } catch (err) {
       console.error(err);
-      setActionError("Could not load applicant.");
-    } finally {
+      toast.error("Could not load applicant.");
       setDetailLoading(false);
     }
   };
 
   const viewResume = async (appId) => {
-    setActionError("");
     try {
       await openAuthedFile(`/applications/${appId}/resume`);
     } catch (err) {
-      setActionError(err.message || "Could not open resume.");
+      toast.error(err.message || "Could not open resume.");
     }
   };
 
@@ -124,7 +135,6 @@ function Applicants() {
       });
       if (!ok) return;
     }
-    setActionError("");
     try {
       const res = await patchWithAuth(`/applications/${appId}/status`, {
         status,
@@ -135,11 +145,11 @@ function Applicants() {
         );
         setDetail((d) => (d && d._id === appId ? { ...d, status } : d));
       } else {
-        setActionError(res.message || "Could not update status.");
+        toast.error(res.message || "Could not update status.");
       }
     } catch (err) {
       console.error(err);
-      setActionError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -149,7 +159,6 @@ function Applicants() {
     const body = messageDraft.trim();
     if (!body) return;
     setMessageSending(true);
-    setActionError("");
     try {
       const res = await postWithAuth("/conversations", {
         applicationId: detail._id,
@@ -158,11 +167,11 @@ function Applicants() {
       if (res.success) {
         navigate(`/messages/${res.conversation._id}`);
       } else {
-        setActionError(res.message || "Could not start the conversation.");
+        toast.error(res.message || "Could not start the conversation.");
       }
     } catch (err) {
       console.error(err);
-      setActionError("Could not start the conversation.");
+      toast.error("Could not start the conversation.");
     } finally {
       setMessageSending(false);
     }
@@ -185,60 +194,66 @@ function Applicants() {
     <>
       <Navbar />
 
-      <div className="applicants-container">
-        <div className="applicants-inner">
-          <button className="link-back" onClick={() => navigate("/faculty")}>
-            ← Back to Faculty Corner
-          </button>
+      <div className="appl">
+        <PageHeader
+          title="Applicants"
+          subtitle={opportunity ? opportunity.title : "Loading…"}
+          action={
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate("/faculty")}
+            >
+              <IconArrowLeft /> Faculty Corner
+            </button>
+          }
+        />
 
-          <div className="applicants-hero">
-            <h1>Applicants</h1>
-            <p>{opportunity ? opportunity.title : "Loading…"}</p>
-          </div>
-
-          {actionError && <div className="action-error-bar">{actionError}</div>}
-
-          <div className="filter-tabs">
+        <div className="container appl-body">
+          <div className="appl-filters" role="group" aria-label="Filter by status">
             {FILTERS.map((f) => (
               <button
                 key={f}
-                className={`filter-tab${filter === f ? " active" : ""}`}
+                type="button"
+                className={`appl-filter${filter === f ? " active" : ""}`}
+                aria-pressed={filter === f}
                 onClick={() => setFilter(f)}
               >
-                {f} <span className="filter-count">{counts[f]}</span>
+                {f} <span className="appl-filter-count">{counts[f]}</span>
               </button>
             ))}
           </div>
 
           {loading ? (
-            <p className="applicants-loading">Loading…</p>
-          ) : visible.length === 0 ? (
-            <div className="applicants-empty">
-              <h2>No applicants{filter !== "All" ? ` in ${filter}` : ""}</h2>
-              <p>Applications will appear here as students apply.</p>
+            <div className="appl-status">
+              <Spinner center label="Loading applicants" />
             </div>
+          ) : visible.length === 0 ? (
+            <EmptyState
+              title={`No applicants${filter !== "All" ? ` in ${filter}` : ""}`}
+              description="Applications will appear here as students apply."
+            />
           ) : (
-            <div className="applicants-list">
+            <div className="appl-list">
               {visible.map((app) => (
-                <div className="applicant-row" key={app._id}>
-                  <div className="applicant-identity">
+                <div className="card appl-row" key={app._id}>
+                  <div className="appl-identity">
                     <Avatar
                       name={app.student?.name}
                       image={app.student?.profileImage}
                       size={40}
                     />
                     <div>
-                      <div className="applicant-name-line">
-                        <span className="applicant-name">
+                      <div className="appl-name-line">
+                        <span className="appl-name">
                           {app.student?.name || "Student"}
                         </span>
                         <StatusBadge status={app.status} />
                       </div>
-                      <div className="applicant-meta">
-                        <span>{app.student?.branch || "—"}</span>
-                        <span>
-                          {app.student?.year ? `Year ${app.student.year}` : "—"}
-                        </span>
+                      <div className="appl-meta">
+                        {app.student?.branch && <span>{app.student.branch}</span>}
+                        {app.student?.year && (
+                          <span>Year {app.student.year}</span>
+                        )}
                         <span>
                           Applied {new Date(app.createdAt).toLocaleDateString()}
                         </span>
@@ -246,14 +261,12 @@ function Applicants() {
                     </div>
                   </div>
 
-                  <div className="applicant-actions">
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => openDetail(app._id)}
-                    >
-                      Review
-                    </button>
-                  </div>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => openDetail(app._id)}
+                  >
+                    Review
+                  </button>
                 </div>
               ))}
             </div>
@@ -261,122 +274,123 @@ function Applicants() {
         </div>
       </div>
 
-      {/* APPLICANT DETAIL MODAL */}
-      {detail && (
-        <div
-          className="modal-overlay"
-          onClick={(e) => e.target === e.currentTarget && setDetail(null)}
-        >
-          <div className="modal-card applicant-modal">
-            <div className="applicant-status-row">
-              <StatusBadge status={detail.status} />
-            </div>
-
-            <ProfileView profile={detail.student} />
-
-            {detail.student?.email && (
-              <div className="applicant-section">
-                <span className="fact-label">Contact</span>
-                <a
-                  className="applicant-email"
-                  href={`mailto:${detail.student.email}`}
-                >
-                  {detail.student.email}
-                </a>
-              </div>
-            )}
-
-            <div className="applicant-section">
-              <span className="fact-label">Cover letter</span>
-              <p className="applicant-cover-text">{detail.coverLetter}</p>
-            </div>
-
-            <div className="applicant-modal-actions">
-              {detail.resume ? (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => viewResume(detail._id)}
-                >
-                  View resume
-                </button>
-              ) : (
-                <span className="no-resume">No resume attached</span>
-              )}
-
-              <div className="status-actions">
-                {actionsFor(detail.status).map((target) => (
-                  <button
-                    key={target}
-                    className={`btn btn-sm ${
-                      target === "Rejected"
-                        ? "btn-danger-ghost"
-                        : target === "Selected"
-                        ? "btn-primary"
-                        : "btn-secondary"
-                    }`}
-                    onClick={() => changeStatus(detail._id, target)}
-                  >
-                    {ACTION_LABEL[target]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {(detail.status === "Shortlisted" ||
-              detail.status === "Selected") && (
-              <div className="applicant-section applicant-message">
-                {!composing ? (
+      {/* Applicant detail */}
+      {(detail || detailLoading) && (
+        <Modal
+          open
+          onClose={closeDetail}
+          title="Applicant"
+          size="lg"
+          footer={
+            detail && (
+              <div className="appl-foot">
+                {detail.resume ? (
                   <button
                     className="btn btn-secondary btn-sm"
-                    onClick={() => setComposing(true)}
+                    onClick={() => viewResume(detail._id)}
                   >
-                    Message applicant
+                    View resume
                   </button>
                 ) : (
-                  <div className="applicant-composer">
-                    <textarea
-                      className="applicant-composer-input"
-                      placeholder={`Message ${
-                        detail.student?.name || "the applicant"
-                      }…`}
-                      value={messageDraft}
-                      onChange={(e) => setMessageDraft(e.target.value)}
-                      rows={3}
-                    />
-                    <div className="applicant-composer-actions">
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => {
-                          setComposing(false);
-                          setMessageDraft("");
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        disabled={messageSending || !messageDraft.trim()}
-                        onClick={startConversation}
-                      >
-                        {messageSending ? "Sending…" : "Send"}
-                      </button>
-                    </div>
-                  </div>
+                  <span className="appl-no-resume">No resume attached</span>
                 )}
+
+                <div className="appl-status-actions">
+                  {actionsFor(detail.status).map((target) => (
+                    <button
+                      key={target}
+                      className={`btn btn-sm ${
+                        target === "Rejected"
+                          ? "btn-danger-ghost"
+                          : target === "Selected"
+                          ? "btn-primary"
+                          : "btn-secondary"
+                      }`}
+                      onClick={() => changeStatus(detail._id, target)}
+                    >
+                      {ACTION_LABEL[target]}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
+            )
+          }
+        >
+          {detail ? (
+            <div className="appl-detail">
+              <div className="appl-detail-status">
+                <StatusBadge status={detail.status} />
+              </div>
 
-            <button
-              className="btn btn-ghost btn-sm modal-close"
-              onClick={() => setDetail(null)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
+              <ProfileView profile={detail.student} />
+
+              {detail.student?.email && (
+                <div className="appl-section">
+                  <span className="appl-label">Contact</span>
+                  <a
+                    className="appl-email"
+                    href={`mailto:${detail.student.email}`}
+                  >
+                    {detail.student.email}
+                  </a>
+                </div>
+              )}
+
+              <div className="appl-section">
+                <span className="appl-label">Cover letter</span>
+                <p className="appl-cover">{detail.coverLetter}</p>
+              </div>
+
+              {(detail.status === "Shortlisted" ||
+                detail.status === "Selected") && (
+                <div className="appl-section">
+                  <span className="appl-label">Message</span>
+                  {!composing ? (
+                    <button
+                      className="btn btn-secondary btn-sm appl-message-start"
+                      onClick={() => setComposing(true)}
+                    >
+                      Message applicant
+                    </button>
+                  ) : (
+                    <div className="appl-composer">
+                      <textarea
+                        className="field-control"
+                        placeholder={`Message ${
+                          detail.student?.name || "the applicant"
+                        }`}
+                        value={messageDraft}
+                        onChange={(e) => setMessageDraft(e.target.value)}
+                        rows={3}
+                      />
+                      <div className="appl-composer-actions">
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => {
+                            setComposing(false);
+                            setMessageDraft("");
+                          }}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          disabled={messageSending || !messageDraft.trim()}
+                          onClick={startConversation}
+                        >
+                          {messageSending ? "Sending…" : "Send"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <Spinner center label="Loading applicant" />
+          )}
+        </Modal>
       )}
-
-      {detailLoading && <div className="detail-loading-veil">Loading…</div>}
     </>
   );
 }
