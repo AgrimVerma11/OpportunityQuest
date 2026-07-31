@@ -1,6 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+
 import Avatar from "../components/Avatar";
 import NotificationBell from "../components/NotificationBell";
+import { IconChevronDown, IconMenu, IconX } from "../components/Icons";
 import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
 
@@ -9,118 +12,163 @@ function Navbar() {
   const location = useLocation();
   const { user: currentUser, logout } = useAuth();
 
+  // A single open-menu state: "user" | "nav" | null (opening one closes the other).
+  const [menu, setMenu] = useState(null);
+  const headerRef = useRef(null);
+
   const isAuthPage =
-    location.pathname === "/" ||
-    location.pathname === "/register";
+    location.pathname === "/" || location.pathname === "/register";
+
+  const closeMenus = () => setMenu(null);
+
+  // Close menus on outside click or Escape. (Link clicks close via onClick.)
+  useEffect(() => {
+    if (!menu) return undefined;
+    const onDown = (e) => {
+      if (headerRef.current && !headerRef.current.contains(e.target)) {
+        setMenu(null);
+      }
+    };
+    const onKey = (e) => e.key === "Escape" && setMenu(null);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menu]);
 
   const handleLogout = () => {
+    setMenu(null);
     logout();
     navigate("/");
   };
 
-  const isActive = (path) => location.pathname === path;
+  const role = currentUser?.role;
+  const links = [{ to: "/home", label: "Home" }];
+  if (role === "Faculty") links.push({ to: "/faculty", label: "Faculty Corner" });
+  if (role === "Student")
+    links.push({ to: "/my-applications", label: "My Applications" });
+  if (role === "Coordinator")
+    links.push(
+      { to: "/approvals", label: "Approvals" },
+      { to: "/analytics", label: "Analytics" }
+    );
+  if (role === "Student" || role === "Faculty")
+    links.push({ to: "/messages", label: "Messages", prefix: true });
+
+  const isActive = (link) =>
+    link.prefix
+      ? location.pathname.startsWith(link.to)
+      : location.pathname === link.to;
 
   return (
-    <nav className="navbar">
-      <div className="nav-left">
-        <span className="nav-logo" onClick={() => navigate("/home")}>
-          <span className="nav-logo-badge">OQ</span>
-          Opportunity Quest
-        </span>
-
-        {!isAuthPage && (
-          <>
-            <span className="nav-divider" />
-            <Link
-              to="/home"
-              className={`nav-link${isActive("/home") ? " active" : ""}`}
+    <header className="navbar" ref={headerRef}>
+      <div className="navbar-inner">
+        <div className="nav-left">
+          {!isAuthPage && (
+            <button
+              type="button"
+              className="nav-burger"
+              aria-label="Menu"
+              aria-expanded={menu === "nav"}
+              onClick={() => setMenu(menu === "nav" ? null : "nav")}
             >
-              Home
-            </Link>
+              {menu === "nav" ? <IconX /> : <IconMenu />}
+            </button>
+          )}
 
-            {currentUser?.role === "Faculty" && (
-              <Link
-                to="/faculty"
-                className={`nav-link${isActive("/faculty") ? " active" : ""}`}
-              >
-                Faculty Corner
-              </Link>
-            )}
+          <Link to={currentUser ? "/home" : "/"} className="nav-brand">
+            <span className="nav-brand-badge">OQ</span>
+            <span className="nav-brand-name">Opportunity Quest</span>
+          </Link>
 
-            {currentUser?.role === "Student" && (
-              <Link
-                to="/my-applications"
-                className={`nav-link${
-                  isActive("/my-applications") ? " active" : ""
-                }`}
-              >
-                My Applications
-              </Link>
-            )}
-
-            {currentUser?.role === "Coordinator" && (
-              <>
+          {!isAuthPage && (
+            <nav className="nav-links" aria-label="Primary">
+              {links.map((link) => (
                 <Link
-                  to="/approvals"
-                  className={`nav-link${
-                    isActive("/approvals") ? " active" : ""
-                  }`}
+                  key={link.to}
+                  to={link.to}
+                  className={`nav-link${isActive(link) ? " active" : ""}`}
+                  aria-current={isActive(link) ? "page" : undefined}
                 >
-                  Approvals
+                  {link.label}
                 </Link>
-                <Link
-                  to="/analytics"
-                  className={`nav-link${
-                    isActive("/analytics") ? " active" : ""
-                  }`}
-                >
-                  Analytics
-                </Link>
-              </>
-            )}
+              ))}
+            </nav>
+          )}
+        </div>
 
-            {(currentUser?.role === "Student" ||
-              currentUser?.role === "Faculty") && (
-              <Link
-                to="/messages"
-                className={`nav-link${
-                  location.pathname.startsWith("/messages") ? " active" : ""
-                }`}
+        {!isAuthPage && currentUser && (
+          <div className="nav-right">
+            <NotificationBell />
+
+            <div className="nav-user">
+              <button
+                type="button"
+                className="nav-user-btn"
+                aria-haspopup="menu"
+                aria-expanded={menu === "user"}
+                onClick={() => setMenu(menu === "user" ? null : "user")}
               >
-                Messages
-              </Link>
-            )}
-          </>
+                <Avatar
+                  name={currentUser.name}
+                  image={currentUser.profileImage}
+                  size={32}
+                />
+                <span className="nav-user-meta">
+                  <span className="nav-user-name">
+                    {currentUser.prefix ? `${currentUser.prefix} ` : ""}
+                    {currentUser.name}
+                  </span>
+                  <span className="nav-user-role">{currentUser.role}</span>
+                </span>
+                <IconChevronDown className="nav-user-caret" />
+              </button>
+
+              {menu === "user" && (
+                <div className="nav-menu" role="menu">
+                  <Link
+                    to="/profile"
+                    className="nav-menu-item"
+                    role="menuitem"
+                    onClick={closeMenus}
+                  >
+                    Profile
+                  </Link>
+                  <div className="nav-menu-divider" />
+                  <button
+                    type="button"
+                    className="nav-menu-item nav-menu-danger"
+                    role="menuitem"
+                    onClick={handleLogout}
+                  >
+                    Log out
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
 
-      {!isAuthPage && (
-        <div className="nav-right">
-          <NotificationBell />
-
-          <Link to="/profile" className="user-chip">
-            <Avatar
-              name={currentUser?.name}
-              image={currentUser?.profileImage}
-              size={36}
-            />
-            <div className="user-info">
-              <span className="user-name">
-                {currentUser?.prefix ? `${currentUser.prefix} ` : ""}
-                {currentUser?.name}
-              </span>
-              <span className={`user-role ${currentUser?.role}`}>
-                {currentUser?.role}
-              </span>
-            </div>
-          </Link>
-
-          <button className="nav-logout" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
+      {/* Mobile nav panel */}
+      {!isAuthPage && menu === "nav" && (
+        <nav className="nav-mobile" aria-label="Primary">
+          {links.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={`nav-mobile-link${isActive(link) ? " active" : ""}`}
+              aria-current={isActive(link) ? "page" : undefined}
+              onClick={closeMenus}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
       )}
-    </nav>
+    </header>
   );
 }
 
