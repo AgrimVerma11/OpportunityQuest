@@ -1,0 +1,31 @@
+/* Opportunity category label. Muted, cohesive tints — colour to aid scanning,
+   not to shout. Foregrounds all clear AA on their tint. */
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  /* Neutral fallback for an unknown category. */
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+}
+
+.category-tag-internship {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.category-tag-research {
+  background: #eef1fa;
+  color: #3b3f9c;
+}
+.category-tag-paid-gig {
+  background: #e9f5ee;
+  color: #157347;
+}
+.category-tag-faculty-project {
+  background: #f6efe3;
+  color: #93590f;
+}

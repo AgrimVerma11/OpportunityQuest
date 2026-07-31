@@ -1,57 +1,94 @@
 /* ─────────────────────────────────────────
    DESIGN TOKENS — Opportunity Quest
-   The single source of truth for color, type,
-   spacing, radius, and elevation.
+   The single source of truth for color, type, spacing, radius, elevation.
    Imported first in main.jsx (before global.css).
 
-   Rule: components reference these variables —
-   no raw hex/px values in page CSS going forward.
+   Visual language: academic ink. A deep oxford-navy brand on a cool slate
+   neutral ramp; white surfaces separated by hairlines rather than heavy shadow;
+   restraint over decoration. One typeface (Inter), hierarchy through scale.
+
+   Rule: page/component CSS references these variables — never raw hex or ad-hoc
+   px for color, radius, or type.
 ───────────────────────────────────────── */
 
 :root {
-  /* ── Brand ───────────────────────────── */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-soft: #eff6ff;
+  /* ── Brand: oxford navy ──────────────── */
+  --color-primary: #1e3a5f;        /* primary actions, links */
+  --color-primary-hover: #16304d;  /* darker on press/hover */
+  --color-primary-active: #112538;
+  --color-primary-soft: #eef2f7;   /* navy-tinted fill: selected rows, soft chips */
+  --color-primary-border: #cdd8e6; /* navy-tinted hairline for soft fills */
+
+  /* ── Neutrals: slate ramp (cool) ─────── */
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
 
   /* ── Text ────────────────────────────── */
-  --color-text: #111827;          /* primary text */
-  --color-text-secondary: #6b7280; /* labels, captions */
-  --color-text-muted: #9ca3af;    /* placeholders, hints */
+  --color-text: #0f172a;           /* primary text (slate-900) */
+  --color-text-secondary: #475569; /* labels, captions (slate-600) */
+  --color-text-muted: #64748b;     /* meta, hints (slate-500) — AA on white */
+  --color-text-faint: #94a3b8;     /* decorative only (slate-400) */
 
   /* ── Surface ─────────────────────────── */
-  --color-bg: #f5f7fb;            /* app background */
-  --color-surface: #ffffff;       /* cards, panels */
-  --color-surface-subtle: #f9fafb; /* hovered rows, insets */
-  --color-border: #e5e7eb;        /* default hairline */
-  --color-border-strong: #d1d5db; /* hovered / focused borders */
+  --color-bg: #f8fafc;             /* app background (slate-50) */
+  --color-surface: #ffffff;        /* cards, panels */
+  --color-surface-subtle: #f1f5f9; /* hovered rows, insets (slate-100) */
+  --color-border: #e2e8f0;         /* default hairline (slate-200) */
+  --color-border-strong: #cbd5e1;  /* hovered / focused borders (slate-300) */
 
-  /* ── Status ──────────────────────────── */
-  --color-success: #16a34a;
+  /* ── Status (semantic) ───────────────── */
+  --color-success: #15803d;
   --color-success-soft: #f0fdf4;
   --color-danger: #dc2626;
   --color-danger-hover: #b91c1c;
   --color-danger-soft: #fef2f2;
-  --color-warning: #d97706;
+  --color-warning: #b45309;
   --color-warning-soft: #fffbeb;
+  --color-info: #1e3a5f;
+  --color-info-soft: #eef2f7;
+
+  /* ── Focus ring ──────────────────────── */
+  --color-ring: #3b6ea5;           /* a lighter navy — visible ring on white */
 
   /* ── Typography ──────────────────────── */
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
-  /* Academic serif — reserved for landing hero headings ONLY, not dashboards. */
-  --font-serif: 'Merriweather', Georgia, 'Times New Roman', serif;
+    'Segoe UI', Roboto, sans-serif;
+  /* Display face for headings — a little more character than the body sans,
+     paired with Inter for everything else. Falls back to the body stack. */
+  --font-display: 'Plus Jakarta Sans', var(--font-sans);
 
-  --text-h1: 2.5rem;    /* 40px — page H1 */
-  --text-h2: 1.5rem;    /* 24px — section heading */
-  --text-h3: 1.25rem;   /* 20px — card title */
-  --text-body: 1rem;    /* 16px — body */
-  --text-sm: 0.875rem;  /* 14px — secondary */
-  --text-xs: 0.8125rem; /* 13px — meta / captions */
+  /* Type scale (rem, 16px base). Semantic aliases kept for existing pages. */
+  --text-display: 2.25rem;  /* 36px — marketing hero */
+  --text-h1: 1.75rem;       /* 28px — page title */
+  --text-h2: 1.375rem;      /* 22px — section heading */
+  --text-h3: 1.125rem;      /* 18px — card title */
+  --text-body: 1rem;        /* 16px — body */
+  --text-sm: 0.875rem;      /* 14px — secondary */
+  --text-xs: 0.8125rem;     /* 13px — meta / captions */
 
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
+  --weight-extrabold: 800;  /* display / masthead only */
+
+  /* Tracking + leading — tokenized so headings share one rhythm. */
+  --tracking-tight: -0.02em;   /* large headings */
+  --tracking-snug: -0.01em;    /* medium headings */
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;     /* eyebrow / uppercase labels */
+  --leading-tight: 1.2;        /* headings */
+  --leading-snug: 1.4;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;     /* body copy */
 
   /* ── Spacing (4px base) ──────────────── */
   --space-1: 4px;
@@ -60,25 +97,38 @@
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
-  --space-7: 40px;
+  --space-7: 48px;
   --space-8: 64px;
 
-  /* ── Radius ──────────────────────────── */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;   /* cards — spec calls for 14–18px */
+  /* ── Radius (tightened — enterprise, not rounded) ── */
+  --radius-sm: 6px;    /* inputs, buttons, chips */
+  --radius-md: 8px;    /* nested panels, menus */
+  --radius-lg: 12px;   /* cards, modals */
   --radius-full: 999px;
 
-  /* ── Elevation (subtle only) ─────────── */
+  /* ── Elevation (hairline-first; shadow used sparingly) ── */
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 1px 3px rgba(15, 23, 42, 0.06),
+  --shadow-md: 0 2px 6px rgba(15, 23, 42, 0.06),
     0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.10),
+    0 2px 6px rgba(15, 23, 42, 0.05);
 
   /* ── Layout ──────────────────────────── */
-  --page-max: 1280px;
+  --page-max: 1200px;
   --page-pad: 40px;
 
   /* ── Motion ──────────────────────────── */
   --transition: 150ms ease;
+  --transition-slow: 220ms ease;
+
+  /* ── Breakpoints (reference — used consistently in @media) ──
+     --bp-sm: 640px;  --bp-md: 768px;  --bp-lg: 1024px;  --bp-xl: 1200px;
+     CSS variables can't be used inside media queries, so these four values
+     are the ONLY breakpoints the app uses. Do not invent new ones. */
+
+  --z-nav: 100;
+  --z-dropdown: 200;
+  --z-modal: 1000;
+  --z-confirm: 1050;   /* above a modal — confirms can be raised from inside one */
+  --z-toast: 1100;
 }

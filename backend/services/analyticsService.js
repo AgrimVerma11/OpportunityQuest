@@ -12,6 +12,9 @@ import { OPPORTUNITY_CATEGORIES } from "../constants/opportunityConstants.js";
 
 const TREND_DAYS = 30;
 
+// Opportunity display statuses, in the order the dashboard shows them.
+const OPPORTUNITY_DISPLAY_STATUSES = ["Active", "Expired", "Archived", "Closed"];
+
 // [{ _id, count }] → { [_id]: count }.
 const toCounts = (rows) =>
   rows.reduce((acc, r) => {
@@ -49,7 +52,7 @@ export const getCoordinatorAnalytics = async (organizationId) => {
   const [
     students,
     facultyRows,
-    activeOpportunities,
+    oppStatusRows,
     categoryRows,
     totalApplications,
     funnelRows,
@@ -58,7 +61,7 @@ export const getCoordinatorAnalytics = async (organizationId) => {
   ] = await Promise.all([
     userRepo.countByRole(organizationId, ROLES.STUDENT),
     userRepo.facultyStatusBreakdown(organizationId),
-    opportunityRepo.countActive(organizationId),
+    opportunityRepo.opportunityStatusBreakdown(organizationId),
     opportunityRepo.aggregateCategoryStats(organizationId),
     applicationRepo.countByOrg(organizationId),
     applicationRepo.funnelByOrg(organizationId),
@@ -67,13 +70,18 @@ export const getCoordinatorAnalytics = async (organizationId) => {
   ]);
 
   const facultyByStatus = toCounts(facultyRows);
+  const opportunitiesByStatus = fillKeys(
+    toCounts(oppStatusRows),
+    OPPORTUNITY_DISPLAY_STATUSES
+  );
 
   return {
     kpis: {
       students,
       activeFaculty: facultyByStatus[ACCOUNT_STATUS.ACTIVE] || 0,
       pendingFaculty: facultyByStatus[ACCOUNT_STATUS.PENDING] || 0,
-      activeOpportunities,
+      // Truly active — accepting applications now (expired items excluded).
+      activeOpportunities: opportunitiesByStatus.Active,
       totalApplications,
     },
     applicationFunnel: fillKeys(toCounts(funnelRows), APPLICATION_STATUSES),
@@ -81,6 +89,7 @@ export const getCoordinatorAnalytics = async (organizationId) => {
       toCounts(categoryRows),
       OPPORTUNITY_CATEGORIES
     ),
+    opportunitiesByStatus,
     facultyByStatus: fillKeys(facultyByStatus, Object.values(ACCOUNT_STATUS)),
     topOpportunities,
     applicationsTrend: fillDays(dailyRows, since, TREND_DAYS),

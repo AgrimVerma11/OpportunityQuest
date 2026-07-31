@@ -1,8 +1,15 @@
 import { useEffect, useState } from "react";
 
 import Navbar from "./Navbar";
+import PageHeader from "../components/PageHeader";
 import Avatar from "../components/Avatar";
+import Modal from "../components/Modal";
+import Field from "../components/Field";
+import Spinner from "../components/Spinner";
+import EmptyState from "../components/EmptyState";
 import { useConfirm } from "../components/ConfirmProvider";
+import { useToast } from "../components/ToastProvider";
+import { IconCheck } from "../components/Icons";
 import { fetchWithAuth, patchWithAuth } from "../utils/api";
 
 import "./Approvals.css";
@@ -23,10 +30,10 @@ function timeAgo(dateString) {
 
 function Approvals() {
   const confirm = useConfirm();
+  const toast = useToast();
 
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState([]);
-  const [actionError, setActionError] = useState("");
   const [busyId, setBusyId] = useState(null);
 
   // Reject modal — kept separate so a reason can be captured deliberately.
@@ -61,17 +68,17 @@ function Approvals() {
     if (!ok) return;
 
     setBusyId(faculty._id);
-    setActionError("");
     try {
       const res = await patchWithAuth(`/admin/faculty/${faculty._id}/approve`);
       if (res.success) {
         removeFromList(faculty._id);
+        toast.success(`${faculty.name} approved.`);
       } else {
-        setActionError(res.message || "Could not approve this account.");
+        toast.error(res.message || "Could not approve this account.");
       }
     } catch (err) {
       console.error(err);
-      setActionError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyId(null);
     }
@@ -80,7 +87,6 @@ function Approvals() {
   const openReject = (faculty) => {
     setRejecting(faculty);
     setReason("");
-    setActionError("");
   };
 
   const closeReject = () => {
@@ -92,25 +98,25 @@ function Approvals() {
     const faculty = rejecting;
     setBusyId(faculty._id);
     try {
-      const res = await patchWithAuth(
-        `/admin/faculty/${faculty._id}/reject`,
-        { reason: reason.trim() }
-      );
+      const res = await patchWithAuth(`/admin/faculty/${faculty._id}/reject`, {
+        reason: reason.trim(),
+      });
       if (res.success) {
         removeFromList(faculty._id);
         closeReject();
+        toast.success(`${faculty.name}'s request was rejected.`);
       } else {
-        setActionError(res.message || "Could not reject this account.");
+        toast.error(res.message || "Could not reject this account.");
       }
     } catch (err) {
       console.error(err);
-      setActionError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setBusyId(null);
     }
   };
 
-  const heroSubtitle = loading
+  const subtitle = loading
     ? "Loading requests…"
     : pending.length === 0
     ? "Every request has been reviewed."
@@ -122,31 +128,24 @@ function Approvals() {
     <>
       <Navbar />
 
-      <div className="approvals-page">
-        <div className="approvals-inner">
-          <div className="approvals-hero">
-            <p className="approvals-eyebrow">Coordinator</p>
-            <h1>Faculty Approvals</h1>
-            <p className="approvals-sub">{heroSubtitle}</p>
-          </div>
+      <div className="approvals">
+        <PageHeader title="Faculty approvals" subtitle={subtitle} />
 
-          {actionError && <div className="action-error-bar">{actionError}</div>}
-
+        <div className="container approvals-body">
           {loading ? (
-            <p className="approvals-loading">Loading…</p>
-          ) : pending.length === 0 ? (
-            <div className="approvals-empty">
-              <div className="approvals-empty-mark">✓</div>
-              <h2>You&rsquo;re all caught up</h2>
-              <p>
-                No faculty are awaiting approval right now. New requests will
-                appear here as they come in.
-              </p>
+            <div className="approvals-status">
+              <Spinner center label="Loading requests" />
             </div>
+          ) : pending.length === 0 ? (
+            <EmptyState
+              icon={<IconCheck />}
+              title="You’re all caught up"
+              description="No faculty are awaiting approval right now. New requests will appear here as they come in."
+            />
           ) : (
             <div className="approvals-list">
               {pending.map((f) => (
-                <div className="approval-card" key={f._id}>
+                <div className="card approval-card" key={f._id}>
                   <div className="approval-top">
                     <div className="approval-identity">
                       <Avatar name={f.name} image={f.profileImage} size={52} />
@@ -181,13 +180,13 @@ function Approvals() {
                     <div className="approval-fact">
                       <span className="approval-fact-label">Department</span>
                       <span className="approval-fact-value">
-                        {f.department || "—"}
+                        {f.department || "Not specified"}
                       </span>
                     </div>
                     <div className="approval-fact">
                       <span className="approval-fact-label">Designation</span>
                       <span className="approval-fact-value">
-                        {f.designation || "—"}
+                        {f.designation || "Not specified"}
                       </span>
                     </div>
 
@@ -198,7 +197,7 @@ function Approvals() {
                     >
                       <span className="approval-verify-label">Employee ID</span>
                       <span className="approval-verify-value">
-                        {f.employeeId || "Not provided — verify carefully"}
+                        {f.employeeId || "Not provided (verify carefully)"}
                       </span>
                     </div>
                   </div>
@@ -210,28 +209,13 @@ function Approvals() {
       </div>
 
       {rejecting && (
-        <div
-          className="modal-overlay"
-          onClick={(e) => e.target === e.currentTarget && closeReject()}
-        >
-          <div className="modal-card">
-            <h3>Reject {rejecting.name}?</h3>
-            <p className="modal-hint">
-              They will not be able to sign in. A short reason helps them
-              understand what to do next.
-            </p>
-
-            <label className="modal-label">Reason (optional)</label>
-            <textarea
-              className="modal-textarea"
-              placeholder="e.g. Could not verify the employee ID against the directory."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              maxLength={500}
-              rows={3}
-            />
-
-            <div className="modal-actions">
+        <Modal
+          open
+          onClose={closeReject}
+          title={`Reject ${rejecting.name}?`}
+          size="sm"
+          footer={
+            <>
               <button className="btn btn-secondary" onClick={closeReject}>
                 Cancel
               </button>
@@ -242,9 +226,23 @@ function Approvals() {
               >
                 {busyId === rejecting._id ? "Rejecting…" : "Reject account"}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <p className="approvals-modal-hint">
+            They will not be able to sign in. A short reason helps them
+            understand what to do next.
+          </p>
+          <Field id="reject-reason" label="Reason (optional)">
+            <textarea
+              placeholder="e.g. Could not verify the employee ID against the directory."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={500}
+              rows={3}
+            />
+          </Field>
+        </Modal>
       )}
     </>
   );

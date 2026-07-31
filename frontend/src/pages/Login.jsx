@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { IconCheck } from "../components/Icons";
+import Field from "../components/Field";
 import { useAuth } from "../context/AuthContext";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import "./Auth.css";
@@ -65,75 +66,80 @@ function Login() {
 
   return (
     <div className="auth-split">
-
-      {/* ── LEFT — branding ── */}
+      {/* ── Left — brand hero ── */}
       <div className="auth-left">
         <div className="auth-brand">
           <div className="auth-logo">OQ</div>
-          <h1>Opportunity<br />Quest</h1>
+          <h1>
+            Opportunity
+            <br />
+            Quest
+          </h1>
           <p className="auth-tagline">
-            Your gateway to internships, research projects and faculty collaborations — all in one place.
+            Your gateway to internships, research projects and faculty
+            collaborations, all in one place.
           </p>
         </div>
 
         <ul className="auth-features">
-          <li><span className="check"><IconCheck /></span> Faculty-posted opportunities</li>
-          <li><span className="check"><IconCheck /></span> Research, internships &amp; paid gigs</li>
-          <li><span className="check"><IconCheck /></span> Filter by branch, year &amp; category</li>
+          <li>
+            <span className="check">
+              <IconCheck />
+            </span>
+            Faculty-posted opportunities
+          </li>
+          <li>
+            <span className="check">
+              <IconCheck />
+            </span>
+            Research, internships &amp; paid gigs
+          </li>
+          <li>
+            <span className="check">
+              <IconCheck />
+            </span>
+            Filter by branch, year &amp; category
+          </li>
         </ul>
 
-        <p className="auth-institute">
-          Designed &amp; built by Agrim Verma
-        </p>
+        <p className="auth-institute">Designed &amp; built by Agrim Verma</p>
       </div>
 
-      {/* ── RIGHT — form ── */}
+      {/* ── Right — form ── */}
       <div className="auth-right">
         <form className="auth-form" onSubmit={handleSubmit}>
-
           <div className="auth-form-header">
             <h2>Welcome back</h2>
             <p>Sign in with your Thapar account to continue.</p>
           </div>
 
-          {notice && (
-            <p
-              style={{
-                color: "var(--color-success)",
-                fontSize: "0.875rem",
-                marginBottom: "0.75rem",
-              }}
-            >
-              {notice}
-            </p>
-          )}
+          {notice && <p className="auth-notice">{notice}</p>}
 
-          <div className="auth-field">
-            <label htmlFor="loginEmail">Email</label>
+          <Field id="loginEmail" label="Email" error={errors.email}>
             <input
               type="email"
-              id="loginEmail"
               placeholder="you@thapar.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
-            {errors.email && <span className="auth-error">{errors.email}</span>}
-          </div>
+          </Field>
 
-          <div className="auth-field">
-            <label htmlFor="loginPassword">Password</label>
+          <Field id="loginPassword" label="Password" error={errors.password}>
             <input
               type="password"
-              id="loginPassword"
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            {errors.password && <span className="auth-error">{errors.password}</span>}
-          </div>
+          </Field>
 
-          <button id="loginBtn" type="submit" className="auth-submit" disabled={loading}>
-            {loading ? "Signing in…" : "Sign In"}
+          <button
+            id="loginBtn"
+            type="submit"
+            className="btn btn-primary btn-block"
+            disabled={loading}
+          >
+            {loading ? "Signing in…" : "Sign in"}
           </button>
 
           <GoogleAuthButton
@@ -143,9 +149,8 @@ function Login() {
           />
 
           <p className="auth-redirect">
-            Don't have an account? <Link to="/register">Create one</Link>
+            Don&apos;t have an account? <Link to="/register">Create one</Link>
           </p>
-
         </form>
       </div>
     </div>

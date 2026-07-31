@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 
+import Modal from "./Modal";
+import Field from "./Field";
 import { postPublic } from "../utils/api";
-import { BRANCH_OPTIONS, YEAR_OPTIONS } from "../constants/profileOptions";
+import {
+  BRANCH_OPTIONS,
+  YEAR_OPTIONS,
+  DEPARTMENT_OPTIONS,
+} from "../constants/profileOptions";
 import "./GoogleAuthButton.css";
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-const DEPARTMENTS = ["DCSE", "ECED", "EID", "MEC", "CIVIL", "CHEMICAL", "SOM"];
 
 // Loads the Google Identity Services library once, on demand.
 function loadGoogleScript() {
@@ -161,36 +164,56 @@ export default function GoogleAuthButton({
 
       {error && !onboarding && <p className="google-auth-error">{error}</p>}
 
-      {onboarding &&
-        createPortal(
-          <div
-            className="google-modal-overlay"
-            onClick={(e) => e.target === e.currentTarget && setOnboarding(null)}
-          >
-          <div className="google-modal-card">
-            <h3>Finish setting up</h3>
-            <p className="google-onboard-hint">
-              Signing in as <strong>{onboarding.email}</strong>. A few details
-              to complete your account.
-            </p>
+      {onboarding && (
+        <Modal
+          open
+          onClose={() => setOnboarding(null)}
+          title="Finish setting up"
+          size="sm"
+          footer={
+            <>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setOnboarding(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={submitOnboarding}
+                disabled={submitting}
+              >
+                {submitting ? "Creating…" : "Continue"}
+              </button>
+            </>
+          }
+        >
+          <p className="google-onboard-hint">
+            Signing in as <strong>{onboarding.email}</strong>. A few details to
+            complete your account.
+          </p>
 
-            <div className="google-onboard-form">
-              <label>I am a</label>
+          <div className="google-onboard-fields">
+            <Field id="g-role" label="I am a">
               <select name="role" value={form.role} onChange={setField}>
                 <option value="Student">Student</option>
                 <option value="Faculty">Faculty</option>
               </select>
+            </Field>
 
-              <label>Gender</label>
+            <Field id="g-gender" label="Gender">
               <select name="gender" value={form.gender} onChange={setField}>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
+            </Field>
 
-              {form.role === "Student" ? (
-                <>
-                  <label>Branch</label>
+            {form.role === "Student" ? (
+              <>
+                <Field id="g-branch" label="Branch">
                   <select name="branch" value={form.branch} onChange={setField}>
                     <option value="">Select branch</option>
                     {BRANCH_OPTIONS.map((b) => (
@@ -199,8 +222,9 @@ export default function GoogleAuthButton({
                       </option>
                     ))}
                   </select>
+                </Field>
 
-                  <label>Year</label>
+                <Field id="g-year" label="Year">
                   <select name="year" value={form.year} onChange={setField}>
                     <option value="">Select year</option>
                     {YEAR_OPTIONS.map((y) => (
@@ -209,57 +233,40 @@ export default function GoogleAuthButton({
                       </option>
                     ))}
                   </select>
-                </>
-              ) : (
-                <>
-                  <label>Department</label>
+                </Field>
+              </>
+            ) : (
+              <>
+                <Field id="g-department" label="Department">
                   <select
                     name="department"
                     value={form.department}
                     onChange={setField}
                   >
                     <option value="">Select department</option>
-                    {DEPARTMENTS.map((d) => (
+                    {DEPARTMENT_OPTIONS.map((d) => (
                       <option key={d} value={d}>
                         {d}
                       </option>
                     ))}
                   </select>
+                </Field>
 
-                  <label>Employee ID</label>
+                <Field id="g-employeeId" label="Employee ID">
                   <input
                     name="employeeId"
                     value={form.employeeId}
                     onChange={setField}
                     placeholder="Your institutional employee ID"
                   />
-                </>
-              )}
+                </Field>
+              </>
+            )}
 
-              {error && <p className="google-auth-error">{error}</p>}
-
-              <div className="google-onboard-actions">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setOnboarding(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={submitOnboarding}
-                  disabled={submitting}
-                >
-                  {submitting ? "Creating…" : "Continue"}
-                </button>
-              </div>
-            </div>
+            {error && <p className="google-auth-error">{error}</p>}
           </div>
-        </div>,
-          document.body
-        )}
+        </Modal>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import Avatar from "./Avatar";
+import Badge from "./Badge";
 import { IconLocation } from "./Icons";
 import "./ProfileView.css";
 
@@ -24,7 +25,7 @@ export default function ProfileView({ profile }) {
         <div className="pv-head-text">
           <h3 className="pv-name">{displayName}</h3>
           <div className="pv-sub">
-            <span className={`pv-role ${profile.role}`}>{profile.role}</span>
+            <Badge tone="primary">{profile.role}</Badge>
             {subline && <span className="pv-subline">{subline}</span>}
           </div>
           {isFaculty && profile.office && (
@@ -65,7 +66,7 @@ export default function ProfileView({ profile }) {
             <Section label="Society / Club">
               <p>
                 {profile.society.name}
-                {profile.society.position ? ` — ${profile.society.position}` : ""}
+                {profile.society.position ? ` · ${profile.society.position}` : ""}
               </p>
             </Section>
           )}

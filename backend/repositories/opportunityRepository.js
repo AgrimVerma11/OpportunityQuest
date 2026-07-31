@@ -80,12 +80,50 @@ export const countActive = (organizationId) =>
     isDeleted: { $ne: true },
   });
 
-export const aggregateCategoryStats = (organizationId) =>
+// Opportunity counts by *display* status: Active / Expired / Archived / Closed.
+// "Expired" is derived (status Active but the deadline has passed), matching how
+// the faculty dashboard labels opportunities, so the coordinator sees the same
+// distinction instead of expired items being lumped in with active ones.
+export const opportunityStatusBreakdown = (organizationId) =>
   Opportunity.aggregate([
     {
       $match: {
         organizationId: new mongoose.Types.ObjectId(organizationId),
         isDeleted: { $ne: true },
+      },
+    },
+    {
+      $addFields: {
+        displayStatus: {
+          $switch: {
+            branches: [
+              { case: { $eq: ["$status", "Closed"] }, then: "Closed" },
+              { case: { $eq: ["$status", "Archived"] }, then: "Archived" },
+              {
+                case: {
+                  $and: [
+                    { $eq: ["$status", "Active"] },
+                    { $lt: ["$deadline", "$$NOW"] },
+                  ],
+                },
+                then: "Expired",
+              },
+            ],
+            default: "Active",
+          },
+        },
+      },
+    },
+    { $group: { _id: "$displayStatus", count: { $sum: 1 } } },
+  ]);
+
+export const aggregateCategoryStats = (organizationId, { status } = {}) =>
+  Opportunity.aggregate([
+    {
+      $match: {
+        organizationId: new mongoose.Types.ObjectId(organizationId),
+        isDeleted: { $ne: true },
+        ...(status ? { status } : {}),
       },
     },
     { $group: { _id: "$category", count: { $sum: 1 } } },

@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { IconCheck } from "../components/Icons";
+import Field from "../components/Field";
 import { useAuth } from "../context/AuthContext";
 import GoogleAuthButton from "../components/GoogleAuthButton";
+import { BRANCH_OPTIONS, DEPARTMENT_OPTIONS } from "../constants/profileOptions";
 import "./Auth.css";
 
 function Register() {
@@ -115,29 +117,46 @@ function Register() {
 
   return (
     <div className="auth-split">
-
-      {/* ── LEFT — branding ── */}
+      {/* ── Left — brand hero ── */}
       <div className="auth-left">
         <div className="auth-brand">
           <div className="auth-logo">OQ</div>
-          <h1>Join Opportunity<br />Quest</h1>
+          <h1>
+            Join Opportunity
+            <br />
+            Quest
+          </h1>
           <p className="auth-tagline">
-            Discover internships, research and faculty collaborations across campus — all in one place.
+            Discover internships, research and faculty collaborations across
+            campus, all in one place.
           </p>
         </div>
 
         <ul className="auth-features">
-          <li><span className="check"><IconCheck /></span> Browse faculty-posted opportunities</li>
-          <li><span className="check"><IconCheck /></span> Filter by your branch &amp; year</li>
-          <li><span className="check"><IconCheck /></span> Apply to research &amp; paid gigs</li>
+          <li>
+            <span className="check">
+              <IconCheck />
+            </span>
+            Browse faculty-posted opportunities
+          </li>
+          <li>
+            <span className="check">
+              <IconCheck />
+            </span>
+            Filter by your branch &amp; year
+          </li>
+          <li>
+            <span className="check">
+              <IconCheck />
+            </span>
+            Apply to research &amp; paid gigs
+          </li>
         </ul>
 
-        <p className="auth-institute">
-          Designed &amp; built by Agrim Verma
-        </p>
+        <p className="auth-institute">Designed &amp; built by Agrim Verma</p>
       </div>
 
-      {/* ── RIGHT — form ── */}
+      {/* ── Right — form ── */}
       <div className="auth-right">
         {submitted ? (
           <div className="auth-form">
@@ -145,208 +164,197 @@ function Register() {
               <h2>Request submitted</h2>
               <p>Your faculty account is with the coordinator for review.</p>
             </div>
-            <p
-              style={{
-                color: "var(--color-text-secondary)",
-                fontSize: "0.875rem",
-                lineHeight: 1.6,
-                marginBottom: "1.25rem",
-              }}
-            >
+            <p className="auth-note">
               You&rsquo;ll be able to sign in once it&rsquo;s approved. We&rsquo;ll
-              keep it under your Thapar email — come back and sign in when
+              keep it under your Thapar email. Come back and sign in when
               it&rsquo;s ready.
             </p>
             <button
               type="button"
-              className="auth-submit"
+              className="btn btn-primary btn-block"
               onClick={() => navigate("/")}
             >
               Back to sign in
             </button>
           </div>
         ) : (
-        <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="auth-form" onSubmit={handleSubmit}>
+            <div className="auth-form-header">
+              <h2>Create account</h2>
+              <p>Build your profile and start exploring opportunities.</p>
+            </div>
 
-          <div className="auth-form-header">
-            <h2>Create account</h2>
-            <p>Build your profile and start exploring opportunities.</p>
-          </div>
+            <Field id="registerName" label="Full name" error={errors.name}>
+              <input
+                name="name"
+                placeholder="e.g. Rahul Sharma"
+                onChange={handleChange}
+              />
+            </Field>
 
-          {/* NAME */}
-          <div className="auth-field">
-            <label htmlFor="registerName">Full Name</label>
-            <input
-              name="name"
-              id="registerName"
-              placeholder="e.g. Rahul Sharma"
-              onChange={handleChange}
-            />
-            {errors.name && <span className="auth-error">{errors.name}</span>}
-          </div>
+            <Field id="registerEmail" label="Thapar email" error={errors.email}>
+              <input
+                name="email"
+                type="email"
+                placeholder="you@thapar.edu"
+                onChange={handleChange}
+              />
+            </Field>
 
-          {/* EMAIL */}
-          <div className="auth-field">
-            <label htmlFor="registerEmail">Thapar Email</label>
-            <input
-              name="email"
-              type="email"
-              id="registerEmail"
-              placeholder="you@thapar.edu"
-              onChange={handleChange}
-            />
-            {errors.email && <span className="auth-error">{errors.email}</span>}
-          </div>
-
-          {/* PASSWORD */}
-          <div className="auth-field">
-            <label htmlFor="registerPassword">Password</label>
-            <input
-              name="password"
+            <Field
               id="registerPassword"
-              type="password"
-              placeholder="At least 8 characters"
-              onChange={handleChange}
-            />
-            {errors.password && <span className="auth-error">{errors.password}</span>}
-          </div>
+              label="Password"
+              error={errors.password}
+            >
+              <input
+                name="password"
+                type="password"
+                placeholder="At least 8 characters"
+                onChange={handleChange}
+              />
+            </Field>
 
-          {/* CONFIRM PASSWORD */}
-          <div className="auth-field">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              name="confirmPassword"
+            <Field
               id="confirmPassword"
-              type="password"
-              placeholder="Repeat your password"
-              onChange={handleChange}
-            />
-            {errors.confirmPassword && <span className="auth-error">{errors.confirmPassword}</span>}
-          </div>
+              label="Confirm password"
+              error={errors.confirmPassword}
+            >
+              <input
+                name="confirmPassword"
+                type="password"
+                placeholder="Repeat your password"
+                onChange={handleChange}
+              />
+            </Field>
 
-          <div className="auth-divider">Account details</div>
+            <div className="auth-divider">Account details</div>
 
-          {/* ROLE + GENDER */}
-          <div className="auth-row">
-            <div className="auth-field">
-              <label htmlFor="registerRole">Role</label>
-              <select name="role" id="registerRole" onChange={handleChange} value={formData.role}>
-                <option value="Student">Student</option>
-                <option value="Faculty">Faculty</option>
-              </select>
-            </div>
-
-            <div className="auth-field">
-              <label htmlFor="registerGender">Gender</label>
-              <select name="gender" id="registerGender" onChange={handleChange} value={formData.gender}>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-          </div>
-
-          {/* STUDENT FIELDS */}
-          {formData.role === "Student" && (
             <div className="auth-row">
-              <div className="auth-field">
-                <label htmlFor="registerBranch">Branch</label>
-                <select name="branch" id="registerBranch" onChange={handleChange} value={formData.branch}>
-                  <option value="">Select Branch</option>
-                  <option value="COE">COE</option>
-                  <option value="COPC">COPC</option>
-                  <option value="COBS">COBS</option>
-                  <option value="DSAI">DSAI</option>
-                  <option value="EEC">EEC</option>
-                  <option value="ECE">ECE</option>
-                  <option value="ENC">ENC</option>
-                  <option value="RAI">RAI</option>
-                  <option value="EVD">EVD</option>
-                  <option value="EIC">EIC</option>
-                  <option value="MEE">MEE</option>
-                  <option value="MEC">MEC</option>
-                  <option value="CHE">CHE</option>
-                  <option value="CIE">CIE</option>
-                  <option value="CCA">CCA</option>
-                  <option value="ELE">ELE</option>
-                  <option value="BME">BME</option>
-                  <option value="BT">BT</option>
+              <Field id="registerRole" label="Role">
+                <select name="role" onChange={handleChange} value={formData.role}>
+                  <option value="Student">Student</option>
+                  <option value="Faculty">Faculty</option>
                 </select>
-                {errors.branch && <span className="auth-error">{errors.branch}</span>}
-              </div>
+              </Field>
 
-              <div className="auth-field">
-                <label htmlFor="registerYear">Year</label>
-                <select name="year" id="registerYear" onChange={handleChange} value={formData.year}>
-                  <option value="">Select Year</option>
-                  <option value="1">1st Year</option>
-                  <option value="2">2nd Year</option>
-                  <option value="3">3rd Year</option>
-                  <option value="4">4th Year</option>
+              <Field id="registerGender" label="Gender">
+                <select
+                  name="gender"
+                  onChange={handleChange}
+                  value={formData.gender}
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
                 </select>
-                {errors.year && <span className="auth-error">{errors.year}</span>}
-              </div>
+              </Field>
             </div>
-          )}
 
-          {/* FACULTY FIELDS */}
-          {formData.role === "Faculty" && (
-            <>
-              <div className="auth-field">
-                <label htmlFor="registerDepartment">Department</label>
-                <select name="department" id="registerDepartment" onChange={handleChange} value={formData.department}>
-                  <option value="">Select Department</option>
-                  <option value="DCSE">DCSE</option>
-                  <option value="ECED">ECED</option>
-                  <option value="EID">EID</option>
-                  <option value="MEC">MEC</option>
-                  <option value="CIVIL">CIVIL</option>
-                  <option value="CHEMICAL">CHEMICAL</option>
-                  <option value="SOM">SOM</option>
-                </select>
-                {errors.department && <span className="auth-error">{errors.department}</span>}
+            {formData.role === "Student" && (
+              <div className="auth-row">
+                <Field id="registerBranch" label="Branch" error={errors.branch}>
+                  <select
+                    name="branch"
+                    onChange={handleChange}
+                    value={formData.branch}
+                  >
+                    <option value="">Select branch</option>
+                    {BRANCH_OPTIONS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field id="registerYear" label="Year" error={errors.year}>
+                  <select
+                    name="year"
+                    onChange={handleChange}
+                    value={formData.year}
+                  >
+                    <option value="">Select year</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                  </select>
+                </Field>
               </div>
+            )}
 
-              <div className="auth-field">
-                <label htmlFor="registerEmployeeId">Employee ID</label>
-                <input
-                  name="employeeId"
+            {formData.role === "Faculty" && (
+              <>
+                <Field
+                  id="registerDepartment"
+                  label="Department"
+                  error={errors.department}
+                >
+                  <select
+                    name="department"
+                    onChange={handleChange}
+                    value={formData.department}
+                  >
+                    <option value="">Select department</option>
+                    {DEPARTMENT_OPTIONS.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field
                   id="registerEmployeeId"
-                  placeholder="Your institutional employee ID"
-                  onChange={handleChange}
-                  value={formData.employeeId}
-                />
-                {errors.employeeId && <span className="auth-error">{errors.employeeId}</span>}
-              </div>
+                  label="Employee ID"
+                  error={errors.employeeId}
+                >
+                  <input
+                    name="employeeId"
+                    placeholder="Your institutional employee ID"
+                    onChange={handleChange}
+                    value={formData.employeeId}
+                  />
+                </Field>
 
-              <div className="auth-field">
-                <label htmlFor="registerInterests">Research Interests <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optional)</span></label>
-                <textarea
-                  name="interests"
+                <Field
                   id="registerInterests"
-                  placeholder="e.g. Machine Learning, IoT, Embedded Systems"
-                  onChange={handleChange}
-                  value={formData.interests}
-                />
-              </div>
-            </>
-          )}
+                  label={
+                    <>
+                      Research interests{" "}
+                      <span className="auth-optional">(optional)</span>
+                    </>
+                  }
+                >
+                  <textarea
+                    name="interests"
+                    placeholder="e.g. Machine Learning, IoT, Embedded Systems"
+                    onChange={handleChange}
+                    value={formData.interests}
+                  />
+                </Field>
+              </>
+            )}
 
-          <button id="registerBtn" type="submit" className="auth-submit" disabled={loading}>
-            {loading ? "Creating account…" : "Create Account"}
-          </button>
+            <button
+              id="registerBtn"
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={loading}
+            >
+              {loading ? "Creating account…" : "Create account"}
+            </button>
 
-          <GoogleAuthButton
-            onSignedIn={handleGoogleSignedIn}
-            onRegistered={handleStudentRegistered}
-            onPending={() => setSubmitted(true)}
-          />
+            <GoogleAuthButton
+              onSignedIn={handleGoogleSignedIn}
+              onRegistered={handleStudentRegistered}
+              onPending={() => setSubmitted(true)}
+            />
 
-          <p className="auth-redirect">
-            Already have an account? <Link to="/">Sign in</Link>
-          </p>
-
-        </form>
+            <p className="auth-redirect">
+              Already have an account? <Link to="/">Sign in</Link>
+            </p>
+          </form>
         )}
       </div>
     </div>

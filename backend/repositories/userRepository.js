@@ -50,7 +50,7 @@ export const countByRole = (organizationId, role) =>
 // first, with who approved them (if anyone).
 export const findFacultyByOrg = (organizationId) =>
   User.find({ organizationId, role: ROLES.FACULTY })
-    .select("name department employeeId accountStatus createdAt approvedAt approvedBy")
+    .select("name department employeeId accountStatus createdAt approvedAt approvedBy profileImage")
     .populate("approvedBy", "name")
     .sort({ createdAt: -1 });
 
@@ -59,7 +59,7 @@ export const findStudentsByOrg = async (organizationId, { page, limit }) => {
   const query = { organizationId, role: ROLES.STUDENT };
   const [students, total] = await Promise.all([
     User.find(query)
-      .select("name email branch year createdAt")
+      .select("name email branch year createdAt profileImage")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit),
@@ -77,5 +77,13 @@ export const facultyStatusBreakdown = (organizationId) =>
         role: ROLES.FACULTY,
       },
     },
-    { $group: { _id: "$accountStatus", count: { $sum: 1 } } },
+    // A missing accountStatus is treated as the schema default (Active) — the
+    // same value Mongoose applies on read, so this aggregation agrees with the
+    // faculty roster instead of dropping those records under a null bucket.
+    {
+      $group: {
+        _id: { $ifNull: ["$accountStatus", ACCOUNT_STATUS.ACTIVE] },
+        count: { $sum: 1 },
+      },
+    },
   ]);

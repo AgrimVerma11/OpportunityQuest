@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 
 import Navbar from "./Navbar";
+import PageHeader from "../components/PageHeader";
 import Avatar from "../components/Avatar";
 import StatusBadge from "../components/StatusBadge";
+import Spinner from "../components/Spinner";
+import EmptyState from "../components/EmptyState";
+import ProfileModal from "../components/ProfileModal";
+import { IconAlert } from "../components/Icons";
 import { fetchWithAuth } from "../utils/api";
 import "./Analytics.css";
 
@@ -16,6 +21,7 @@ const FUNNEL_ORDER = [
 ];
 const CATEGORY_ORDER = ["Internship", "Research", "Paid Gig", "Faculty Project"];
 const FACULTY_ORDER = ["Active", "Pending", "Rejected", "Suspended"];
+const OPPORTUNITY_STATUS_ORDER = ["Active", "Expired", "Archived", "Closed"];
 
 const TABS = ["Overview", "Faculty", "Students"];
 
@@ -26,7 +32,7 @@ const fmtDate = (iso) =>
         month: "short",
         year: "numeric",
       })
-    : "—";
+    : "-";
 
 const toneOf = (label) => label.toLowerCase().replace(/\s+/g, "-");
 
@@ -49,6 +55,7 @@ function BarRow({ label, value, max, tone }) {
 
 export default function Analytics() {
   const [tab, setTab] = useState("Overview");
+  const [viewUserId, setViewUserId] = useState(null);
 
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -109,17 +116,19 @@ export default function Analytics() {
   const shell = (inner) => (
     <>
       <Navbar />
-      <div className="an-container">
-        <div className="an-inner">
-          <div className="an-header">
-            <h1>Analytics</h1>
-            <p>An overview of activity across your institution.</p>
-          </div>
-          <div className="an-tabs">
+      <div className="an">
+        <PageHeader
+          title="Analytics"
+          subtitle="An overview of activity across your institution."
+        />
+        <div className="container an-body">
+          <div className="an-tabs" role="tablist" aria-label="Analytics views">
             {TABS.map((t) => (
               <button
                 key={t}
                 type="button"
+                role="tab"
+                aria-selected={tab === t}
                 className={`an-tab${tab === t ? " active" : ""}`}
                 onClick={() => setTab(t)}
               >
@@ -130,20 +139,42 @@ export default function Analytics() {
           {inner}
         </div>
       </div>
+      {viewUserId && (
+        <ProfileModal
+          userId={viewUserId}
+          onClose={() => setViewUserId(null)}
+        />
+      )}
     </>
   );
 
-  if (loading) return shell(<p className="an-state">Loading…</p>);
-  if (error) return shell(<p className="an-state">{error}</p>);
+  if (loading)
+    return shell(
+      <div className="an-state">
+        <Spinner center label="Loading analytics" />
+      </div>
+    );
+  if (error)
+    return shell(
+      <div className="an-state">
+        <EmptyState
+          icon={<IconAlert />}
+          title="Couldn’t load analytics"
+          description={error}
+        />
+      </div>
+    );
   if (!analytics) return null;
 
-  if (tab === "Faculty") return shell(<FacultyTable rows={faculty} />);
+  if (tab === "Faculty")
+    return shell(<FacultyTable rows={faculty} onView={setViewUserId} />);
   if (tab === "Students") {
     return shell(
       <StudentsTable
         data={students}
         loading={studentsLoading}
         onMore={() => loadStudents((students?.page || 1) + 1, true)}
+        onView={setViewUserId}
       />
     );
   }
@@ -158,6 +189,7 @@ function Overview({ a }) {
     kpis,
     applicationFunnel,
     opportunitiesByCategory,
+    opportunitiesByStatus = {},
     facultyByStatus,
     topOpportunities,
     applicationsTrend,
@@ -197,7 +229,7 @@ function Overview({ a }) {
       </div>
 
       <div className="an-grid">
-        <section className="an-card">
+        <section className="card an-card">
           <h2>Application funnel</h2>
           {FUNNEL_ORDER.map((s) => (
             <BarRow
@@ -210,7 +242,7 @@ function Overview({ a }) {
           ))}
         </section>
 
-        <section className="an-card">
+        <section className="card an-card">
           <h2>Opportunities by category</h2>
           {CATEGORY_ORDER.map((c) => (
             <BarRow
@@ -223,7 +255,21 @@ function Overview({ a }) {
           ))}
         </section>
 
-        <section className="an-card">
+        <section className="card an-card">
+          <h2>Opportunities by status</h2>
+          <div className="an-stat-row">
+            {OPPORTUNITY_STATUS_ORDER.map((s) => (
+              <div className={`an-stat ${toneOf(s)}`} key={s}>
+                <span className="an-stat-value">
+                  {opportunitiesByStatus[s] || 0}
+                </span>
+                <span className="an-stat-label">{s}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="card an-card">
           <h2>Faculty by status</h2>
           <div className="an-stat-row">
             {FACULTY_ORDER.map((s) => (
@@ -235,7 +281,7 @@ function Overview({ a }) {
           </div>
         </section>
 
-        <section className="an-card">
+        <section className="card an-card">
           <h2>Top opportunities</h2>
           {topOpportunities.length === 0 ? (
             <p className="an-empty">No applications yet.</p>
@@ -253,9 +299,9 @@ function Overview({ a }) {
         </section>
       </div>
 
-      <section className="an-card an-trend-card">
+      <section className="card an-card an-trend-card">
         <div className="an-trend-head">
-          <h2>Applications — last 30 days</h2>
+          <h2>Applications in the last 30 days</h2>
           <span className="an-trend-total">{trendTotal} total</span>
         </div>
         <div className="an-trend">
@@ -280,19 +326,24 @@ function Overview({ a }) {
 
 // ── Faculty roster ────────────────────────────────────────────────
 
-function FacultyTable({ rows }) {
-  if (rows === null) return <p className="an-state">Loading…</p>;
+function FacultyTable({ rows, onView }) {
+  if (rows === null)
+    return (
+      <div className="an-state">
+        <Spinner center label="Loading faculty" />
+      </div>
+    );
   if (rows.length === 0)
     return (
-      <section className="an-card">
+      <section className="card an-card">
         <p className="an-empty">No faculty in your institution yet.</p>
       </section>
     );
 
   return (
-    <section className="an-card an-table-card">
-      <div className="an-table-scroll">
-        <table className="an-table">
+    <section className="card an-card an-table-card">
+      <div className="table-wrap">
+        <table className="table table-hover">
           <thead>
             <tr>
               <th>Faculty</th>
@@ -305,15 +356,22 @@ function FacultyTable({ rows }) {
           </thead>
           <tbody>
             {rows.map((f) => (
-              <tr key={f._id}>
+              <tr
+                key={f._id}
+                className="an-row-clickable"
+                tabIndex={0}
+                aria-label={`View ${f.name}'s profile`}
+                onClick={() => onView(f._id)}
+                onKeyDown={(e) => e.key === "Enter" && onView(f._id)}
+              >
                 <td>
                   <div className="an-person">
-                    <Avatar name={f.name} size={30} />
+                    <Avatar name={f.name} image={f.profileImage} size={30} />
                     <span>{f.name}</span>
                   </div>
                 </td>
-                <td>{f.department || "—"}</td>
-                <td>{f.employeeId || "—"}</td>
+                <td>{f.department || "-"}</td>
+                <td>{f.employeeId || "-"}</td>
                 <td>
                   <StatusBadge status={f.accountStatus} />
                 </td>
@@ -330,21 +388,26 @@ function FacultyTable({ rows }) {
 
 // ── Student roster ────────────────────────────────────────────────
 
-function StudentsTable({ data, loading, onMore }) {
-  if (!data && loading) return <p className="an-state">Loading…</p>;
+function StudentsTable({ data, loading, onMore, onView }) {
+  if (!data && loading)
+    return (
+      <div className="an-state">
+        <Spinner center label="Loading students" />
+      </div>
+    );
   if (!data) return null;
   if (data.list.length === 0)
     return (
-      <section className="an-card">
+      <section className="card an-card">
         <p className="an-empty">No students registered yet.</p>
       </section>
     );
 
   return (
-    <section className="an-card an-table-card">
+    <section className="card an-card an-table-card">
       <div className="an-table-count">{data.total} students</div>
-      <div className="an-table-scroll">
-        <table className="an-table">
+      <div className="table-wrap">
+        <table className="table table-hover">
           <thead>
             <tr>
               <th>Student</th>
@@ -356,15 +419,22 @@ function StudentsTable({ data, loading, onMore }) {
           </thead>
           <tbody>
             {data.list.map((s) => (
-              <tr key={s._id}>
+              <tr
+                key={s._id}
+                className="an-row-clickable"
+                tabIndex={0}
+                aria-label={`View ${s.name}'s profile`}
+                onClick={() => onView(s._id)}
+                onKeyDown={(e) => e.key === "Enter" && onView(s._id)}
+              >
                 <td>
                   <div className="an-person">
                     <Avatar name={s.name} image={s.profileImage} size={30} />
                     <span>{s.name}</span>
                   </div>
                 </td>
-                <td>{s.branch || "—"}</td>
-                <td>{s.year || "—"}</td>
+                <td>{s.branch || "-"}</td>
+                <td>{s.year || "-"}</td>
                 <td className="an-email">{s.email}</td>
                 <td>{fmtDate(s.createdAt)}</td>
               </tr>

@@ -1,19 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Navbar from "./Navbar";
 import "./Faculty.css";
 
+import PageHeader from "../components/PageHeader";
+import CategoryTag from "../components/CategoryTag";
+import StatusBadge from "../components/StatusBadge";
+import Spinner from "../components/Spinner";
+import EmptyState from "../components/EmptyState";
+import Field from "../components/Field";
+import Modal from "../components/Modal";
 import { useConfirm } from "../components/ConfirmProvider";
-import { IconHistory, IconPaperclip } from "../components/Icons";
-
+import { useToast } from "../components/ToastProvider";
 import {
-  fetchWithAuth,
-  patchWithAuth,
-  deleteWithAuth,
-} from "../utils/api";
-import { useAuth } from "../context/AuthContext";
+  IconHistory,
+  IconPaperclip,
+  IconPlus,
+  IconFile,
+  IconMore,
+} from "../components/Icons";
 
+import { fetchWithAuth, patchWithAuth, deleteWithAuth } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
 // Defined at module scope so React doesn't recreate it on every render.
 // Archived/Closed are real persisted states; "Expired" is derived only for
@@ -28,7 +37,6 @@ function getDisplayStatus(item) {
 function formatDate(value) {
   return new Date(value).toLocaleDateString();
 }
-
 
 function OpportunityCard({
   item,
@@ -46,35 +54,62 @@ function OpportunityCard({
   showClose,
 }) {
   const displayStatus = getDisplayStatus(item);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onDown = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKey = (e) => e.key === "Escape" && setMenuOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
+  // Run a menu action and close the menu.
+  const pick = (fn) => () => {
+    setMenuOpen(false);
+    fn();
+  };
+  const hasSecondary = showExtend || showArchive || showClose;
 
   return (
-    <div className="faculty-card">
+    <div className="card faculty-card">
       <div className="faculty-meta">
-        <span className="meta-pill">{item.category}</span>
-        <span className={`status-pill ${displayStatus}`}>{displayStatus}</span>
+        <CategoryTag category={item.category} />
+        <StatusBadge status={displayStatus} />
       </div>
 
-      <h3>{item.title}</h3>
+      <h3 className="faculty-card-title">{item.title}</h3>
 
       <div className="faculty-card-facts">
-        <p>
-          <strong>Deadline</strong> {formatDate(item.deadline)}
-        </p>
-        <p>
-          <strong>Created</strong> {formatDate(item.createdAt)}
-        </p>
+        <div>
+          <span className="faculty-fact-label">Deadline</span>
+          {formatDate(item.deadline)}
+        </div>
+        <div>
+          <span className="faculty-fact-label">Created</span>
+          {formatDate(item.createdAt)}
+        </div>
       </div>
 
       {(item.deadlineHistory?.length > 0 || item.attachments?.length > 0) && (
         <div className="faculty-card-notes">
           {item.deadlineHistory?.length > 0 && (
-            <span className="card-note">
+            <span className="faculty-note">
               <IconHistory /> Deadline changed {item.deadlineHistory.length}
               {item.deadlineHistory.length > 1 ? " times" : " time"}
             </span>
           )}
           {item.attachments?.length > 0 && (
-            <span className="card-note">
+            <span className="faculty-note">
               <IconPaperclip /> {item.attachments.length} attachment
               {item.attachments.length > 1 ? "s" : ""}
             </span>
@@ -82,7 +117,7 @@ function OpportunityCard({
         </div>
       )}
 
-      <div className="card-actions">
+      <div className="faculty-card-actions">
         <button
           className="btn btn-secondary btn-sm"
           onClick={() => onView(item._id)}
@@ -106,64 +141,86 @@ function OpportunityCard({
           </button>
         )}
 
-        {showExtend && (
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => onExtend(item._id, item.deadline)}
-          >
-            Extend Deadline
-          </button>
-        )}
-
-        {showArchive && (
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => onArchive(item._id)}
-          >
-            Archive
-          </button>
-        )}
-
         {showUnarchive && (
           <button
             className="btn btn-primary btn-sm"
             onClick={() => onUnarchive(item._id, item.deadline)}
           >
-            Unarchive
+            Reactivate
           </button>
         )}
 
-        {showClose && (
+        <div className="faculty-menu-wrap" ref={menuRef}>
           <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => onClose(item._id)}
+            type="button"
+            className="btn btn-secondary btn-sm faculty-menu-trigger"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            aria-label="More actions"
+            onClick={() => setMenuOpen((o) => !o)}
           >
-            Close
+            <IconMore />
           </button>
-        )}
 
-        <button
-          className="btn btn-danger-ghost btn-sm"
-          onClick={() => onDelete(item._id)}
-        >
-          Delete
-        </button>
+          {menuOpen && (
+            <div className="faculty-menu" role="menu">
+              {showExtend && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="faculty-menu-item"
+                  onClick={pick(() => onExtend(item._id, item.deadline))}
+                >
+                  Extend deadline
+                </button>
+              )}
+              {showArchive && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="faculty-menu-item"
+                  onClick={pick(() => onArchive(item._id))}
+                >
+                  Archive
+                </button>
+              )}
+              {showClose && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="faculty-menu-item"
+                  onClick={pick(() => onClose(item._id))}
+                >
+                  Close
+                </button>
+              )}
+              {hasSecondary && <div className="faculty-menu-sep" />}
+              <button
+                type="button"
+                role="menuitem"
+                className="faculty-menu-item faculty-menu-danger"
+                onClick={pick(() => onDelete(item._id))}
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
 
 // ─────────────────────────────────────────
 
 function Faculty() {
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const toast = useToast();
 
   const [loading, setLoading] = useState(true);
   const [opportunities, setOpportunities] = useState([]);
   const [profile, setProfile] = useState(null);
-  const [actionError, setActionError] = useState("");
 
   // Extend-deadline modal
   const [extendModal, setExtendModal] = useState(null); // { id, currentDeadline }
@@ -212,17 +269,16 @@ function Faculty() {
   // Generic status-change helper for the confirm-then-PATCH actions.
   const runStatusAction = async (endpoint, confirmOptions, failMessage) => {
     if (confirmOptions && !(await confirm(confirmOptions))) return;
-    setActionError("");
     try {
       const result = await patchWithAuth(endpoint);
       if (result.success) {
         loadMyOpportunities();
       } else {
-        setActionError(result.message || failMessage);
+        toast.error(result.message || failMessage);
       }
     } catch (err) {
       console.error(err);
-      setActionError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -259,17 +315,16 @@ function Faculty() {
       tone: "danger",
     });
     if (!ok) return;
-    setActionError("");
     try {
       const result = await deleteWithAuth(`/opportunities/${id}`);
       if (result.success) {
         loadMyOpportunities();
       } else {
-        setActionError(result.message || "Failed to delete");
+        toast.error(result.message || "Failed to delete");
       }
     } catch (err) {
       console.error(err);
-      setActionError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     }
   };
 
@@ -400,6 +455,13 @@ function Faculty() {
       )
     : 0;
 
+  const stats = [
+    { label: "Active", value: activeOpportunities.length, tone: "active" },
+    { label: "Archived", value: archivedOpportunities.length, tone: "archived" },
+    { label: "Expired", value: expiredOpportunities.length, tone: "expired" },
+    { label: "Closed", value: closedOpportunities.length, tone: "closed" },
+  ];
+
   const cardProps = {
     onView: handleView,
     onApplicants: (id) => navigate(`/opportunity/${id}/applicants`),
@@ -412,7 +474,7 @@ function Faculty() {
   };
 
   const renderGrid = (items, flags) => (
-    <div className="opportunities-grid">
+    <div className="faculty-grid">
       {items.map((item) => (
         <OpportunityCard key={item._id} item={item} {...flags} {...cardProps} />
       ))}
@@ -423,167 +485,152 @@ function Faculty() {
     <>
       <Navbar />
 
-      <div className="faculty-container">
-        <div className="faculty-inner">
-
-          <div className="faculty-hero">
-            <div>
-              <p className="faculty-welcome">FACULTY DASHBOARD</p>
-              <h1 className="faculty-title">
-                Welcome back, {currentUser?.name}
-              </h1>
-              <div className="faculty-role-line">
-                Faculty{profile?.department && ` · ${profile.department}`}
-              </div>
-              <p className="faculty-subtitle">
-                Manage opportunities, research projects, internships and
-                student engagement from one central place.
-              </p>
-            </div>
+      <div className="faculty">
+        <PageHeader
+          title={`Welcome back, ${
+            currentUser?.prefix ? `${currentUser.prefix} ` : ""
+          }${currentUser?.name || ""}`}
+          subtitle="Manage opportunities, research projects, internships and student engagement from one central place."
+          action={
             <button
               className="btn btn-primary"
               onClick={() => navigate("/create-opportunity")}
             >
-              + Create Opportunity
+              <IconPlus /> Create opportunity
             </button>
-          </div>
+          }
+        />
 
-          <div className="stats-grid">
-            <div className="stat-card">
-              <h3>{activeOpportunities.length}</h3>
-              <p>Active</p>
-            </div>
-            <div className="stat-card">
-              <h3>{archivedOpportunities.length}</h3>
-              <p>Archived</p>
-            </div>
-            <div className="stat-card">
-              <h3>{expiredOpportunities.length}</h3>
-              <p>Expired</p>
-            </div>
-            <div className="stat-card">
-              <h3>{closedOpportunities.length}</h3>
-              <p>Closed</p>
-            </div>
-          </div>
-
-          <div className="faculty-profile-card">
-            <div>
-              <h2>Faculty Profile</h2>
-              <p>
-                Keep your profile updated so students can discover your
-                expertise, interests and research work.
-              </p>
-            </div>
-            <div className="faculty-profile-aside">
-              <div className="profile-completion">{completion}% Complete</div>
-              <button
-                className="btn btn-secondary"
-                onClick={() => navigate("/profile")}
-              >
-                Manage Profile
-              </button>
-            </div>
-          </div>
-
-          {actionError && <div className="action-error-bar">{actionError}</div>}
-
-          {/* ACTIVE */}
-          <h2 className="section-title">Active Opportunities</h2>
-
+        <div className="container faculty-body">
           {loading ? (
-            <p className="faculty-loading">Loading…</p>
-          ) : activeOpportunities.length === 0 ? (
-            <div className="empty-state">
-              <h2>No active opportunities</h2>
-              <p>
-                Create your first opportunity and start connecting with
-                students.
-              </p>
-              <button
-                className="btn btn-primary"
-                onClick={() => navigate("/create-opportunity")}
-              >
-                Create Opportunity
-              </button>
+            <div className="faculty-status">
+              <Spinner center label="Loading your dashboard" />
             </div>
           ) : (
-            renderGrid(activeOpportunities, { showArchive: true, showClose: true })
-          )}
-
-          {/* EXPIRED */}
-          {expiredOpportunities.length > 0 && (
             <>
-              <h2 className="section-title">Expired Opportunities</h2>
-              {renderGrid(expiredOpportunities, {
-                showExtend: true,
-                showArchive: true,
-                showClose: true,
-              })}
+              {/* Stats */}
+              <div className="faculty-stats">
+                {stats.map((s) => (
+                  <div
+                    className={`card faculty-stat faculty-stat-${s.tone}`}
+                    key={s.label}
+                  >
+                    <span className="faculty-stat-value">{s.value}</span>
+                    <span className="faculty-stat-label">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Profile nudge: only when there is something worth completing */}
+              {profile && completion < 100 && (
+                <div className="faculty-profile">
+                  <div className="faculty-profile-text">
+                    <p className="faculty-profile-title">
+                      Complete your profile
+                    </p>
+                    <p className="faculty-profile-desc">
+                      Add your bio, department and interests so students can find
+                      your work.
+                    </p>
+                  </div>
+                  <div
+                    className="faculty-progress-track"
+                    role="progressbar"
+                    aria-valuenow={completion}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Profile completion"
+                  >
+                    <div
+                      className="faculty-progress-fill"
+                      style={{ width: `${completion}%` }}
+                    />
+                  </div>
+                  <span className="faculty-progress-value">{completion}%</span>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => navigate("/profile")}
+                  >
+                    Manage profile
+                  </button>
+                </div>
+              )}
+
+              {/* Active */}
+              <h2 className="faculty-section-title">Active opportunities</h2>
+              {activeOpportunities.length === 0 ? (
+                <EmptyState
+                  icon={<IconFile />}
+                  title="No active opportunities"
+                  description="Create your first opportunity and start connecting with students."
+                  action={
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => navigate("/create-opportunity")}
+                    >
+                      <IconPlus /> Create opportunity
+                    </button>
+                  }
+                />
+              ) : (
+                renderGrid(activeOpportunities, {
+                  showArchive: true,
+                  showClose: true,
+                })
+              )}
+
+              {/* Expired */}
+              {expiredOpportunities.length > 0 && (
+                <>
+                  <h2 className="faculty-section-title">
+                    Expired opportunities
+                  </h2>
+                  {renderGrid(expiredOpportunities, {
+                    showExtend: true,
+                    showArchive: true,
+                    showClose: true,
+                  })}
+                </>
+              )}
+
+              {/* Archived */}
+              {archivedOpportunities.length > 0 && (
+                <>
+                  <h2 className="faculty-section-title">
+                    Archived opportunities
+                  </h2>
+                  <p className="faculty-section-subtitle">
+                    Paused while you review applicants. Reactivate to make live
+                    again, or close once finalised.
+                  </p>
+                  {renderGrid(archivedOpportunities, {
+                    showUnarchive: true,
+                    showClose: true,
+                  })}
+                </>
+              )}
+
+              {/* Closed */}
+              {closedOpportunities.length > 0 && (
+                <>
+                  <h2 className="faculty-section-title">Closed opportunities</h2>
+                  {renderGrid(closedOpportunities, {})}
+                </>
+              )}
             </>
           )}
-
-          {/* ARCHIVED */}
-          {archivedOpportunities.length > 0 && (
-            <>
-              <h2 className="section-title">Archived Opportunities</h2>
-              <p className="section-subtitle">
-                Paused while you review applicants. Reactivate to make live again,
-                or close once finalised.
-              </p>
-              {renderGrid(archivedOpportunities, {
-                showUnarchive: true,
-                showClose: true,
-              })}
-            </>
-          )}
-
-          {/* CLOSED */}
-          {closedOpportunities.length > 0 && (
-            <>
-              <h2 className="section-title">Closed Opportunities</h2>
-              {renderGrid(closedOpportunities, {})}
-            </>
-          )}
-
         </div>
       </div>
 
-      {/* EXTEND DEADLINE MODAL */}
+      {/* Extend deadline modal */}
       {extendModal && (
-        <div
-          className="modal-overlay"
-          onClick={(e) => e.target === e.currentTarget && closeExtendModal()}
-        >
-          <div className="modal-card">
-            <h3>Extend Deadline</h3>
-            <p className="modal-hint">
-              New deadline must be later than the current one (
-              {formatDate(extendModal.currentDeadline)}).
-            </p>
-
-            <label className="modal-label">New Deadline</label>
-            <input
-              type="date"
-              className="modal-input"
-              value={newDeadline}
-              min={getMinDate(extendModal.currentDeadline)}
-              onChange={(e) => setNewDeadline(e.target.value)}
-            />
-
-            <label className="modal-label">Reason (optional)</label>
-            <textarea
-              className="modal-textarea"
-              placeholder="e.g. Extended due to additional project scope"
-              value={extensionReason}
-              onChange={(e) => setExtensionReason(e.target.value)}
-              maxLength={300}
-              rows={3}
-            />
-
-            {extendError && <p className="modal-error">{extendError}</p>}
-
-            <div className="modal-actions">
+        <Modal
+          open
+          onClose={closeExtendModal}
+          title="Extend deadline"
+          size="sm"
+          footer={
+            <>
               <button className="btn btn-secondary" onClick={closeExtendModal}>
                 Cancel
               </button>
@@ -592,78 +639,48 @@ function Faculty() {
                 onClick={handleExtendDeadline}
                 disabled={extending}
               >
-                {extending ? "Extending…" : "Confirm Extension"}
+                {extending ? "Extending…" : "Confirm extension"}
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* UNARCHIVE MODAL */}
-      {unarchiveModal && (
-        <div
-          className="modal-overlay"
-          onClick={(e) => e.target === e.currentTarget && closeUnarchiveModal()}
+            </>
+          }
         >
-          <div className="modal-card">
-            <h3>Reactivate Opportunity</h3>
-            <p className="modal-hint">
-              Make this opportunity live for students again. Continue with the
-              current deadline or set a new one.
-            </p>
+          <p className="faculty-modal-hint">
+            New deadline must be later than the current one (
+            {formatDate(extendModal.currentDeadline)}).
+          </p>
 
-            <div className="unarchive-options">
-              <label
-                className={`unarchive-option ${
-                  unarchiveModal.deadlinePassed ? "is-disabled" : ""
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="unarchiveMode"
-                  value="keep"
-                  checked={unarchiveMode === "keep"}
-                  disabled={unarchiveModal.deadlinePassed}
-                  onChange={() => setUnarchiveMode("keep")}
-                />
-                <span>
-                  <strong>Keep current deadline</strong>
-                  <small>
-                    {formatDate(unarchiveModal.currentDeadline)}
-                    {unarchiveModal.deadlinePassed &&
-                      " — already passed, set a new one"}
-                  </small>
-                </span>
-              </label>
-
-              <label className="unarchive-option">
-                <input
-                  type="radio"
-                  name="unarchiveMode"
-                  value="new"
-                  checked={unarchiveMode === "new"}
-                  onChange={() => setUnarchiveMode("new")}
-                />
-                <span>
-                  <strong>Set a new deadline</strong>
-                  <small>Choose a future date below</small>
-                </span>
-              </label>
-            </div>
-
-            {unarchiveMode === "new" && (
+          <div className="faculty-modal-fields">
+            <Field id="extend-deadline" label="New deadline" error={extendError}>
               <input
                 type="date"
-                className="modal-input"
-                value={unarchiveDeadline}
-                min={getMinDate()}
-                onChange={(e) => setUnarchiveDeadline(e.target.value)}
+                value={newDeadline}
+                min={getMinDate(extendModal.currentDeadline)}
+                onChange={(e) => setNewDeadline(e.target.value)}
               />
-            )}
+            </Field>
 
-            {unarchiveError && <p className="modal-error">{unarchiveError}</p>}
+            <Field id="extend-reason" label="Reason (optional)">
+              <textarea
+                placeholder="e.g. Extended due to additional project scope"
+                value={extensionReason}
+                onChange={(e) => setExtensionReason(e.target.value)}
+                maxLength={300}
+                rows={3}
+              />
+            </Field>
+          </div>
+        </Modal>
+      )}
 
-            <div className="modal-actions">
+      {/* Unarchive modal */}
+      {unarchiveModal && (
+        <Modal
+          open
+          onClose={closeUnarchiveModal}
+          title="Reactivate opportunity"
+          size="sm"
+          footer={
+            <>
               <button
                 className="btn btn-secondary"
                 onClick={closeUnarchiveModal}
@@ -677,9 +694,66 @@ function Faculty() {
               >
                 {unarchiving ? "Reactivating…" : "Reactivate"}
               </button>
-            </div>
+            </>
+          }
+        >
+          <p className="faculty-modal-hint">
+            Make this opportunity live for students again. Continue with the
+            current deadline or set a new one.
+          </p>
+
+          <div className="unarchive-options">
+            <label
+              className={`unarchive-option ${
+                unarchiveModal.deadlinePassed ? "is-disabled" : ""
+              }`}
+            >
+              <input
+                type="radio"
+                name="unarchiveMode"
+                value="keep"
+                checked={unarchiveMode === "keep"}
+                disabled={unarchiveModal.deadlinePassed}
+                onChange={() => setUnarchiveMode("keep")}
+              />
+              <span>
+                <strong>Keep current deadline</strong>
+                <small>
+                  {formatDate(unarchiveModal.currentDeadline)}
+                  {unarchiveModal.deadlinePassed &&
+                    " (already passed, set a new one)"}
+                </small>
+              </span>
+            </label>
+
+            <label className="unarchive-option">
+              <input
+                type="radio"
+                name="unarchiveMode"
+                value="new"
+                checked={unarchiveMode === "new"}
+                onChange={() => setUnarchiveMode("new")}
+              />
+              <span>
+                <strong>Set a new deadline</strong>
+                <small>Choose a future date below</small>
+              </span>
+            </label>
           </div>
-        </div>
+
+          {unarchiveMode === "new" && (
+            <Field id="unarchive-deadline" label="New deadline">
+              <input
+                type="date"
+                value={unarchiveDeadline}
+                min={getMinDate()}
+                onChange={(e) => setUnarchiveDeadline(e.target.value)}
+              />
+            </Field>
+          )}
+
+          {unarchiveError && <p className="field-error">{unarchiveError}</p>}
+        </Modal>
       )}
     </>
   );

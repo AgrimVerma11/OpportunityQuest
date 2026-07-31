@@ -79,19 +79,24 @@ export const updateOpportunity = async (id, userId, body) => {
     Object.entries(body).filter(([, value]) => value !== undefined)
   );
 
-  // Record the previous deadline whenever it changes, so every deadline
-  // change is auditable — whether it happens here (edit), via extend, or
-  // via reactivation.
-  if (
-    updates.deadline &&
-    new Date(updates.deadline).getTime() !==
-      new Date(opportunity.deadline).getTime()
-  ) {
-    opportunity.deadlineHistory.push({
-      previousDeadline: opportunity.deadline,
-      extendedAt: new Date(),
-      reason: "Updated while editing",
-    });
+  // Deadline rules on edit: a deadline that is being *changed* must be in the
+  // future; an *unchanged* deadline is left as-is even if it has already passed,
+  // so the other fields of an expired opportunity can be edited without forcing
+  // a re-date. A genuine change is also recorded for the audit trail.
+  if (updates.deadline) {
+    const nextDeadline = new Date(updates.deadline).getTime();
+    const currentDeadline = new Date(opportunity.deadline).getTime();
+
+    if (nextDeadline !== currentDeadline) {
+      if (nextDeadline <= Date.now()) {
+        throw new AppError("Deadline must be a future date", 400);
+      }
+      opportunity.deadlineHistory.push({
+        previousDeadline: opportunity.deadline,
+        extendedAt: new Date(),
+        reason: "Updated while editing",
+      });
+    }
   }
 
   Object.assign(opportunity, updates);

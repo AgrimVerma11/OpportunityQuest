@@ -9,13 +9,18 @@
 }
 
 .status-Applied     { background: var(--color-primary-soft); color: var(--color-primary-hover); }
-.status-Viewed      { background: #f1f5f9;                   color: var(--color-text-secondary); }
+.status-Viewed      { background: var(--color-surface-subtle);                   color: var(--color-text-secondary); }
 .status-Shortlisted { background: var(--color-warning-soft); color: var(--color-warning); }
 .status-Selected    { background: var(--color-success-soft); color: var(--color-success); }
 .status-Rejected    { background: var(--color-danger-soft);  color: var(--color-danger); }
-.status-Withdrawn   { background: #f1f5f9;                   color: var(--color-text-muted); }
+.status-Withdrawn   { background: var(--color-surface-subtle);                   color: var(--color-text-muted); }
 
 /* Account statuses (faculty roster) */
 .status-Active      { background: var(--color-success-soft); color: var(--color-success); }
 .status-Pending     { background: var(--color-warning-soft); color: var(--color-warning); }
-.status-Suspended   { background: #f1f5f9;                   color: var(--color-text-muted); }
+.status-Suspended   { background: var(--color-surface-subtle); color: var(--color-text-muted); }
+
+/* Opportunity display statuses (faculty dashboard) */
+.status-Expired     { background: var(--color-danger-soft);  color: var(--color-danger); }
+.status-Archived    { background: var(--color-warning-soft); color: var(--color-warning); }
+.status-Closed      { background: var(--color-surface-subtle); color: var(--color-text-secondary); }
