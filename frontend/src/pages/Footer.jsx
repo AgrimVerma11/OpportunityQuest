@@ -31,8 +31,11 @@ function Footer() {
         <div className="footer-top">
           <div className="footer-brand">
             <div className="footer-brand-row">
-              <span className="footer-badge">OQ</span>
-              <span className="footer-name">Opportunity Quest</span>
+              <img
+                src="/brand/opportunity-quest-lockup-light.svg"
+                alt="Opportunity Quest"
+                className="footer-lockup"
+              />
             </div>
             <p className="footer-tagline">
               Connecting students with faculty-posted internships, research

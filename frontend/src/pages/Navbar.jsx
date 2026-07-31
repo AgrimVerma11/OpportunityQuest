@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import Avatar from "../components/Avatar";
+import Logo from "../components/Logo";
 import NotificationBell from "../components/NotificationBell";
 import { IconChevronDown, IconMenu, IconX } from "../components/Icons";
 import { useAuth } from "../context/AuthContext";
@@ -79,8 +80,12 @@ function Navbar() {
           )}
 
           <Link to={currentUser ? "/home" : "/"} className="nav-brand">
-            <span className="nav-brand-badge">OQ</span>
-            <span className="nav-brand-name">Opportunity Quest</span>
+            <img
+              src="/brand/opportunity-quest-lockup-light.svg"
+              alt="Opportunity Quest"
+              className="nav-brand-lockup"
+            />
+            <Logo className="nav-brand-mark" size={42} />
           </Link>
 
           {!isAuthPage && (

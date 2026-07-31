@@ -11,7 +11,7 @@
   width: 100%;
   max-width: var(--page-max);
   margin: 0 auto;
-  height: 60px;
+  height: 72px;
   padding: 0 var(--page-pad);
   display: flex;
   align-items: center;
@@ -39,19 +39,14 @@
   border-radius: var(--radius-sm);
   margin-right: var(--space-3);
 }
-.nav-brand-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
+.nav-brand-lockup {
+  height: 46px;
+  width: auto;
+  display: block;
+}
+.nav-brand-mark {
+  display: none;
   flex-shrink: 0;
-  background: var(--color-primary);
-  color: #fff;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.5px;
 }
 
 /* ── Primary links (desktop) ── */
@@ -222,7 +217,8 @@
   .navbar-inner { padding: 0 var(--space-4); }
   .nav-links { display: none; }
   .nav-burger { display: inline-flex; }
-  .nav-brand-name { display: none; }
+  .nav-brand-lockup { display: none; }
+  .nav-brand-mark { display: block; }
   .nav-brand { margin-right: 0; }
   .nav-mobile { display: flex; }
   .nav-user-meta { display: none; }

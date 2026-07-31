@@ -1,0 +1,21 @@
+<!-- Opportunity Quest full lockup, light surfaces. Mark + wordmark reproduced
+     verbatim from the brand source; only the background rect is removed and the
+     viewBox trimmed to the content, so it sits on any light surface. -->
+<svg viewBox="55 58 585 158" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4AF5A"/>
+      <stop offset="100%" stop-color="#9C7A2E"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(40,40) scale(0.5)">
+    <path d="M 340.00 200.00 A 140 140 0 1 1 200.00 60.00" fill="none" stroke="url(#goldGrad)" stroke-width="6" stroke-linecap="round"/>
+    <polygon points="260.10,149.80 325.87,74.13 250.20,139.90" fill="url(#goldGrad)"/>
+    <polygon points="255.15,144.85 231.11,231.11 144.85,255.15" fill="#20244A"/>
+    <polygon points="255.15,144.85 168.89,168.89 144.85,255.15" fill="#34386A"/>
+    <polygon points="255.15,144.85 231.11,231.11 144.85,255.15 168.89,168.89" fill="none" stroke="#14172E" stroke-width="1.5"/>
+  </g>
+  <text x="300" y="132" font-family="Georgia, 'Times New Roman', serif" font-size="56" fill="#14172E" letter-spacing="0.5">Opportunity</text>
+  <text x="302" y="178" font-family="Georgia, 'Times New Roman', serif" font-size="26" fill="#9C7A2E" letter-spacing="8">QUEST</text>
+  <line x1="303" y1="150" x2="363" y2="150" stroke="#9C7A2E" stroke-width="1.5"/>
+</svg>
