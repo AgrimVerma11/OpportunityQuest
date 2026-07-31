@@ -20,6 +20,12 @@ import { apiLimiter, authLimiter } from "./middleware/rateLimiters.js";
 export function createApp() {
   const app = express();
 
+  // Behind a single reverse proxy in production (Render). Trust exactly one hop
+  // so req.ip reflects the real client from X-Forwarded-For — otherwise the rate
+  // limiters key every request off the proxy's one IP, and express-rate-limit
+  // refuses to start. A number, not `true`, so a client cannot spoof the header.
+  app.set("trust proxy", 1);
+
   // -------- SECURITY & PARSING MIDDLEWARE --------
 
   // crossOriginResourcePolicy is relaxed so the frontend (a different origin in

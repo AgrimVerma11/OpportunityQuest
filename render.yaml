@@ -1,0 +1,52 @@
+# Render Blueprint for the Opportunity Quest backend.
+#
+# New → Blueprint → pick this repo, and Render reads this file to create the
+# service. Only NODE_ENV, STORAGE_DRIVER and EMAIL_PROVIDER are set here; every
+# secret and account-specific value is `sync: false`, so Render prompts you for
+# it in the dashboard and never stores it in the repo.
+#
+# The frontend is deployed separately on Vercel (see docs/phases/phase-7).
+
+services:
+  - type: web
+    name: opportunity-quest-api
+    runtime: node
+    rootDir: backend
+    region: singapore # closest Render region to the Atlas/Upstash Mumbai infra
+    plan: free # note: free web services sleep after inactivity (~50s cold start)
+    buildCommand: npm install --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STORAGE_DRIVER
+        value: r2
+      - key: EMAIL_PROVIDER
+        value: resend
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ALLOWED_ORIGIN # the Vercel production URL (https, no trailing slash)
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_PUBLIC_BUCKET
+        sync: false
+      - key: R2_PRIVATE_BUCKET
+        sync: false
+      - key: R2_PUBLIC_BASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false

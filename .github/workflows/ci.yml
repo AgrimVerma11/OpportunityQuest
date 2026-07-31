@@ -39,7 +39,7 @@ jobs:
       - run: npm test
 
   frontend:
-    name: Frontend lint & build
+    name: Frontend lint, test & build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -51,6 +51,10 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      # npm install (not npm ci): same cross-platform optional-dependency issue
+      # as the backend job — vitest and rollup pull in platform-specific binaries
+      # whose lockfile entries differ between the dev Mac and the Linux runner.
+      - run: npm install
       - run: npm run lint
+      - run: npm test
       - run: npm run build
