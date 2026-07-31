@@ -69,3 +69,7 @@ export const BRANCH_OPTIONS = [
 ];
 
 export const YEAR_OPTIONS = [1, 2, 3, 4];
+
+export const DEPARTMENT_OPTIONS = [
+  "DCSE", "ECED", "EID", "MEC", "CIVIL", "CHEMICAL", "SOM",
+];
