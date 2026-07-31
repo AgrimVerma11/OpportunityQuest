@@ -101,7 +101,10 @@ export const registerUserService = async (
   const existingUser =
     await findUserByEmail(userData.email);
 
-  if (existingUser) {
+  // Only a previously *rejected* applicant may register again — e.g. a faculty
+  // member rejected for a mistyped employee ID. Any other existing account
+  // (active, pending, or suspended) still blocks re-registration.
+  if (existingUser && existingUser.accountStatus !== ACCOUNT_STATUS.REJECTED) {
     throw new AppError("User already exists", 409);
   }
 
@@ -114,12 +117,28 @@ export const registerUserService = async (
       ? ACCOUNT_STATUS.PENDING
       : ACCOUNT_STATUS.ACTIVE;
 
-  const user = await createUser({
-    ...userData,
-    organizationId: organization._id,
-    accountStatus,
-    password: hashedPassword,
-  });
+  let user;
+  if (existingUser) {
+    // Re-application: refresh the rejected record with the fresh details, clear
+    // the rejection, and route it back through approval like a new request.
+    Object.assign(existingUser, {
+      ...userData,
+      organizationId: organization._id,
+      password: hashedPassword,
+      accountStatus,
+      rejectionReason: "",
+      approvedBy: null,
+      approvedAt: null,
+    });
+    user = await existingUser.save();
+  } else {
+    user = await createUser({
+      ...userData,
+      organizationId: organization._id,
+      accountStatus,
+      password: hashedPassword,
+    });
+  }
 
   if (accountStatus === ACCOUNT_STATUS.PENDING) {
     await notifyCoordinatorsOfPendingFaculty(organization._id, user);
