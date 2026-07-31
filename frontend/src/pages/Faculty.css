@@ -1,381 +1,251 @@
-/* ── FACULTY DASHBOARD ── */
-.faculty-container {
-  background: var(--color-bg);
-  padding: var(--space-6) var(--page-pad) var(--space-8);
-}
+/* ─────────────────────────────────────────
+   FACULTY DASHBOARD.
+   Masthead = <PageHeader>; modals = <Modal>+<Field>; loading/empty = primitives;
+   category/status pills = <CategoryTag>/<StatusBadge>. This file owns the
+   dashboard body: stats, profile card, and the management cards.
+───────────────────────────────────────── */
 
-.faculty-inner {
-  max-width: var(--page-max);
-  margin: 0 auto;
+.faculty-body {
+  padding-bottom: var(--space-8);
 }
-
-.faculty-loading {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-/* Hero */
-.faculty-hero {
+.faculty-status {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-6);
-  margin-bottom: var(--space-6);
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
 }
 
-.faculty-hero > div:first-child { flex: 1; min-width: 0; }
-
-.faculty-welcome {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-  color: var(--color-primary);
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  margin-bottom: var(--space-2);
-}
-
-.faculty-title {
-  font-size: var(--text-h1);
-  font-weight: var(--weight-bold);
-  color: var(--color-text);
-  letter-spacing: -0.8px;
-  margin-bottom: var(--space-2);
-  line-height: 1.15;
-}
-
-.faculty-role-line {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-3);
-}
-
-.faculty-subtitle {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  line-height: 1.7;
-  max-width: 580px;
-}
-
-/* Stats */
-.stats-grid {
+/* ── Stats ── */
+.faculty-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
   margin-bottom: var(--space-5);
 }
-
-.stat-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  text-align: center;
-  transition: transform var(--transition), box-shadow var(--transition);
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.stat-card h3 {
-  font-size: 2.25rem;
-  font-weight: var(--weight-bold);
-  color: var(--color-primary);
-  letter-spacing: -1px;
-  margin-bottom: var(--space-1);
-}
-
-.stat-card p {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* Profile card */
-.faculty-profile-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5) var(--space-6);
-  margin-bottom: var(--space-7);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-5);
-}
-
-.faculty-profile-card h2 {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-  margin-bottom: var(--space-1);
-}
-
-.faculty-profile-card p {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  max-width: 520px;
-}
-
-.faculty-profile-aside {
+.faculty-stat {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+.faculty-stat-value {
+  font-size: 2rem;
+  font-weight: var(--weight-extrabold);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  color: var(--color-text);
+}
+.faculty-stat-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-muted);
+}
+/* Value colour mirrors the status badges so counts read at a glance. */
+.faculty-stat-active .faculty-stat-value { color: var(--color-success); }
+.faculty-stat-archived .faculty-stat-value { color: var(--color-warning); }
+.faculty-stat-expired .faculty-stat-value { color: var(--color-danger); }
+.faculty-stat-closed .faculty-stat-value { color: var(--color-text-secondary); }
+
+/* ── Profile nudge — a slim banner, shown only when incomplete ── */
+.faculty-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-6);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-lg);
+}
+.faculty-profile-text {
+  min-width: 0;
+  flex: 1;
+}
+.faculty-profile-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+.faculty-profile-desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+.faculty-progress-track {
+  width: 120px;
+  height: 6px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.faculty-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow) ease;
+}
+.faculty-progress-value {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-primary);
   flex-shrink: 0;
 }
 
-.profile-completion {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
-  color: var(--color-primary);
-  text-align: center;
-}
-
-/* Section headings */
-.section-title {
+/* ── Section headings ── */
+.faculty-section-title {
   font-size: var(--text-h2);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-snug);
   color: var(--color-text);
-  letter-spacing: -0.3px;
   margin: var(--space-7) 0 var(--space-4);
 }
-
-.section-subtitle {
+.faculty-section-subtitle {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  margin: -8px 0 var(--space-4);
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
   max-width: 620px;
 }
 
-/* Opportunity grid */
-.opportunities-grid {
+/* ── Management cards ── */
+.faculty-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--space-4);
 }
-
-/* Opportunity card */
 .faculty-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
   display: flex;
   flex-direction: column;
-  transition: transform var(--transition), box-shadow var(--transition);
+  gap: var(--space-3);
 }
-
-.faculty-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.faculty-card h3 {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-  margin-bottom: var(--space-3);
-  line-height: 1.35;
-}
-
-.faculty-card-facts p {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-1);
-}
-
-.faculty-card-facts strong {
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-  margin-right: var(--space-2);
-}
-
-/* Meta + status pills */
 .faculty-meta {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-3);
 }
-
-.meta-pill {
-  background: var(--color-primary-soft);
-  color: var(--color-primary-hover);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
+.faculty-card-title {
+  font-size: var(--text-h3);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-snug);
+}
+.faculty-card-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+.faculty-fact-label {
+  display: inline-block;
+  min-width: 76px;
   font-weight: var(--weight-semibold);
+  color: var(--color-text);
 }
-
-.status-pill {
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-}
-.status-pill.Active   { background: var(--color-success-soft); color: var(--color-success); }
-.status-pill.Archived { background: var(--color-warning-soft); color: var(--color-warning); }
-.status-pill.Expired  { background: var(--color-danger-soft);  color: var(--color-danger); }
-.status-pill.Closed   { background: #f1f5f9;                   color: var(--color-text-secondary); }
-
-/* Card notes */
 .faculty-card-notes {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  margin-top: var(--space-3);
 }
-
-.card-note {
+.faculty-note {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
-
-.card-note svg { color: var(--color-text-muted); }
-
-/* Card actions */
-.card-actions {
+.faculty-note svg {
+  width: 14px;
+  height: 14px;
+  color: var(--color-text-muted);
+}
+.faculty-card-actions {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-top: auto;
   padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
 }
 
-/* Empty state */
-.empty-state {
+/* Overflow menu for the less-common actions, keeping the row uncluttered. */
+.faculty-menu-wrap {
+  position: relative;
+  margin-left: auto;
+}
+.faculty-menu-trigger {
+  padding: 0;
+  width: 32px;
+}
+.faculty-menu-trigger svg {
+  width: 18px;
+  height: 18px;
+}
+.faculty-menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 180px;
+  padding: var(--space-1);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-8) var(--space-7);
-  text-align: center;
-}
-
-.empty-state h2 {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-semibold);
-  margin-bottom: var(--space-2);
-  color: var(--color-text);
-}
-
-.empty-state p {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-5);
-}
-
-/* Action error */
-.action-error-bar {
-  background: var(--color-danger-soft);
-  border: 1px solid #fecaca;
-  color: var(--color-danger);
-  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown);
+}
+.faculty-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.faculty-menu-item:hover {
+  background: var(--color-surface-subtle);
+}
+.faculty-menu-danger {
+  color: var(--color-danger);
+}
+.faculty-menu-danger:hover {
+  background: var(--color-danger-soft);
+}
+.faculty-menu-sep {
+  height: 1px;
+  margin: var(--space-1) 0;
+  background: var(--color-border);
+}
+
+/* ── Modal bodies ── */
+.faculty-modal-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
   margin-bottom: var(--space-4);
 }
-
-/* ── Modals ── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  backdrop-filter: blur(2px);
-  padding: var(--space-4);
-}
-
-.modal-card {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  width: 100%;
-  max-width: 460px;
-  box-shadow: var(--shadow-lg);
+.faculty-modal-fields {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
-.modal-card h3 {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-bold);
-  color: var(--color-text);
-  margin: 0;
-}
-
-.modal-hint {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
-  line-height: 1.6;
-}
-
-.modal-label {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.modal-input,
-.modal-textarea {
-  width: 100%;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  padding: var(--space-3);
-  font-size: var(--text-sm);
-  font-family: inherit;
-  color: var(--color-text);
-  background: var(--color-surface-subtle);
-  transition: border-color var(--transition), box-shadow var(--transition);
-}
-
-.modal-input:focus,
-.modal-textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  background: var(--color-surface);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-.modal-textarea { resize: vertical; }
-
-.modal-error {
-  color: var(--color-danger);
-  font-size: var(--text-sm);
-  margin: 0;
-  font-weight: var(--weight-medium);
-}
-
-.modal-actions {
-  display: flex;
-  gap: var(--space-2);
-  justify-content: flex-end;
-  margin-top: var(--space-1);
-}
-
-/* Unarchive options */
+/* Reactivate: choice of keeping or replacing the deadline */
 .unarchive-options {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
-
 .unarchive-option {
   display: flex;
   align-items: flex-start;
@@ -386,48 +256,51 @@
   cursor: pointer;
   transition: border-color var(--transition), background var(--transition);
 }
-
-.unarchive-option:hover { border-color: var(--color-border-strong); }
-
+.unarchive-option:hover {
+  border-color: var(--color-border-strong);
+}
 .unarchive-option:has(input:checked) {
   border-color: var(--color-primary);
   background: var(--color-primary-soft);
 }
-
 .unarchive-option.is-disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
-
-.unarchive-option input { margin-top: 3px; }
-
+.unarchive-option input {
+  margin-top: 3px;
+}
 .unarchive-option span {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-
 .unarchive-option strong {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
 }
-
 .unarchive-option small {
   font-size: var(--text-xs);
   color: var(--color-text-secondary);
 }
-
-/* Responsive */
-@media (max-width: 900px) {
-  .faculty-container { padding: var(--space-5) var(--space-4) var(--space-7); }
-  .faculty-hero { flex-direction: column; gap: var(--space-4); align-items: flex-start; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .faculty-profile-card { flex-direction: column; align-items: flex-start; }
-  .faculty-profile-aside { align-self: stretch; }
+.unarchive-options + .field {
+  margin-top: var(--space-4);
+}
+.unarchive-options ~ .field-error {
+  margin-top: var(--space-3);
 }
 
-@media (max-width: 600px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .faculty-title { font-size: 1.9rem; }
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .faculty-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .faculty-profile {
+    flex-wrap: wrap;
+  }
+  .faculty-progress-track {
+    flex: 1;
+    width: auto;
+  }
 }

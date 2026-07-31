@@ -10,9 +10,15 @@ import {
 import { useAuth } from "../context/AuthContext";
 
 import Navbar from "./Navbar";
+import Avatar from "../components/Avatar";
+import CategoryTag from "../components/CategoryTag";
+import DeadlineChip from "../components/DeadlineChip";
 import StatusBadge from "../components/StatusBadge";
+import Spinner from "../components/Spinner";
+import EmptyState from "../components/EmptyState";
+import Field from "../components/Field";
 import ProfileModal from "../components/ProfileModal";
-import { IconFile } from "../components/Icons";
+import { IconFile, IconAlert, IconArrowLeft, IconUser } from "../components/Icons";
 import { useConfirm } from "../components/ConfirmProvider";
 
 import "./OpportunityDetail.css";
@@ -157,7 +163,9 @@ function OpportunityDetail() {
     return (
       <>
         <Navbar />
-        <p className="loading">Loading opportunity...</p>
+        <div className="container detail-state">
+          <Spinner center label="Loading opportunity" />
+        </div>
       </>
     );
   }
@@ -166,7 +174,21 @@ function OpportunityDetail() {
     return (
       <>
         <Navbar />
-        <p className="loading">Opportunity not found.</p>
+        <div className="container detail-state">
+          <EmptyState
+            icon={<IconAlert />}
+            title="Opportunity not found"
+            description="This opportunity may have been removed, or the link is incorrect."
+            action={
+              <button
+                className="btn btn-secondary"
+                onClick={() => navigate("/home")}
+              >
+                Back to opportunities
+              </button>
+            }
+          />
+        </div>
       </>
     );
   }
@@ -184,15 +206,13 @@ function OpportunityDetail() {
   const renderApplicationPanel = () => {
     if (isOwnerFaculty) {
       return (
-        <div className="application-panel">
-          <div>
-            <h3>Applicants</h3>
-            <p className="panel-hint">
-              Review and manage students who applied to this opportunity.
-            </p>
-          </div>
+        <div className="card detail-apply">
+          <h2 className="detail-apply-title">Applicants</h2>
+          <p className="detail-apply-hint">
+            Review and manage students who applied to this opportunity.
+          </p>
           <button
-            className="btn btn-primary"
+            className="btn btn-primary btn-block"
             onClick={() => navigate(`/opportunity/${id}/applicants`)}
           >
             View applicants
@@ -205,19 +225,23 @@ function OpportunityDetail() {
 
     if (hasActiveApplication) {
       return (
-        <div className="application-panel">
-          <div>
-            <h3>Your application</h3>
-            <p className="panel-hint">
-              Status: <StatusBadge status={myApplication.status} /> — submitted{" "}
+        <div className="card detail-apply">
+          <h2 className="detail-apply-title">Your application</h2>
+          <div className="detail-apply-status">
+            <StatusBadge status={myApplication.status} />
+            <span className="detail-apply-date">
+              Submitted{" "}
               {new Date(
                 myApplication.createdAt || Date.now()
               ).toLocaleDateString()}
-            </p>
+            </span>
           </div>
           {WITHDRAWABLE.includes(myApplication.status) && (
-            <button className="btn btn-danger-ghost" onClick={handleWithdraw}>
-              Withdraw
+            <button
+              className="btn btn-danger-ghost btn-block"
+              onClick={handleWithdraw}
+            >
+              Withdraw application
             </button>
           )}
         </div>
@@ -228,192 +252,236 @@ function OpportunityDetail() {
 
     if (!isEligible(profile, opportunity)) {
       return (
-        <div className="application-panel">
-          <div>
-            <h3>Apply</h3>
-            <p className="panel-hint">
-              You do not meet the eligibility criteria for this opportunity.
-            </p>
-          </div>
+        <div className="card detail-apply">
+          <h2 className="detail-apply-title">Apply</h2>
+          <p className="detail-apply-hint">
+            You do not meet the eligibility criteria for this opportunity.
+          </p>
         </div>
       );
     }
 
     if (!isOpen) {
       return (
-        <div className="application-panel">
-          <div>
-            <h3>Apply</h3>
-            <p className="panel-hint">
-              This opportunity is no longer accepting applications.
-            </p>
-          </div>
+        <div className="card detail-apply">
+          <h2 className="detail-apply-title">Apply</h2>
+          <p className="detail-apply-hint">
+            This opportunity is no longer accepting applications.
+          </p>
         </div>
       );
     }
 
     return (
-      <form className="apply-card" onSubmit={handleApply}>
-        <h3>Apply to this opportunity</h3>
+      <form className="card detail-apply" onSubmit={handleApply}>
+        <h2 className="detail-apply-title">Apply to this opportunity</h2>
         {myApplication?.status === "Withdrawn" && (
-          <p className="panel-hint">
+          <p className="detail-apply-hint">
             You previously withdrew. Re-applying is allowed after a short
             cooldown.
           </p>
         )}
 
-        <label className="apply-label">Cover letter</label>
-        <textarea
-          className="apply-textarea"
-          placeholder="Tell the faculty why you're a good fit (minimum 20 characters)."
-          value={coverLetter}
-          onChange={(e) => setCoverLetter(e.target.value)}
-          maxLength={2000}
-          rows={5}
-        />
+        <Field
+          id="coverLetter"
+          label="Cover letter"
+          hint="Minimum 20 characters."
+        >
+          <textarea
+            placeholder="Tell the faculty why you are a good fit."
+            value={coverLetter}
+            onChange={(e) => setCoverLetter(e.target.value)}
+            maxLength={2000}
+            rows={6}
+          />
+        </Field>
 
-        <label className="apply-label">Resume (PDF, optional)</label>
-        <div className="apply-file-row">
-          <label className="btn btn-secondary btn-sm file-trigger">
-            Choose PDF
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={handleResumeChange}
-              hidden
-            />
-          </label>
-          <span className="apply-file">
-            {resumeFile ? resumeFile.name : "No file chosen"}
-          </span>
+        <div className="detail-file">
+          <span className="detail-file-label">Resume (PDF, optional)</span>
+          <div className="detail-file-row">
+            <label className="btn btn-secondary btn-sm detail-file-btn">
+              Choose PDF
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={handleResumeChange}
+                hidden
+              />
+            </label>
+            <span className="detail-file-name">
+              {resumeFile ? resumeFile.name : "No file chosen"}
+            </span>
+          </div>
         </div>
 
-        {applyError && <p className="apply-error">{applyError}</p>}
+        {applyError && <p className="field-error">{applyError}</p>}
 
-        <button type="submit" className="btn btn-primary" disabled={applying}>
-          {applying ? "Submitting..." : "Submit application"}
+        <button
+          type="submit"
+          className="btn btn-primary btn-block"
+          disabled={applying}
+        >
+          {applying ? "Submitting…" : "Submit application"}
         </button>
       </form>
     );
   };
 
+  const panel = renderApplicationPanel();
+
   return (
     <>
       <Navbar />
 
-      <div className="detail-container">
-        <div className="detail-card">
-          <div className="detail-header">
-            <h1 className="detail-title">{opportunity.title}</h1>
-            <p className="detail-description">{opportunity.description}</p>
+      <div className="detail">
+        <div className="container detail-top">
+          <button
+            type="button"
+            className="detail-back"
+            onClick={() => navigate(-1)}
+          >
+            <IconArrowLeft /> Back
+          </button>
+
+          <div className="detail-hero-tags">
+            <CategoryTag category={opportunity.category} />
+            <DeadlineChip deadline={opportunity.deadline} />
           </div>
 
-          {renderApplicationPanel()}
+          <h1 className="detail-title">{opportunity.title}</h1>
 
-          <div className="detail-grid">
-            <div className="detail-box">
-              <p className="detail-label">Category</p>
-              <p className="detail-value">{opportunity.category}</p>
-            </div>
-            <div className="detail-box">
-              <p className="detail-label">Posted By</p>
-              <p className="detail-value">
+          <div className="detail-poster">
+            <Avatar
+              name={opportunity.postedBy?.name}
+              image={opportunity.postedBy?.profileImage}
+              size={40}
+            />
+            <div className="detail-poster-meta">
+              <span className="detail-poster-name">
                 {opportunity.postedBy?.prefix
                   ? `${opportunity.postedBy.prefix} `
                   : ""}
                 {opportunity.postedBy?.name}
-              </p>
-              {opportunity.postedBy?._id && (
-                <button
-                  className="link-inline"
-                  onClick={() => setShowFaculty(true)}
-                >
-                  View profile
-                </button>
+              </span>
+              {opportunity.postedBy?.department && (
+                <span className="detail-poster-sub">
+                  {opportunity.postedBy.department}
+                </span>
               )}
             </div>
-            <div className="detail-box">
-              <p className="detail-label">Department</p>
-              <p className="detail-value">
-                {opportunity.postedBy?.department || "Not specified"}
-              </p>
-            </div>
-            <div className="detail-box">
-              <p className="detail-label">Eligible Branches</p>
-              <p className="detail-value">
-                {opportunity.eligibleBranches?.join(", ")}
-              </p>
-            </div>
-            <div className="detail-box">
-              <p className="detail-label">Eligible Years</p>
-              <p className="detail-value">
-                {opportunity.eligibleYears?.join(", ")}
-              </p>
-            </div>
-            <div className="detail-box">
-              <p className="detail-label">Eligible Gender</p>
-              <p className="detail-value">{opportunity.eligibleGender}</p>
-            </div>
-            <div className="detail-box">
-              <p className="detail-label">Contact Email</p>
-              <p className="detail-value">{opportunity.contactEmail}</p>
-            </div>
-            <div className="detail-box">
-              <p className="detail-label">Deadline</p>
-              <p className="detail-value">
-                {new Date(opportunity.deadline).toLocaleDateString()}
-              </p>
-            </div>
+            {opportunity.postedBy?._id && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm detail-poster-btn"
+                onClick={() => setShowFaculty(true)}
+              >
+                <IconUser /> View profile
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="container detail-body">
+          <div className="detail-main">
+            <section className="card detail-section">
+              <h2 className="detail-section-title">About this opportunity</h2>
+              <p className="detail-about">{opportunity.description}</p>
+            </section>
+
+            <section className="card detail-section">
+              <h2 className="detail-section-title">Details</h2>
+              <dl className="detail-facts">
+                <div className="detail-fact">
+                  <dt>Eligible branches</dt>
+                  <dd>{opportunity.eligibleBranches?.join(", ") || "All"}</dd>
+                </div>
+                <div className="detail-fact">
+                  <dt>Eligible years</dt>
+                  <dd>{opportunity.eligibleYears?.join(", ") || "All"}</dd>
+                </div>
+                <div className="detail-fact">
+                  <dt>Eligible gender</dt>
+                  <dd>{opportunity.eligibleGender}</dd>
+                </div>
+                <div className="detail-fact">
+                  <dt>Deadline</dt>
+                  <dd>
+                    {new Date(opportunity.deadline).toLocaleDateString()}
+                  </dd>
+                </div>
+                <div className="detail-fact">
+                  <dt>Department</dt>
+                  <dd>{opportunity.postedBy?.department || "Not specified"}</dd>
+                </div>
+                <div className="detail-fact">
+                  <dt>Contact</dt>
+                  <dd>
+                    {opportunity.contactEmail ? (
+                      <a href={`mailto:${opportunity.contactEmail}`}>
+                        {opportunity.contactEmail}
+                      </a>
+                    ) : (
+                      "Not specified"
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            {opportunity.tags?.filter((t) => t.trim() !== "").length > 0 && (
+              <section className="card detail-section">
+                <h2 className="detail-section-title">Tags</h2>
+                <div className="detail-tags">
+                  {opportunity.tags
+                    .filter((t) => t.trim() !== "")
+                    .map((tag, index) => (
+                      <span className="detail-tag" key={index}>
+                        {tag}
+                      </span>
+                    ))}
+                </div>
+              </section>
+            )}
+
+            {opportunity.attachments?.length > 0 && (
+              <section className="card detail-section">
+                <h2 className="detail-section-title">Attachments</h2>
+                <div className="detail-attachments">
+                  {opportunity.attachments.map((att) => (
+                    <a
+                      key={att._id}
+                      href={fileUrl(att.url)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="detail-attachment"
+                    >
+                      <IconFile />
+                      <span>{att.originalName}</span>
+                    </a>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {opportunity.deadlineHistory?.length > 0 && (
+              <section className="card detail-section">
+                <h2 className="detail-section-title">Deadline history</h2>
+                <ul className="detail-history">
+                  {opportunity.deadlineHistory.map((entry, i) => (
+                    <li key={i} className="detail-history-item">
+                      Changed on{" "}
+                      {new Date(entry.extendedAt).toLocaleDateString()}. Previous
+                      deadline was{" "}
+                      {new Date(entry.previousDeadline).toLocaleDateString()}
+                      {entry.reason && ` (${entry.reason})`}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
 
-          {opportunity.tags?.length > 0 && (
-            <>
-              <h3 className="tags-title">Related Tags</h3>
-              <div className="tags-container">
-                {opportunity.tags.map((tag, index) => (
-                  <span className="tag" key={index}>
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-
-          {opportunity.attachments?.length > 0 && (
-            <>
-              <h3 className="tags-title">Attachments</h3>
-              <div className="attachments-list">
-                {opportunity.attachments.map((att) => (
-                  <a
-                    key={att._id}
-                    href={fileUrl(att.url)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="detail-attachment-link"
-                  >
-                    <IconFile /> {att.originalName}
-                  </a>
-                ))}
-              </div>
-            </>
-          )}
-
-          {opportunity.deadlineHistory?.length > 0 && (
-            <>
-              <h3 className="tags-title">Deadline History</h3>
-              <ul className="deadline-history-list">
-                {opportunity.deadlineHistory.map((entry, i) => (
-                  <li key={i} className="deadline-history-item">
-                    Changed on{" "}
-                    {new Date(entry.extendedAt).toLocaleDateString()} — previous
-                    deadline was{" "}
-                    {new Date(entry.previousDeadline).toLocaleDateString()}
-                    {entry.reason && ` (${entry.reason})`}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+          {panel && <aside className="detail-side">{panel}</aside>}
         </div>
       </div>
 

@@ -1,48 +1,31 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import "./Home.css";
 
 import Navbar from "./Navbar";
 import Avatar from "../components/Avatar";
-import { IconSearch, IconClock } from "../components/Icons";
+import CategoryTag from "../components/CategoryTag";
+import DeadlineChip from "../components/DeadlineChip";
+import PageHeader from "../components/PageHeader";
+import Spinner from "../components/Spinner";
+import EmptyState from "../components/EmptyState";
+import { IconSearch, IconAlert, IconPlus, IconArrowRight } from "../components/Icons";
 import { BRANCH_OPTIONS, YEAR_OPTIONS } from "../constants/profileOptions";
 
 import { fetchWithAuth } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
 
-
-// Days remaining until a deadline (negative if past). Drives the urgency chip.
-function deadlineInfo(deadline) {
-  if (!deadline) return null;
-  const days = Math.ceil(
-    (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  );
-  if (days < 0) return { label: "Closed", tone: "past" };
-  if (days === 0) return { label: "Last day", tone: "urgent" };
-  if (days === 1) return { label: "1 day left", tone: "urgent" };
-  if (days <= 5) return { label: `${days} days left`, tone: "soon" };
-  return { label: `${days} days left`, tone: "normal" };
-}
-
-function DeadlineChip({ deadline }) {
-  const info = deadlineInfo(deadline);
-  if (!info) return null;
-  return (
-    <span className={`deadline-chip ${info.tone}`}>
-      <IconClock /> {info.label}
-    </span>
-  );
-}
+const CATEGORIES = ["All", "Internship", "Research", "Paid Gig", "Faculty Project"];
+const YEAR_LABEL = { 1: "1st Year", 2: "2nd Year", 3: "3rd Year", 4: "4th Year" };
 
 // Compact eligibility summary: "All", or first few values with a "+N" overflow.
 function summarize(list, max = 3) {
-  if (!list || list.length === 0) return "—";
+  if (!list || list.length === 0) return "-";
   if (list.includes("All")) return "All";
   if (list.length <= max) return list.join(", ");
   return `${list.slice(0, max).join(", ")} +${list.length - max}`;
 }
-
 
 function Home() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,9 +40,17 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const isFaculty = currentUser?.role === "Faculty";
+  const isStudent = currentUser?.role === "Student";
+
+  const hasFilters =
+    searchTerm.trim() !== "" ||
+    selectedCategory !== "All" ||
+    selectedBranch !== "All" ||
+    selectedYear !== "All";
 
   const buildQuery = (pageNum) => {
     const params = new URLSearchParams({ page: String(pageNum), limit: "12" });
@@ -102,7 +93,7 @@ function Home() {
     }, 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedCategory, selectedBranch, selectedYear]);
+  }, [searchTerm, selectedCategory, selectedBranch, selectedYear, reloadKey]);
 
   const loadMore = async () => {
     setLoadingMore(true);
@@ -127,125 +118,166 @@ function Home() {
     <>
       <Navbar />
 
-      <div className="home-container">
-        <div className="home-inner">
+      <div className="home">
+        <PageHeader
+          title={`Welcome back, ${
+            currentUser?.prefix ? `${currentUser.prefix} ` : ""
+          }${currentUser?.name || ""}`}
+          subtitle={
+            isFaculty
+              ? "Post opportunities and manage collaborations and projects across campus."
+              : "Discover internships, research opportunities, faculty projects and paid gigs, all in one place."
+          }
+          action={
+            isFaculty ? (
+              <Link to="/create-opportunity" className="btn btn-primary">
+                <IconPlus /> Post an opportunity
+              </Link>
+            ) : isStudent ? (
+              <Link to="/my-applications" className="btn btn-secondary">
+                My applications
+              </Link>
+            ) : null
+          }
+        />
 
-          {/* HEADER */}
-          <div className="top-bar">
-            <div>
-              <h1 className="home-title">
-                Welcome back,{" "}
-                {currentUser?.prefix ? `${currentUser.prefix} ` : ""}
-                {currentUser?.name}
-              </h1>
-              <p className="home-subtitle">
-                {currentUser?.role === "Faculty"
-                  ? "Manage opportunities, collaborations and projects across campus."
-                  : "Discover internships, research opportunities, faculty projects and paid gigs."}
-              </p>
+        <div className="container home-body">
+
+          {/* Filter toolbar */}
+          <div className="home-filters">
+            <div
+              className="home-chips"
+              role="group"
+              aria-label="Filter by category"
+            >
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  className={`home-chip${
+                    selectedCategory === cat ? " active" : ""
+                  }`}
+                  aria-pressed={selectedCategory === cat}
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  {cat === "All" ? "All opportunities" : cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="home-toolbar" role="search">
+              <div className="home-search">
+                <IconSearch className="home-search-icon" />
+                <input
+                  type="text"
+                  className="field-control"
+                  placeholder="Search by title, keyword or tag"
+                  aria-label="Search opportunities"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              <select
+                className="field-control home-select"
+                aria-label="Filter by branch"
+                value={selectedBranch}
+                onChange={(e) => setSelectedBranch(e.target.value)}
+              >
+                <option value="All">All branches</option>
+                {BRANCH_OPTIONS.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="field-control home-select"
+                aria-label="Filter by year"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+              >
+                <option value="All">All years</option>
+                {YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={String(y)}>
+                    {YEAR_LABEL[y]}
+                  </option>
+                ))}
+              </select>
+
+              {hasFilters && (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={clearFilters}
+                >
+                  Clear
+                </button>
+              )}
             </div>
           </div>
 
-          {/* FILTERS */}
-          <div className="filter-wrapper">
-            <div className="search-box">
-              <IconSearch className="search-icon" />
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Search opportunities..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <select
-              className="category-select"
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="All">All Categories</option>
-              <option value="Internship">Internship</option>
-              <option value="Research">Research</option>
-              <option value="Paid Gig">Paid Gig</option>
-              <option value="Faculty Project">Faculty Project</option>
-            </select>
-
-            <select
-              className="category-select"
-              value={selectedBranch}
-              onChange={(e) => setSelectedBranch(e.target.value)}
-            >
-              <option value="All">All Branches</option>
-              {BRANCH_OPTIONS.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="category-select"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-            >
-              <option value="All">All Years</option>
-              {YEAR_OPTIONS.map((y) => (
-                <option key={y} value={String(y)}>
-                  {y === 1 ? "1st" : y === 2 ? "2nd" : y === 3 ? "3rd" : "4th"}{" "}
-                  Year
-                </option>
-              ))}
-            </select>
-
-            <button className="clear-btn" onClick={clearFilters}>
-              Clear
-            </button>
+          {/* Section header */}
+          <div className="home-section-head">
+            <h2 className="home-section-title">
+              {selectedCategory === "All" ? "Explore opportunities" : selectedCategory}
+            </h2>
+            {!loading && !error && (
+              <span className="home-count">
+                {total} {total === 1 ? "result" : "results"}
+              </span>
+            )}
           </div>
 
-          {/* SECTION HEADER */}
-          <div className="explore-header">
-            <h2 className="section-title">Explore Opportunities</h2>
-            <span className="result-count">
-              {total} {total === 1 ? "opportunity" : "opportunities"}
-            </span>
-          </div>
-
-          {/* RESULTS */}
+          {/* Results */}
           {loading ? (
-            <div className="home-loading">
-              <div className="home-spinner" />
-              <p className="home-loading-text">Loading opportunities…</p>
+            <div className="home-status">
+              <Spinner center label="Loading opportunities" />
             </div>
           ) : error ? (
-            <div className="opportunities-grid">
-              <div className="no-results">
-                <h3>Something went wrong</h3>
-                <p>{error}</p>
-              </div>
-            </div>
+            <EmptyState
+              icon={<IconAlert />}
+              title="Something went wrong"
+              description={error}
+              action={
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setReloadKey((k) => k + 1)}
+                >
+                  Try again
+                </button>
+              }
+            />
           ) : opportunities.length === 0 ? (
-            <div className="opportunities-grid">
-              <div className="no-results">
-                <h3>No opportunities found</h3>
-                <p>Try changing the filters or search terms.</p>
-              </div>
-            </div>
+            <EmptyState
+              icon={<IconSearch />}
+              title="No opportunities found"
+              description="Try a different category, or clear your filters to see everything."
+              action={
+                hasFilters && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={clearFilters}
+                  >
+                    Clear filters
+                  </button>
+                )
+              }
+            />
           ) : (
             <>
               <div className="opportunities-grid">
                 {opportunities.map((item) => (
-                  <div
-                    className="opportunity-card"
+                  <Link
+                    to={`/opportunity/${item._id}`}
+                    className="card card-hover opportunity-card"
                     key={item._id}
-                    onClick={() => navigate(`/opportunity/${item._id}`)}
                   >
                     <div className="oc-header">
-                      <span
-                        className={`badge ${item.category?.replace(" ", "-")}`}
-                      >
-                        {item.category}
-                      </span>
+                      <CategoryTag category={item.category} />
                       <DeadlineChip deadline={item.deadline} />
                     </div>
 
@@ -258,9 +290,7 @@ function Home() {
                         size={28}
                       />
                       <span className="oc-faculty-name">
-                        {item.postedBy?.prefix
-                          ? `${item.postedBy.prefix} `
-                          : ""}
+                        {item.postedBy?.prefix ? `${item.postedBy.prefix} ` : ""}
                         {item.postedBy?.name || "Faculty"}
                       </span>
                       {item.postedBy?.department && (
@@ -296,21 +326,18 @@ function Home() {
                           {summarize(item.eligibleYears)}
                         </span>
                       </div>
-                      <span className="oc-cta">View details →</span>
+                      <span className="oc-cta">
+                        View details <IconArrowRight className="oc-cta-icon" />
+                      </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
 
               {hasMore && (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    marginTop: "var(--space-6)",
-                  }}
-                >
+                <div className="home-loadmore">
                   <button
+                    type="button"
                     className="btn btn-secondary"
                     onClick={loadMore}
                     disabled={loadingMore}

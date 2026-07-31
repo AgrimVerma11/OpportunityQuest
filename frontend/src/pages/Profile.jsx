@@ -3,6 +3,10 @@ import Navbar from "./Navbar";
 import { useAuth } from "../context/AuthContext";
 import Avatar from "../components/Avatar";
 import AvatarCropper from "../components/AvatarCropper";
+import Badge from "../components/Badge";
+import Spinner from "../components/Spinner";
+import { useToast } from "../components/ToastProvider";
+import { IconX } from "../components/Icons";
 import {
   fetchWithAuth,
   putWithAuth,
@@ -22,8 +26,26 @@ import "./Profile.css";
 
 const EMPTY_PROJECT = { title: "", description: "" };
 
+// One field: a label, and either the edit control (edit mode) or the saved
+// value rendered as clean text (read mode).
+function ProfileField({ label, value, editMode, children }) {
+  return (
+    <div className="pf-field">
+      <span className="pf-label">{label}</span>
+      {editMode && children ? (
+        children
+      ) : value != null && value !== "" ? (
+        <span className="pf-value">{value}</span>
+      ) : (
+        <span className="pf-value pf-empty">Not added</span>
+      )}
+    </div>
+  );
+}
+
 function Profile() {
   const { updateUser } = useAuth();
+  const toast = useToast();
   const fileInputRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
@@ -32,7 +54,6 @@ function Profile() {
   const [editMode, setEditMode] = useState(false);
   const [profile, setProfile] = useState(null);
   const [draft, setDraft] = useState(null);
-  const [saveError, setSaveError] = useState("");
   const [cropFile, setCropFile] = useState(null);
 
   useEffect(() => {
@@ -85,18 +106,16 @@ function Profile() {
     });
 
   // ── Avatar upload ──
-  // Picking a file opens the cropper; the cropped result is what we upload.
   const handleImagePick = (e) => {
     const file = e.target.files[0];
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (!file) return;
-    setSaveError("");
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setSaveError("Profile image must be a JPG, PNG or WebP.");
+      toast.error("Profile image must be a JPG, PNG or WebP.");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setSaveError("Profile image must be under 2MB.");
+      toast.error("Profile image must be under 2MB.");
       return;
     }
     setCropFile(file);
@@ -105,7 +124,6 @@ function Profile() {
   const handleCroppedUpload = async (blob) => {
     setCropFile(null);
     setUploadingImage(true);
-    setSaveError("");
     try {
       const formData = new FormData();
       formData.append("image", new File([blob], "avatar.jpg", { type: "image/jpeg" }));
@@ -115,18 +133,17 @@ function Profile() {
         setDraft((d) => ({ ...d, profileImage: res.profile.profileImage }));
         updateUser({ profileImage: res.profile.profileImage });
       } else {
-        setSaveError(res.message || "Could not upload image.");
+        toast.error(res.message || "Could not upload image.");
       }
     } catch (err) {
       console.error(err);
-      setSaveError("Could not upload image. Please try again.");
+      toast.error("Could not upload image. Please try again.");
     } finally {
       setUploadingImage(false);
     }
   };
 
   const handleRemoveImage = async () => {
-    setSaveError("");
     setUploadingImage(true);
     try {
       const res = await deleteWithAuth("/auth/profile/image");
@@ -135,11 +152,11 @@ function Profile() {
         setDraft((d) => ({ ...d, profileImage: "" }));
         updateUser({ profileImage: "" });
       } else {
-        setSaveError(res.message || "Could not remove image.");
+        toast.error(res.message || "Could not remove image.");
       }
     } catch (err) {
       console.error(err);
-      setSaveError("Could not remove image. Please try again.");
+      toast.error("Could not remove image. Please try again.");
     } finally {
       setUploadingImage(false);
     }
@@ -147,19 +164,16 @@ function Profile() {
 
   const handleEdit = () => {
     setDraft({ ...profile });
-    setSaveError("");
     setEditMode(true);
   };
 
   const handleCancel = () => {
     setDraft({ ...profile });
-    setSaveError("");
     setEditMode(false);
   };
 
   const handleSave = async () => {
     setSaving(true);
-    setSaveError("");
 
     const payload = isStudent
       ? {
@@ -202,14 +216,15 @@ function Profile() {
           name: result.profile.name,
           prefix: result.profile.prefix || "",
         });
+        toast.success("Profile saved.");
       } else {
-        setSaveError(
+        toast.error(
           result.errors?.[0] || result.message || "Failed to save. Please try again."
         );
       }
     } catch (err) {
       console.error(err);
-      setSaveError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -219,7 +234,9 @@ function Profile() {
     return (
       <>
         <Navbar />
-        <div className="profile-loading">Loading profile…</div>
+        <div className="profile-state">
+          <Spinner center label="Loading profile" />
+        </div>
       </>
     );
   }
@@ -251,18 +268,18 @@ function Profile() {
   const current = editMode ? draft : profile;
   const displayName =
     !isStudent && profile.prefix ? `${profile.prefix} ${profile.name}` : profile.name;
+  const roleContext = isStudent ? profile.branch : profile.department;
 
   return (
     <>
       <Navbar />
 
-      <div className="profile-page">
-        <div className="profile-inner">
-
-          {/* HERO */}
-          <div className="profile-hero">
-            <div className="profile-avatar-wrap">
-              <Avatar name={profile.name} image={profile.profileImage} size={88} />
+      <div className="profile">
+        <div className="profile-body">
+          {/* Hero */}
+          <div className="card profile-hero">
+            <div className="profile-avatar">
+              <Avatar name={profile.name} image={profile.profileImage} size={96} />
               <input
                 ref={fileInputRef}
                 type="file"
@@ -270,19 +287,23 @@ function Profile() {
                 style={{ display: "none" }}
                 onChange={handleImagePick}
               />
-              <div className="avatar-actions">
+              <div className="profile-avatar-actions">
                 <button
                   type="button"
-                  className="avatar-edit-btn"
+                  className="btn btn-secondary btn-sm"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingImage}
                 >
-                  {uploadingImage ? "Working…" : profile.profileImage ? "Change" : "Add photo"}
+                  {uploadingImage
+                    ? "Working…"
+                    : profile.profileImage
+                    ? "Change"
+                    : "Add photo"}
                 </button>
                 {profile.profileImage && !uploadingImage && (
                   <button
                     type="button"
-                    className="avatar-remove-btn"
+                    className="btn btn-ghost btn-sm profile-avatar-remove"
                     onClick={handleRemoveImage}
                   >
                     Remove
@@ -291,34 +312,35 @@ function Profile() {
               </div>
             </div>
 
-            <div className="profile-hero-info">
-              <h1>{displayName}</h1>
-              <p className="profile-role">
-                {profile.role}
-                {isStudent
-                  ? profile.branch
-                    ? ` · ${profile.branch}`
-                    : ""
-                  : profile.department
-                  ? ` · ${profile.department}`
-                  : ""}
-              </p>
+            <div className="profile-identity">
+              <h1 className="profile-name">{displayName}</h1>
+              <div className="profile-role">
+                <Badge tone="primary">{profile.role}</Badge>
+                {roleContext && <span className="profile-role-sub">{roleContext}</span>}
+              </div>
 
-              <div className="completion-wrapper">
-                <div className="completion-label">
+              <div className="profile-completion">
+                <div className="profile-completion-head">
                   <span>Profile completion</span>
-                  <span className="completion-pct">{completion}%</span>
+                  <span className="profile-completion-pct">{completion}%</span>
                 </div>
-                <div className="progress-bar">
+                <div
+                  className="profile-progress"
+                  role="progressbar"
+                  aria-valuenow={completion}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Profile completion"
+                >
                   <div
-                    className="progress-fill"
+                    className="profile-progress-fill"
                     style={{ width: `${completion}%` }}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="profile-hero-actions">
+            <div className="profile-actions">
               {editMode ? (
                 <>
                   <button
@@ -326,40 +348,44 @@ function Profile() {
                     onClick={handleSave}
                     disabled={saving}
                   >
-                    {saving ? "Saving…" : "Save Changes"}
+                    {saving ? "Saving…" : "Save changes"}
                   </button>
-                  <button className="btn btn-secondary" onClick={handleCancel}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleCancel}
+                    disabled={saving}
+                  >
                     Cancel
                   </button>
                 </>
               ) : (
                 <button className="btn btn-primary" onClick={handleEdit}>
-                  Edit Profile
+                  Edit profile
                 </button>
               )}
-              {saveError && <p className="profile-save-error">{saveError}</p>}
             </div>
           </div>
 
-          {/* ABOUT */}
-          <div className="profile-about-card">
-            <h2>About Me</h2>
+          {/* About */}
+          <section className="card profile-section">
+            <h2 className="profile-section-title">About</h2>
             {editMode ? (
               <>
                 <textarea
+                  className="field-control"
                   name="bio"
                   value={current.bio || ""}
                   onChange={handleChange}
                   maxLength={BIO_MAX_LENGTH}
+                  rows={4}
                   placeholder={
                     isStudent
                       ? "A short introduction about yourself, your interests and goals."
                       : "Tell students about your research interests, expertise and academic journey."
                   }
-                  rows={4}
                 />
                 <div
-                  className={`char-counter${
+                  className={`profile-counter${
                     (current.bio || "").length >= BIO_MAX_LENGTH ? " at-limit" : ""
                   }`}
                 >
@@ -367,9 +393,9 @@ function Profile() {
                 </div>
               </>
             ) : (
-              <p>{profile.bio || "No bio added yet."}</p>
+              <p className="profile-bio">{profile.bio || "No bio added yet."}</p>
             )}
-          </div>
+          </section>
 
           {isStudent ? renderStudent() : renderFaculty()}
         </div>
@@ -389,70 +415,87 @@ function Profile() {
   function renderFaculty() {
     return (
       <div className="profile-grid">
-        <div className="profile-info-card">
-          <h3>Professional Information</h3>
+        <section className="card profile-section">
+          <h3 className="profile-section-title">Professional information</h3>
 
-          <Field label="Title">
-            {editMode ? (
-              <select name="prefix" value={current.prefix || ""} onChange={handleChange}>
-                <option value="">None</option>
-                <option value="Dr.">Dr.</option>
-                <option value="Prof.">Prof.</option>
-              </select>
-            ) : (
-              <ReadValue value={profile.prefix} />
-            )}
-          </Field>
+          <ProfileField label="Title" value={profile.prefix} editMode={editMode}>
+            <select
+              className="field-control"
+              name="prefix"
+              value={current.prefix || ""}
+              onChange={handleChange}
+            >
+              <option value="">None</option>
+              <option value="Dr.">Dr.</option>
+              <option value="Prof.">Prof.</option>
+            </select>
+          </ProfileField>
 
-          <Field label="Full Name">
+          <ProfileField label="Full name" value={profile.name} editMode={editMode}>
             <input
+              className="field-control"
               name="name"
               value={current.name || ""}
-              disabled={!editMode}
               onChange={handleChange}
             />
-          </Field>
+          </ProfileField>
 
-          <Field label="Department">
+          <ProfileField
+            label="Department"
+            value={profile.department}
+            editMode={editMode}
+          >
             <input
+              className="field-control"
               name="department"
               value={current.department || ""}
-              disabled={!editMode}
               onChange={handleChange}
-              placeholder={editMode ? "e.g. DCSE" : "—"}
+              placeholder="e.g. DCSE"
             />
-          </Field>
+          </ProfileField>
 
-          <Field label="Designation">
+          <ProfileField
+            label="Designation"
+            value={profile.designation}
+            editMode={editMode}
+          >
             <input
+              className="field-control"
               name="designation"
               value={current.designation || ""}
-              disabled={!editMode}
               onChange={handleChange}
-              placeholder={editMode ? "e.g. Assistant Professor" : "—"}
+              placeholder="e.g. Assistant Professor"
             />
-          </Field>
+          </ProfileField>
 
-          <Field label="Cabin / Office">
+          <ProfileField
+            label="Cabin / office"
+            value={profile.office}
+            editMode={editMode}
+          >
             <input
+              className="field-control"
               name="office"
               value={current.office || ""}
-              disabled={!editMode}
               onChange={handleChange}
-              placeholder={editMode ? "e.g. Cabin G-204, CSED Block" : "—"}
+              placeholder="e.g. Cabin G-204, CSED Block"
             />
-          </Field>
+          </ProfileField>
 
-          <Field label="Research Interests">
+          <ProfileField
+            label="Research interests"
+            value={profile.interests}
+            editMode={editMode}
+          >
             <input
+              className="field-control"
               name="interests"
               value={current.interests || ""}
-              disabled={!editMode}
               onChange={handleChange}
-              placeholder={editMode ? "e.g. Machine Learning, IoT" : "—"}
+              placeholder="e.g. Machine Learning, IoT"
             />
-          </Field>
-        </div>
+          </ProfileField>
+        </section>
 
         {renderContactCard()}
       </div>
@@ -463,65 +506,70 @@ function Profile() {
   function renderStudent() {
     const skills = current.skills || [];
     const projects = [0, 1].map((i) => current.projects?.[i] || EMPTY_PROJECT);
-    const suggestedPosition = current.year
-      ? POSITION_BY_YEAR[current.year]
-      : "";
+    const suggestedPosition = current.year ? POSITION_BY_YEAR[current.year] : "";
 
     return (
       <>
         <div className="profile-grid">
-          <div className="profile-info-card">
-            <h3>Academic Details</h3>
+          <section className="card profile-section">
+            <h3 className="profile-section-title">Academic details</h3>
 
-            <Field label="Full Name">
+            <ProfileField label="Full name" value={profile.name} editMode={editMode}>
               <input
+                className="field-control"
                 name="name"
                 value={current.name || ""}
-                disabled={!editMode}
                 onChange={handleChange}
               />
-            </Field>
+            </ProfileField>
 
-            <Field label="Branch">
-              {editMode ? (
-                <select name="branch" value={current.branch || ""} onChange={handleChange}>
-                  <option value="">Select branch</option>
-                  {BRANCH_OPTIONS.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <ReadValue value={profile.branch} />
-              )}
-            </Field>
+            <ProfileField label="Branch" value={profile.branch} editMode={editMode}>
+              <select
+                className="field-control"
+                name="branch"
+                value={current.branch || ""}
+                onChange={handleChange}
+              >
+                <option value="">Select branch</option>
+                {BRANCH_OPTIONS.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </ProfileField>
 
-            <Field label="Year">
-              {editMode ? (
-                <select name="year" value={current.year || ""} onChange={handleChange}>
-                  <option value="">Select year</option>
-                  {YEAR_OPTIONS.map((y) => (
-                    <option key={y} value={y}>
-                      Year {y}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <ReadValue value={profile.year ? `Year ${profile.year}` : ""} />
-              )}
-            </Field>
-          </div>
+            <ProfileField
+              label="Year"
+              value={profile.year ? `Year ${profile.year}` : ""}
+              editMode={editMode}
+            >
+              <select
+                className="field-control"
+                name="year"
+                value={current.year || ""}
+                onChange={handleChange}
+              >
+                <option value="">Select year</option>
+                {YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={y}>
+                    Year {y}
+                  </option>
+                ))}
+              </select>
+            </ProfileField>
+          </section>
 
           {renderContactCard()}
         </div>
 
-        {/* SKILLS */}
-        <div className="profile-info-card">
-          <h3>Top Skills</h3>
+        {/* Skills */}
+        <section className="card profile-section">
+          <h3 className="profile-section-title">Top skills</h3>
           {editMode && (
-            <div className="skill-picker">
+            <div className="profile-skill-picker">
               <select
+                className="field-control"
                 value=""
                 onChange={(e) => addSkill(e.target.value)}
                 disabled={skills.length >= MAX_SKILLS}
@@ -537,150 +585,159 @@ function Profile() {
                   </option>
                 ))}
               </select>
-              <span className="skill-hint">Choose up to {MAX_SKILLS}.</span>
+              <span className="profile-hint">Choose up to {MAX_SKILLS}.</span>
             </div>
           )}
-          <div className="skill-chips">
-            {skills.length === 0 && <span className="muted">No skills added.</span>}
+          <div className="profile-chips">
+            {skills.length === 0 && (
+              <span className="pf-empty">No skills added.</span>
+            )}
             {skills.map((s) => (
-              <span className="skill-chip" key={s}>
+              <span className="profile-chip" key={s}>
                 {s}
                 {editMode && (
-                  <button type="button" onClick={() => removeSkill(s)}>
-                    ×
+                  <button
+                    type="button"
+                    aria-label={`Remove ${s}`}
+                    onClick={() => removeSkill(s)}
+                  >
+                    <IconX />
                   </button>
                 )}
               </span>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* SOCIETY */}
-        <div className="profile-info-card">
-          <h3>Society / Club</h3>
+        {/* Society */}
+        <section className="card profile-section">
+          <h3 className="profile-section-title">Society / club</h3>
           {Number(current.year) === 4 && editMode && (
-            <p className="muted small">
+            <p className="profile-hint profile-hint-block">
               Final-year students are usually not active society members.
             </p>
           )}
           <div className="profile-two-col">
-            <Field label="Society / Club">
+            <ProfileField
+              label="Society / club"
+              value={profile.society?.name}
+              editMode={editMode}
+            >
               <input
+                className="field-control"
                 value={current.society?.name || ""}
-                disabled={!editMode}
                 onChange={(e) => setSociety("name", e.target.value)}
-                placeholder={editMode ? "e.g. ACM Student Chapter" : "—"}
+                placeholder="e.g. ACM Student Chapter"
               />
-            </Field>
-            <Field label="Position">
-              {editMode ? (
-                <select
-                  value={current.society?.position || ""}
-                  onChange={(e) => setSociety("position", e.target.value)}
-                >
-                  <option value="">
-                    {suggestedPosition
-                      ? `Suggested: ${suggestedPosition}`
-                      : "Select position"}
+            </ProfileField>
+            <ProfileField
+              label="Position"
+              value={profile.society?.position}
+              editMode={editMode}
+            >
+              <select
+                className="field-control"
+                value={current.society?.position || ""}
+                onChange={(e) => setSociety("position", e.target.value)}
+              >
+                <option value="">
+                  {suggestedPosition
+                    ? `Suggested: ${suggestedPosition}`
+                    : "Select position"}
+                </option>
+                {POSITION_OPTIONS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
                   </option>
-                  {POSITION_OPTIONS.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <ReadValue value={profile.society?.position} />
-              )}
-            </Field>
+                ))}
+              </select>
+            </ProfileField>
           </div>
-        </div>
+        </section>
 
-        {/* PROJECTS */}
-        <div className="profile-info-card">
-          <h3>Projects</h3>
+        {/* Projects */}
+        <section className="card profile-section">
+          <h3 className="profile-section-title">Projects</h3>
           {!editMode && projects.every((p) => !p.title) && (
-            <span className="muted">No projects added.</span>
+            <span className="pf-empty">No projects added.</span>
           )}
           {projects.map((p, i) =>
             editMode || p.title ? (
-              <div className="project-block" key={i}>
-                <Field label={`Project ${i + 1}`}>
+              <div className="profile-project" key={i}>
+                <ProfileField
+                  label={`Project ${i + 1}`}
+                  value={p.title}
+                  editMode={editMode}
+                >
                   <input
+                    className="field-control"
                     value={p.title || ""}
-                    disabled={!editMode}
                     onChange={(e) => setProject(i, "title", e.target.value)}
-                    placeholder={editMode ? "Project title" : "—"}
+                    placeholder="Project title"
                   />
-                </Field>
-                {(editMode || p.description) && (
+                </ProfileField>
+                {editMode ? (
                   <textarea
-                    className="project-desc"
+                    className="field-control"
                     value={p.description || ""}
-                    disabled={!editMode}
                     onChange={(e) => setProject(i, "description", e.target.value)}
-                    placeholder={editMode ? "What it does, your role, the stack…" : ""}
+                    placeholder="What it does, your role, the stack."
                     rows={2}
                   />
+                ) : (
+                  p.description && (
+                    <p className="profile-project-desc">{p.description}</p>
+                  )
                 )}
               </div>
             ) : null
           )}
-        </div>
+        </section>
 
-        {/* INTERESTS */}
-        <div className="profile-info-card">
-          <h3>Areas of Interest</h3>
+        {/* Interests */}
+        <section className="card profile-section">
+          <h3 className="profile-section-title">Areas of interest</h3>
           {editMode ? (
-            <div className="profile-field">
-              <input
-                name="interests"
-                value={current.interests || ""}
-                onChange={handleChange}
-                placeholder="e.g. Backend engineering, Competitive programming"
-              />
-            </div>
+            <input
+              className="field-control"
+              name="interests"
+              value={current.interests || ""}
+              onChange={handleChange}
+              placeholder="e.g. Backend engineering, Competitive programming"
+            />
           ) : (
-            <p className="muted">{profile.interests || "Not specified."}</p>
+            <p className="profile-bio">{profile.interests || "Not specified."}</p>
           )}
-        </div>
+        </section>
       </>
     );
   }
 
   function renderContactCard() {
+    const linkedin = profile.linkedinUrl ? (
+      <a href={profile.linkedinUrl} target="_blank" rel="noreferrer">
+        {profile.linkedinUrl}
+      </a>
+    ) : (
+      ""
+    );
+
     return (
-      <div className="profile-info-card">
-        <h3>Contact &amp; Links</h3>
-        <Field label="Email">
-          <input value={profile.email || ""} disabled />
-        </Field>
-        <Field label="LinkedIn URL">
+      <section className="card profile-section">
+        <h3 className="profile-section-title">Contact &amp; links</h3>
+        <ProfileField label="Email" value={profile.email} />
+        <ProfileField label="LinkedIn" value={linkedin} editMode={editMode}>
           <input
+            className="field-control"
             name="linkedinUrl"
             value={current.linkedinUrl || ""}
-            disabled={!editMode}
             onChange={handleChange}
-            placeholder={editMode ? "https://linkedin.com/in/yourname" : "—"}
+            placeholder="https://linkedin.com/in/yourname"
           />
-        </Field>
-      </div>
+        </ProfileField>
+      </section>
     );
   }
-}
-
-// Small presentational helpers
-function Field({ label, children }) {
-  return (
-    <div className="profile-field">
-      <label>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function ReadValue({ value }) {
-  return <input value={value || ""} disabled placeholder="—" />;
 }
 
 export default Profile;
