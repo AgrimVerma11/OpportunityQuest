@@ -9,9 +9,10 @@ export const updateOpportunityValidation = Joi.object({
   eligibleYears: Joi.array().items(Joi.string()),
   eligibleGender: Joi.string().valid("Male", "Female", "Any"),
   tags: Joi.array().items(Joi.string()),
-  deadline: Joi.date().greater("now").messages({
-    "date.greater": "Deadline must be a future date",
-  }),
+  // Any valid date is accepted here; the "must be in the future" rule is
+  // enforced in the service, which can tell whether the deadline actually
+  // changed (an unchanged past deadline on an expired opportunity is fine).
+  deadline: Joi.date(),
 });
 
 export const extendDeadlineValidation = Joi.object({
