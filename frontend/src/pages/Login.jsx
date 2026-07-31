@@ -69,12 +69,11 @@ function Login() {
       {/* ── Left — brand hero ── */}
       <div className="auth-left">
         <div className="auth-brand">
-          <div className="auth-logo">OQ</div>
-          <h1>
-            Opportunity
-            <br />
-            Quest
-          </h1>
+          <img
+            src="/brand/opportunity-quest-lockup-dark.svg"
+            alt="Opportunity Quest"
+            className="auth-lockup"
+          />
           <p className="auth-tagline">
             Your gateway to internships, research projects and faculty
             collaborations, all in one place.

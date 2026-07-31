@@ -15,75 +15,67 @@
   position: sticky;
   top: 0;
   height: 100vh;
-  background: var(--slate-900);
+  /* A soft glow behind the logo fading into the brand ink, for depth. */
+  background: radial-gradient(120% 95% at 15% 8%, #222a52 0%, #14162b 62%);
   color: #fff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: var(--space-8) var(--space-7);
+  /* Refined seam: a thin brand-gold hairline plus a soft depth shadow, so the
+     hero reads as a layered panel rather than a flat block against the form. */
+  box-shadow: 1px 0 0 rgba(217, 183, 106, 0.45), 16px 0 48px rgba(9, 11, 26, 0.25);
+  z-index: 1;
 }
 
-.auth-logo {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--radius-md);
-  font-size: var(--text-body);
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.5px;
-  margin-bottom: var(--space-6);
-}
-
-.auth-brand h1 {
-  font-size: var(--text-display);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-tight);
-  letter-spacing: var(--tracking-tight);
-  color: #fff;
-  margin: 0 0 var(--space-4);
+.auth-lockup {
+  width: 340px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: var(--space-5);
 }
 
 .auth-tagline {
+  font-family: var(--font-serif);
   font-size: var(--text-body);
   line-height: var(--leading-relaxed);
-  color: rgba(255, 255, 255, 0.66);
-  max-width: 320px;
+  color: rgba(255, 255, 255, 0.74);
+  max-width: 340px;
 }
 
 .auth-features {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .auth-features li {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  font-size: var(--text-sm);
-  color: rgba(255, 255, 255, 0.82);
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .auth-features li .check {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   border-radius: var(--radius-full);
-  background: var(--color-primary);
-  color: #fff;
+  /* Brand-gold badge with a dark ink tick — echoes the logo's gold. */
+  background: linear-gradient(135deg, #e4c578 0%, #b8923d 100%);
+  color: #14162b;
+  box-shadow: 0 1px 4px rgba(184, 146, 61, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .auth-features li .check svg {
-  width: 13px;
-  height: 13px;
+  width: 10px;
+  height: 10px;
   stroke-width: 2.5;
 }
 
@@ -117,6 +109,7 @@
 }
 
 .auth-form-header h2 {
+  font-family: var(--font-serif);
   font-size: var(--text-h1);
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-tight);
@@ -197,8 +190,8 @@
   .auth-left {
     padding: var(--space-7) var(--space-6);
   }
-  .auth-brand h1 {
-    font-size: var(--text-h1);
+  .auth-lockup {
+    width: 290px;
   }
 }
 
@@ -211,6 +204,8 @@
     position: relative;
     height: auto;
     padding: var(--space-6) var(--space-5);
+    /* Stacked layout: gold hairline moves to the bottom seam. */
+    box-shadow: 0 1px 0 rgba(217, 183, 106, 0.45);
   }
   .auth-features,
   .auth-institute {

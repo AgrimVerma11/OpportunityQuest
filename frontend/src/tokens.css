@@ -64,6 +64,9 @@
   /* Display face for headings — a little more character than the body sans,
      paired with Inter for everything else. Falls back to the body stack. */
   --font-display: 'Plus Jakarta Sans', var(--font-sans);
+  /* Brand serif — the Opportunity Quest wordmark's face. Used to echo the logo
+     on the auth screens. */
+  --font-serif: Georgia, 'Times New Roman', serif;
 
   /* Type scale (rem, 16px base). Semantic aliases kept for existing pages. */
   --text-display: 2.25rem;  /* 36px — marketing hero */

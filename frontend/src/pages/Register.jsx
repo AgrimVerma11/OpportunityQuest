@@ -120,12 +120,11 @@ function Register() {
       {/* ── Left — brand hero ── */}
       <div className="auth-left">
         <div className="auth-brand">
-          <div className="auth-logo">OQ</div>
-          <h1>
-            Join Opportunity
-            <br />
-            Quest
-          </h1>
+          <img
+            src="/brand/opportunity-quest-lockup-dark.svg"
+            alt="Opportunity Quest"
+            className="auth-lockup"
+          />
           <p className="auth-tagline">
             Discover internships, research and faculty collaborations across
             campus, all in one place.
