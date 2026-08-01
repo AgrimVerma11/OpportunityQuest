@@ -47,16 +47,17 @@ function Navbar() {
 
   const role = currentUser?.role;
   const links = [{ to: "/home", label: "Home" }];
-  if (role === "Faculty") links.push({ to: "/faculty", label: "Faculty Corner" });
+  if (role === "Faculty" || role === "Coordinator")
+    links.push({ to: "/faculty", label: "Faculty Corner" });
   if (role === "Student")
     links.push({ to: "/my-applications", label: "My Applications" });
+  if (role === "Student" || role === "Faculty" || role === "Coordinator")
+    links.push({ to: "/messages", label: "Messages", prefix: true });
   if (role === "Coordinator")
     links.push(
       { to: "/approvals", label: "Approvals" },
       { to: "/analytics", label: "Analytics" }
     );
-  if (role === "Student" || role === "Faculty")
-    links.push({ to: "/messages", label: "Messages", prefix: true });
 
   const isActive = (link) =>
     link.prefix

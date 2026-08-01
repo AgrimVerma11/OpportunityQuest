@@ -41,7 +41,7 @@ const router = express.Router();
 router.post(
   "/create",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   validate(createOpportunityValidation),
   createOpportunity
 );
@@ -57,7 +57,7 @@ router.get("/", authMiddleware, getOpportunities);
 router.get(
   "/my-opportunities",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   getMyOpportunities
 );
 
@@ -77,7 +77,7 @@ router.get("/:id", authMiddleware, getOpportunityById);
 router.put(
   "/:id",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   validate(updateOpportunityValidation),
   updateOpportunity
 );
@@ -88,7 +88,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   softDeleteOpportunity
 );
 
@@ -98,7 +98,7 @@ router.delete(
 router.patch(
   "/:id/archive",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   archiveOpportunity
 );
 
@@ -108,7 +108,7 @@ router.patch(
 router.patch(
   "/:id/unarchive",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   validate(unarchiveValidation),
   unarchiveOpportunity
 );
@@ -119,7 +119,7 @@ router.patch(
 router.patch(
   "/:id/close",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   closeOpportunity
 );
 
@@ -129,7 +129,7 @@ router.patch(
 router.patch(
   "/:id/extend-deadline",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   validate(extendDeadlineValidation),
   extendDeadline
 );
@@ -140,7 +140,7 @@ router.patch(
 router.post(
   "/:id/attachments",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   (req, res, next) => {
     upload.single("attachment")(req, res, (err) => {
       if (err) {
@@ -158,7 +158,7 @@ router.post(
 router.delete(
   "/:id/attachments/:attachmentId",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   deleteAttachment
 );
 

@@ -245,6 +245,27 @@ describe("authorization", () => {
       });
     expect(res.status).toBe(403);
   });
+
+  it("lets a coordinator post and manage an opportunity (Phase VMAX)", async () => {
+    const coordinator = await createCoordinator();
+    const student = await asStudent();
+
+    // A coordinator can post — they own it via postedBy, so every downstream
+    // ownership check treats them like the posting faculty.
+    const opportunity = await createOpportunity(coordinator.token, {
+      contactEmail: "coord@thapar.edu",
+    });
+
+    const apply = await applyTo(student.token, opportunity._id);
+    expect(apply.status).toBe(201);
+
+    // The owner (coordinator) can review the applicants.
+    const applicants = await request(app)
+      .get(`/api/applications/opportunity/${opportunity._id}`)
+      .set("Authorization", `Bearer ${coordinator.token}`);
+    expect(applicants.status).toBe(200);
+    expect(applicants.body.count).toBe(1);
+  });
 });
 
 // ── Golden path ───────────────────────────────────────────────────

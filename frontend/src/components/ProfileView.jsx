@@ -8,11 +8,14 @@ import "./ProfileView.css";
 export default function ProfileView({ profile }) {
   if (!profile) return null;
 
-  const isFaculty = profile.role === "Faculty";
+  // Faculty and coordinators share the professional (faculty-style) layout;
+  // students get the student layout.
+  const isFacultyLike =
+    profile.role === "Faculty" || profile.role === "Coordinator";
   const displayName =
-    isFaculty && profile.prefix ? `${profile.prefix} ${profile.name}` : profile.name;
+    isFacultyLike && profile.prefix ? `${profile.prefix} ${profile.name}` : profile.name;
 
-  const subline = isFaculty
+  const subline = isFacultyLike
     ? [profile.department, profile.designation].filter(Boolean).join(" · ")
     : [profile.branch, profile.year ? `Year ${profile.year}` : ""]
         .filter(Boolean)
@@ -28,7 +31,7 @@ export default function ProfileView({ profile }) {
             <Badge tone="primary">{profile.role}</Badge>
             {subline && <span className="pv-subline">{subline}</span>}
           </div>
-          {isFaculty && profile.office && (
+          {isFacultyLike && profile.office && (
             <div className="pv-office">
               <IconLocation /> {profile.office}
             </div>
@@ -36,7 +39,7 @@ export default function ProfileView({ profile }) {
         </div>
       </div>
 
-      {isFaculty ? (
+      {isFacultyLike ? (
         <>
           {profile.interests && (
             <Section label="Research Interests">

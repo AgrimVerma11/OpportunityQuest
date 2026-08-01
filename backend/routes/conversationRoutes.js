@@ -13,7 +13,7 @@ import { validateObjectId } from "../utils/validateObjectId.js";
 const router = express.Router();
 
 // Faculty-initiated: only a faculty member can open a conversation.
-router.post("/", authMiddleware, authorizeRoles("Faculty"), start);
+router.post("/", authMiddleware, authorizeRoles("Faculty", "Coordinator"), start);
 
 router.get("/", authMiddleware, list);
 router.get("/:id", authMiddleware, validateObjectId("id"), thread);

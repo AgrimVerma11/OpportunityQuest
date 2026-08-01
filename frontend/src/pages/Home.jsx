@@ -45,6 +45,8 @@ function Home() {
   const { user: currentUser } = useAuth();
   const isFaculty = currentUser?.role === "Faculty";
   const isStudent = currentUser?.role === "Student";
+  // Faculty and coordinators can both post and manage opportunities.
+  const canPost = isFaculty || currentUser?.role === "Coordinator";
 
   const hasFilters =
     searchTerm.trim() !== "" ||
@@ -124,12 +126,12 @@ function Home() {
             currentUser?.prefix ? `${currentUser.prefix} ` : ""
           }${currentUser?.name || ""}`}
           subtitle={
-            isFaculty
+            canPost
               ? "Post opportunities and manage collaborations and projects across campus."
               : "Discover internships, research opportunities, faculty projects and paid gigs, all in one place."
           }
           action={
-            isFaculty ? (
+            canPost ? (
               <Link to="/create-opportunity" className="btn btn-primary">
                 <IconPlus /> Post an opportunity
               </Link>

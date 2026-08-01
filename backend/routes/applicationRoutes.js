@@ -57,7 +57,7 @@ router.get(
 router.get(
   "/opportunity/:opportunityId",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   validateObjectId("opportunityId"),
   getApplicants
 );
@@ -77,7 +77,7 @@ router.get(
 router.patch(
   "/:id/status",
   authMiddleware,
-  authorizeRoles("Faculty"),
+  authorizeRoles("Faculty", "Coordinator"),
   validateObjectId("id"),
   validate(statusUpdateValidation),
   updateStatus

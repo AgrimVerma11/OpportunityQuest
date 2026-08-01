@@ -194,9 +194,8 @@ function OpportunityDetail() {
   }
 
   const isStudent = currentUser?.role === "Student";
-  const isOwnerFaculty =
-    currentUser?.role === "Faculty" &&
-    opportunity.postedBy?._id === currentUser.id;
+  // The poster (faculty or coordinator) owns this opportunity's management.
+  const isOwner = opportunity.postedBy?._id === currentUser.id;
   const isOpen =
     opportunity.status === "Active" &&
     new Date(opportunity.deadline) > new Date();
@@ -204,7 +203,7 @@ function OpportunityDetail() {
     myApplication && myApplication.status !== "Withdrawn";
 
   const renderApplicationPanel = () => {
-    if (isOwnerFaculty) {
+    if (isOwner) {
       return (
         <div className="card detail-apply">
           <h2 className="detail-apply-title">Applicants</h2>

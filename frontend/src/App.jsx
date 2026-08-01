@@ -74,7 +74,7 @@ function App() {
         <Route
           path="/create-opportunity"
           element={
-            <ProtectedRoute role="Faculty">
+            <ProtectedRoute role={["Faculty", "Coordinator"]}>
               <CreateOpportunity />
             </ProtectedRoute>
           }
@@ -82,7 +82,7 @@ function App() {
         <Route
           path="/edit-opportunity/:id"
           element={
-            <ProtectedRoute role="Faculty">
+            <ProtectedRoute role={["Faculty", "Coordinator"]}>
               <EditOpportunity />
             </ProtectedRoute>
           }
@@ -90,7 +90,7 @@ function App() {
         <Route
           path="/opportunity/:id/applicants"
           element={
-            <ProtectedRoute role="Faculty">
+            <ProtectedRoute role={["Faculty", "Coordinator"]}>
               <Applicants />
             </ProtectedRoute>
           }
@@ -98,7 +98,7 @@ function App() {
         <Route
           path="/faculty"
           element={
-            <ProtectedRoute role="Faculty">
+            <ProtectedRoute role={["Faculty", "Coordinator"]}>
               <Faculty />
             </ProtectedRoute>
           }
