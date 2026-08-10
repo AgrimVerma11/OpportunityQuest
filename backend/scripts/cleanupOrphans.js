@@ -9,6 +9,7 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import Notification from "../models/Notification.js";
 import * as storage from "../lib/storage/index.js";
+import { reconcileApplicationCounts } from "./reconcile.js";
 
 dotenv.config();
 
@@ -90,12 +91,18 @@ async function run() {
     });
   }
 
+  // Heal any Opportunity.applicationsCount left drifted by the deletes above (or
+  // by past hand-edits) — otherwise a card can show "Applicants · 1" for an
+  // opportunity that now has none.
+  const countsFixed = await reconcileApplicationCounts();
+
   console.log("Orphan cleanup complete. Removed:");
   console.log(`  opportunities: ${deadOpps.length}`);
   console.log(`  applications:  ${deadApps.length}`);
   console.log(`  conversations: ${deadConvos.length}`);
   console.log(`  messages:      ${deadMsgs.length}`);
   console.log(`  notifications: ${deadNotifs.length}`);
+  console.log(`  counters fixed: ${countsFixed}`);
 
   await mongoose.disconnect();
 }

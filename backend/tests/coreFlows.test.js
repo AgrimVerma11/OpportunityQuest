@@ -5,7 +5,10 @@ import { createApp } from "../app.js";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 import Message from "../models/Message.js";
+import Application from "../models/Application.js";
+import Opportunity from "../models/Opportunity.js";
 import AuditLog from "../models/AuditLog.js";
+import { reconcileApplicationCounts } from "../scripts/reconcile.js";
 import * as auditRepo from "../repositories/auditRepository.js";
 import bcrypt from "bcryptjs";
 import { verifyGoogleCredential } from "../config/googleClient.js";
@@ -324,6 +327,35 @@ describe("core application flow", () => {
       .patch(`/api/applications/${applicationId}/withdraw`)
       .set("Authorization", `Bearer ${student.token}`);
     expect(withdraw.status).toBe(200);
+  });
+});
+
+// ── Application count reconciliation ──────────────────────────────
+
+describe("application count reconciliation", () => {
+  it("heals a drifted applicationsCount after an out-of-band delete", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const opportunity = await createOpportunity(faculty.token);
+
+    await applyTo(student.token, opportunity._id).expect(201);
+    expect((await Opportunity.findById(opportunity._id)).applicationsCount).toBe(
+      1
+    );
+
+    // An application removed directly (a maintenance script or hand edit)
+    // bypasses the -1, leaving the denormalized counter stale.
+    await Application.deleteMany({ opportunity: opportunity._id });
+    expect((await Opportunity.findById(opportunity._id)).applicationsCount).toBe(
+      1
+    );
+
+    // Reconciliation recomputes it from the real number of applications.
+    const fixed = await reconcileApplicationCounts();
+    expect(fixed).toBe(1);
+    expect((await Opportunity.findById(opportunity._id)).applicationsCount).toBe(
+      0
+    );
   });
 });
 

@@ -9,6 +9,7 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import Notification from "../models/Notification.js";
 import * as storage from "../lib/storage/index.js";
+import { reconcileApplicationCounts } from "./reconcile.js";
 
 dotenv.config();
 
@@ -98,8 +99,12 @@ async function run() {
 
   await User.deleteOne({ _id: userId });
 
+  // Heal Opportunity.applicationsCount on any surviving opportunity this user
+  // had applied to (its counter was just decremented out-of-band).
+  const countersFixed = await reconcileApplicationCounts();
+
   console.log(`Deleted ${email} (${user.role}) and their footprint:`);
-  console.log(removed);
+  console.log({ ...removed, countersFixed });
 
   await mongoose.disconnect();
 }
