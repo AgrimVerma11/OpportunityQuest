@@ -2,7 +2,7 @@
    GLOBAL BASE — Opportunity Quest
    Imported once in main.jsx (after tokens.css).
    Tokens live in tokens.css; this file is base element styling, the focus /
-   accessibility layer, and shared component primitives.
+   accessibility layer, and shared table + layout primitives.
 ───────────────────────────────────────── */
 
 *, *::before, *::after {
@@ -19,9 +19,9 @@ html {
 }
 
 body {
-  font-family: var(--font-sans);
-  background: var(--color-bg);
-  color: var(--color-text);
+  font-family: var(--sans);
+  background: var(--ivory);
+  color: var(--ink);
   font-size: var(--text-body);
   line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
@@ -42,13 +42,13 @@ body {
   flex-direction: column;
 }
 
-/* ── Typography defaults ── */
+/* ── Typography defaults (components override per-heading) ── */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
+  font-family: var(--sans);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-snug);
-  color: var(--color-text);
+  color: var(--ink);
 }
 
 p { line-height: var(--leading-relaxed); }
@@ -65,15 +65,15 @@ input, textarea, select, button {
 img, svg { display: block; max-width: 100%; }
 
 ::selection {
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
+  background: rgba(212, 175, 90, 0.3);
+  color: var(--ink);
 }
 
 /* ── Focus: a single, accessible keyboard-only ring ──
    Shows for keyboard users (:focus-visible), never for mouse clicks. */
 :focus { outline: none; }
 :focus-visible {
-  outline: 2px solid var(--color-ring);
+  outline: 2px solid var(--gold-deep);
   outline-offset: 2px;
 }
 
@@ -81,11 +81,11 @@ img, svg { display: block; max-width: 100%; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
+  background: var(--muted-2);
   border-radius: var(--radius-full);
-  border: 3px solid var(--color-bg);
+  border: 3px solid var(--ivory);
 }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-faint); }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 /* ── Respect reduced-motion preferences ── */
 @media (prefers-reduced-motion: reduce) {
@@ -113,7 +113,6 @@ img, svg { display: block; max-width: 100%; }
 
 /* ─────────────────────────────────────────
    SHARED PRIMITIVES
-   Pages reach for these instead of one-off button/card styles.
 ───────────────────────────────────────── */
 
 /* Page container — one content width and gutter, used by every page. */
@@ -126,99 +125,6 @@ img, svg { display: block; max-width: 100%; }
 }
 @media (max-width: 768px) {
   .container { padding-left: var(--space-4); padding-right: var(--space-4); }
-}
-
-/* Buttons — consistent height, padding, radius across the app. */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  height: 40px;
-  padding: 0 var(--space-4);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  line-height: 1;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: background var(--transition), border-color var(--transition),
-    color var(--transition), box-shadow var(--transition);
-}
-.btn:disabled { opacity: 0.55; cursor: not-allowed; }
-
-.btn-primary {
-  background: var(--color-primary);
-  color: #fff;
-}
-.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
-.btn-primary:active:not(:disabled) { background: var(--color-primary-active); }
-
-.btn-secondary {
-  background: var(--color-surface);
-  color: var(--color-text);
-  border-color: var(--color-border-strong);
-}
-.btn-secondary:hover:not(:disabled) {
-  background: var(--color-surface-subtle);
-  border-color: var(--color-text-faint);
-}
-
-.btn-danger {
-  background: var(--color-danger);
-  color: #fff;
-}
-.btn-danger:hover:not(:disabled) { background: var(--color-danger-hover); }
-
-.btn-ghost {
-  background: transparent;
-  color: var(--color-text-secondary);
-}
-.btn-ghost:hover:not(:disabled) {
-  background: var(--color-surface-subtle);
-  color: var(--color-text);
-}
-
-/* Low-emphasis destructive action — outline that warms to danger on hover. */
-.btn-danger-ghost {
-  background: transparent;
-  color: var(--color-danger);
-  border-color: var(--color-border-strong);
-}
-.btn-danger-ghost:hover:not(:disabled) {
-  background: var(--color-danger-soft);
-  border-color: var(--color-danger);
-}
-
-/* Compact modifier for dense contexts (card action rows, toolbars). */
-.btn-sm {
-  height: 32px;
-  padding: 0 var(--space-3);
-  font-size: var(--text-xs);
-}
-
-/* Full-width modifier (forms). */
-.btn-block { width: 100%; }
-
-/* Cards — consistent surface, hairline, radius, padding. */
-.card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-}
-
-/* Opt-in hover: subtle lift, for clickable cards. */
-.card-hover {
-  transition: border-color var(--transition), box-shadow var(--transition),
-    transform var(--transition);
-}
-.card-hover:hover {
-  border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
 }
 
 /* Tables — one style for rosters, applicant lists, and data views. */
@@ -235,15 +141,15 @@ img, svg { display: block; max-width: 100%; }
   font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
-  color: var(--color-text-muted);
-  border-bottom: 1px solid var(--color-border);
+  color: var(--muted-2);
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
 .table td {
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-  color: var(--color-text);
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
   vertical-align: middle;
 }
 .table tbody tr:last-child td { border-bottom: none; }
-.table-hover tbody tr:hover { background: var(--color-surface-subtle); }
+.table-hover tbody tr:hover { background: var(--ivory); }
