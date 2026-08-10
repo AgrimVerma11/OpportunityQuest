@@ -1,0 +1,37 @@
+/* Refresh category/status pill. Namespaced (oq-) so it coexists with the
+   legacy CategoryTag/StatusBadge until cleanup. */
+.oq-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Category tints */
+.oq-tag--cat-internship { background: var(--tag-internship-bg); color: var(--tag-internship-text); }
+.oq-tag--cat-research   { background: var(--tag-research-bg);   color: var(--tag-research-text); }
+.oq-tag--cat-paidgig    { background: var(--tag-paidgig-bg);    color: var(--tag-paidgig-text); }
+.oq-tag--cat-faculty    { background: var(--tag-faculty-bg);    color: var(--tag-faculty-text); }
+
+/* Status tints */
+.oq-tag--status-active   { background: var(--status-active-bg);   color: var(--status-active-text); }
+.oq-tag--status-archived { background: var(--status-archived-bg); color: var(--status-archived-text); }
+.oq-tag--status-expired  { background: var(--status-expired-bg);  color: var(--status-expired-text); }
+.oq-tag--status-closed   { background: var(--status-closed-bg);   color: var(--status-closed-text); }
+.oq-tag--status-pending  { background: var(--status-pending-bg);  color: var(--status-pending-text); }
+
+/* Leading status dot — inherits the pill's text colour. */
+.oq-tag--dot::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}

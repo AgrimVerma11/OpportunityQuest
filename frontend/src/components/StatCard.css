@@ -1,0 +1,45 @@
+/* Refresh stat tile. Namespaced (oq-). */
+.oq-stat {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-panel);
+}
+
+.oq-stat__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+.oq-stat__icon--students  { background: var(--tag-internship-bg); color: var(--tag-internship-text); }
+.oq-stat__icon--faculty   { background: var(--tag-faculty-bg);    color: var(--tag-faculty-text); }
+.oq-stat__icon--approvals { background: var(--status-pending-bg); color: var(--status-pending-text); }
+.oq-stat__icon--opps      { background: var(--tag-research-bg);   color: var(--tag-research-text); }
+.oq-stat__icon--apps      { background: var(--tag-paidgig-bg);    color: var(--tag-paidgig-text); }
+
+.oq-stat__num {
+  font-family: var(--serif);
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+.oq-stat__num--active   { color: var(--status-active-text); }
+.oq-stat__num--archived { color: var(--status-archived-text); }
+.oq-stat__num--expired  { color: var(--status-expired-text); }
+.oq-stat__num--closed   { color: var(--status-closed-text); }
+.oq-stat__num--pending  { color: var(--status-pending-text); }
+
+.oq-stat__label {
+  font-size: 11.5px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  font-weight: 700;
+}

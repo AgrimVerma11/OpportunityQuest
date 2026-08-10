@@ -3,72 +3,53 @@
    The single source of truth for color, type, spacing, radius, elevation.
    Imported first in main.jsx (before global.css).
 
-   Visual language: academic ink. A deep oxford-navy brand on a cool slate
-   neutral ramp; white surfaces separated by hairlines rather than heavy shadow;
-   restraint over decoration. One typeface (Inter), hierarchy through scale.
+   Visual language: academic ink + gold. A deep indigo brand with a gold
+   accent on warm ivory/paper surfaces, separated by warm hairlines. A serif
+   display face (Georgia) over a neutral system sans.
 
    Rule: page/component CSS references these variables — never raw hex or ad-hoc
    px for color, radius, or type.
 ───────────────────────────────────────── */
 
 :root {
-  /* ── Brand: oxford navy ──────────────── */
-  --color-primary: #1e3a5f;        /* primary actions, links */
-  --color-primary-hover: #16304d;  /* darker on press/hover */
-  --color-primary-active: #112538;
-  --color-primary-soft: #eef2f7;   /* navy-tinted fill: selected rows, soft chips */
-  --color-primary-border: #cdd8e6; /* navy-tinted hairline for soft fills */
+  /* ── Ink + gold ──────────────────────── */
+  --ink: #14172e;             /* headings, primary buttons, primary text */
+  --ink-soft: #383b5c;        /* body copy on paper */
+  --gold-deep: #9c7a2e;       /* links, eyebrows, text accents */
+  --gold-light: #d4af5a;      /* gradient top-stop, small highlights */
+  --cream: #f7f3ec;           /* text / icons on ink surfaces */
 
-  /* ── Neutrals: slate ramp (cool) ─────── */
-  --slate-50: #f8fafc;
-  --slate-100: #f1f5f9;
-  --slate-200: #e2e8f0;
-  --slate-300: #cbd5e1;
-  --slate-400: #94a3b8;
-  --slate-500: #64748b;
-  --slate-600: #475569;
-  --slate-700: #334155;
-  --slate-800: #1e293b;
-  --slate-900: #0f172a;
+  /* ── Warm neutrals ───────────────────── */
+  --ivory: #faf9f5;           /* app background */
+  --paper: #ffffff;           /* cards, panels, header */
+  --border: #e9e4d9;          /* warm hairline */
+  --muted: #6b6f7d;           /* secondary text */
+  --muted-2: #8a8d99;         /* meta / captions */
 
-  /* ── Text ────────────────────────────── */
-  --color-text: #0f172a;           /* primary text (slate-900) */
-  --color-text-secondary: #475569; /* labels, captions (slate-600) */
-  --color-text-muted: #64748b;     /* meta, hints (slate-500) — AA on white */
-  --color-text-faint: #94a3b8;     /* decorative only (slate-400) */
+  /* ── Category tags (opportunity type) ── */
+  --tag-internship-bg: #edf0f5;  --tag-internship-text: #46536b;
+  --tag-research-bg: #f3ecf3;    --tag-research-text: #5b3a5c;
+  --tag-paidgig-bg: #f6f0de;     --tag-paidgig-text: #8a6d2f;
+  --tag-faculty-bg: #ecedf5;     --tag-faculty-text: #2e3358;
 
-  /* ── Surface ─────────────────────────── */
-  --color-bg: #f8fafc;             /* app background (slate-50) */
-  --color-surface: #ffffff;        /* cards, panels */
-  --color-surface-subtle: #f1f5f9; /* hovered rows, insets (slate-100) */
-  --color-border: #e2e8f0;         /* default hairline (slate-200) */
-  --color-border-strong: #cbd5e1;  /* hovered / focused borders (slate-300) */
+  /* ── Status tags (opportunity / faculty lifecycle) ── */
+  --status-active-bg: #e9f1e9;   --status-active-text: #3f6b45;
+  --status-archived-bg: #f1f2f0; --status-archived-text: #5b6259;
+  --status-expired-bg: #f7ece9;  --status-expired-text: #9c4a3a;
+  --status-closed-bg: #ecedf0;   --status-closed-text: #4a4e5a;
+  --status-pending-bg: #f6f0de;  --status-pending-text: #8a6d2f;
 
-  /* ── Status (semantic) ───────────────── */
-  --color-success: #15803d;
-  --color-success-soft: #f0fdf4;
-  --color-danger: #dc2626;
-  --color-danger-hover: #b91c1c;
-  --color-danger-soft: #fef2f2;
-  --color-warning: #b45309;
-  --color-warning-soft: #fffbeb;
-  --color-info: #1e3a5f;
-  --color-info-soft: #eef2f7;
-
-  /* ── Focus ring ──────────────────────── */
-  --color-ring: #3b6ea5;           /* a lighter navy — visible ring on white */
+  /* ── Urgency chips ("N days left"): low >7d · mid 4–7d · high ≤3d ── */
+  --urgency-low-bg: #efefee;   --urgency-low-text: #62666f;
+  --urgency-mid-bg: #f6f0de;   --urgency-mid-text: #8a6d2f;
+  --urgency-high-bg: #f7ece9;  --urgency-high-text: #9c4a3a;
 
   /* ── Typography ──────────────────────── */
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, sans-serif;
-  /* Display face for headings — a little more character than the body sans,
-     paired with Inter for everything else. Falls back to the body stack. */
-  --font-display: 'Plus Jakarta Sans', var(--font-sans);
-  /* Brand serif — the Opportunity Quest wordmark's face. Used to echo the logo
-     on the auth screens. */
-  --font-serif: Georgia, 'Times New Roman', serif;
+  --serif: Georgia, 'Times New Roman', serif;   /* display / headings */
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
+    sans-serif;                                 /* body */
 
-  /* Type scale (rem, 16px base). Semantic aliases kept for existing pages. */
+  /* Type scale (rem, 16px base). */
   --text-display: 2.25rem;  /* 36px — marketing hero */
   --text-h1: 1.75rem;       /* 28px — page title */
   --text-h2: 1.375rem;      /* 22px — section heading */
@@ -81,17 +62,16 @@
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
-  --weight-extrabold: 800;  /* display / masthead only */
+  --weight-extrabold: 800;
 
-  /* Tracking + leading — tokenized so headings share one rhythm. */
-  --tracking-tight: -0.02em;   /* large headings */
-  --tracking-snug: -0.01em;    /* medium headings */
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
   --tracking-normal: 0;
-  --tracking-wide: 0.04em;     /* eyebrow / uppercase labels */
-  --leading-tight: 1.2;        /* headings */
+  --tracking-wide: 0.04em;
+  --leading-tight: 1.2;
   --leading-snug: 1.4;
   --leading-normal: 1.5;
-  --leading-relaxed: 1.65;     /* body copy */
+  --leading-relaxed: 1.65;
 
   /* ── Spacing (4px base) ──────────────── */
   --space-1: 4px;
@@ -103,18 +83,15 @@
   --space-7: 48px;
   --space-8: 64px;
 
-  /* ── Radius (tightened — enterprise, not rounded) ── */
-  --radius-sm: 6px;    /* inputs, buttons, chips */
-  --radius-md: 8px;    /* nested panels, menus */
+  /* ── Radius ──────────────────────────── */
+  --radius-sm: 6px;    /* inputs, chips */
+  --radius-md: 8px;    /* menus, nested panels */
   --radius-lg: 12px;   /* cards, modals */
   --radius-full: 999px;
 
-  /* ── Elevation (hairline-first; shadow used sparingly) ── */
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 2px 6px rgba(15, 23, 42, 0.06),
-    0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.10),
-    0 2px 6px rgba(15, 23, 42, 0.05);
+  /* ── Elevation (refresh) ─────────────── */
+  --shadow-panel: 0 1px 2px rgba(20, 23, 46, 0.04), 0 1px 1px rgba(20, 23, 46, 0.03);
+  --shadow-card: 0 4px 16px rgba(20, 23, 46, 0.06), 0 1px 2px rgba(20, 23, 46, 0.05);
 
   /* ── Layout ──────────────────────────── */
   --page-max: 1200px;
@@ -125,9 +102,8 @@
   --transition-slow: 220ms ease;
 
   /* ── Breakpoints (reference — used consistently in @media) ──
-     --bp-sm: 640px;  --bp-md: 768px;  --bp-lg: 1024px;  --bp-xl: 1200px;
-     CSS variables can't be used inside media queries, so these four values
-     are the ONLY breakpoints the app uses. Do not invent new ones. */
+     640 / 768 / 1024 / 1200. CSS variables can't be used inside media
+     queries, so these are the only breakpoints the app uses. */
 
   --z-nav: 100;
   --z-dropdown: 200;

@@ -1,0 +1,77 @@
+/* Refresh button. Namespaced (oq-) so it coexists with the legacy .btn
+   system in global.css until cleanup. */
+.oq-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--sans);
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background var(--transition), border-color var(--transition),
+    color var(--transition), box-shadow var(--transition);
+}
+.oq-btn:disabled,
+.oq-btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Sizes */
+.oq-btn--md { padding: 12px 20px; font-size: 14.5px; border-radius: 10px; }
+.oq-btn--sm { padding: 9px 16px; font-size: 13.5px; border-radius: 8px; }
+
+/* Full-width modifier (sidebar CTAs, forms) */
+.oq-btn--block { width: 100%; }
+
+/* Variants (declared after sizes so their overrides win) */
+.oq-btn--primary {
+  background: var(--ink);
+  color: var(--cream);
+  box-shadow: var(--shadow-card);
+}
+.oq-btn--primary:hover:not(:disabled) { background: #1d2145; }
+.oq-btn--primary:active:not(:disabled) { background: #0f1226; }
+/* Small in-card primaries take the lighter lift; the hero CTA keeps the big one. */
+.oq-btn--sm.oq-btn--primary { box-shadow: var(--shadow-panel); }
+
+.oq-btn--outline {
+  background: var(--paper);
+  border-color: var(--border);
+  color: var(--ink);
+}
+.oq-btn--outline:hover:not(:disabled) {
+  border-color: var(--gold-deep);
+  color: var(--gold-deep);
+}
+
+.oq-btn--subtle {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--ink-soft);
+}
+.oq-btn--subtle:hover:not(:disabled) { background: var(--ivory); }
+
+.oq-btn--text {
+  background: transparent;
+  color: var(--gold-deep);
+  font-weight: 700;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.oq-btn--text:hover:not(:disabled) { color: #7d611f; }
+
+/* Solid destructive fill — for confirm-to-delete/reject actions. */
+.oq-btn--danger {
+  background: var(--status-expired-text);
+  color: var(--cream);
+}
+.oq-btn--danger:hover:not(:disabled) { background: #8a3f31; }
+.oq-btn--danger:active:not(:disabled) { background: #733528; }
+
+.oq-btn__plus { color: var(--gold-light); font-weight: 700; }

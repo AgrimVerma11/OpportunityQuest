@@ -1,0 +1,12 @@
+/* Refresh card surface. Namespaced (oq-) so it coexists with the legacy
+   .card in global.css until cleanup. */
+.oq-card {
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 26px;
+  box-shadow: var(--shadow-panel);
+}
+
+/* Softer lift for opportunity cards. */
+.oq-card--elevated { box-shadow: var(--shadow-card); }

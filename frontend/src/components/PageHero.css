@@ -1,0 +1,84 @@
+/* Shared refresh masthead — serif title with a faint compass watermark and a
+   soft gold glow. Transparent background (inherits the page's ivory). */
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 56px 0 34px;
+}
+.page-hero::before {
+  content: "";
+  position: absolute;
+  top: -180px;
+  right: -140px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    rgba(212, 175, 90, 0.16),
+    rgba(212, 175, 90, 0) 68%
+  );
+  pointer-events: none;
+}
+.page-hero-mark {
+  position: absolute;
+  top: 16px;
+  right: 64px;
+  width: 200px;
+  height: 200px;
+  opacity: 0.9;
+  pointer-events: none;
+}
+.page-hero-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 40px;
+}
+.page-hero-text {
+  max-width: 580px;
+}
+.page-hero-eyebrow {
+  font-size: 12.5px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.page-hero-title {
+  font-family: var(--serif);
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.page-hero-sub {
+  font-size: 16px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+.page-hero-action {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .page-hero {
+    padding: 36px 0 24px;
+  }
+  .page-hero-inner {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .page-hero-mark {
+    display: none;
+  }
+  .page-hero-title {
+    font-size: 30px;
+  }
+}

@@ -1,0 +1,18 @@
+/* Refresh deadline-urgency chip. Namespaced (oq-) so it coexists with the
+   legacy DeadlineChip until cleanup. */
+.oq-urgency {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.oq-urgency--low  { background: var(--urgency-low-bg);  color: var(--urgency-low-text); }
+.oq-urgency--mid  { background: var(--urgency-mid-bg);  color: var(--urgency-mid-text); }
+.oq-urgency--high { background: var(--urgency-high-bg); color: var(--urgency-high-text); }
