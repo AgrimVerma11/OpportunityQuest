@@ -16,16 +16,17 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-text-muted);
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--muted-2);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 12px 32px rgba(20, 23, 46, 0.14);
+  font-family: var(--sans);
   animation: toast-in var(--transition-slow) ease;
 }
-.toast-success { border-left-color: var(--color-success); }
-.toast-error { border-left-color: var(--color-danger); }
-.toast-info { border-left-color: var(--color-primary); }
+.toast-success { border-left-color: var(--status-active-text); }
+.toast-error { border-left-color: var(--status-expired-text); }
+.toast-info { border-left-color: var(--gold-deep); }
 
 .toast-icon {
   flex-shrink: 0;
@@ -33,15 +34,15 @@
   font-size: 1.05rem;
   margin-top: 1px;
 }
-.toast-success .toast-icon { color: var(--color-success); }
-.toast-error .toast-icon { color: var(--color-danger); }
-.toast-info .toast-icon { color: var(--color-primary); }
+.toast-success .toast-icon { color: var(--status-active-text); }
+.toast-error .toast-icon { color: var(--status-expired-text); }
+.toast-info .toast-icon { color: var(--gold-deep); }
 
 .toast-message {
   flex: 1;
-  font-size: var(--text-sm);
-  color: var(--color-text);
-  line-height: var(--leading-snug);
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.4;
 }
 
 .toast-close {
@@ -53,15 +54,15 @@
   height: 24px;
   border: none;
   background: transparent;
-  color: var(--color-text-muted);
+  color: var(--muted-2);
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.95rem;
   transition: background var(--transition), color var(--transition);
 }
 .toast-close:hover {
-  background: var(--color-surface-subtle);
-  color: var(--color-text);
+  background: var(--ivory);
+  color: var(--gold-deep);
 }
 
 @keyframes toast-in {

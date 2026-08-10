@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 
 import { IconFile, IconPlus } from "./Icons";
+import Button from "./Button";
 import "./AttachmentField.css";
 
 // PDF attachment picker + list, shared by Create (pending files) and Edit
@@ -64,13 +65,15 @@ export default function AttachmentField({
                   <span>{it.name}</span>
                 </span>
               )}
-              <button
+              <Button
                 type="button"
-                className="btn btn-danger-ghost btn-sm"
+                variant="outline"
+                size="sm"
+                className="attach-remove"
                 onClick={() => onRemove(it)}
               >
                 Remove
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
@@ -87,14 +90,16 @@ export default function AttachmentField({
         hidden
         onChange={pick}
       />
-      <button
+      <Button
         type="button"
-        className="btn btn-secondary btn-sm attach-add"
+        variant="outline"
+        size="sm"
+        className="attach-add"
         onClick={() => inputRef.current?.click()}
         disabled={busy}
       >
         <IconPlus /> {busy ? "Uploading…" : addLabel}
-      </button>
+      </Button>
     </div>
   );
 }

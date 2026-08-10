@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import "./ConfirmDialog.css";
+import Button from "./Button";
 
 /* App-wide confirmation dialog.
  * The local host popup was hella annoying and looked very unbrandedd and basic so i made my own. This component is meant to be used for any action that needs confirmation, like deleting something or navigating away with unsaved changes.
@@ -92,21 +93,16 @@ export function ConfirmProvider({ children }) {
               </p>
             )}
             <div className="confirm-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={() => settle(false)}
-              >
+              <Button variant="outline" onClick={() => settle(false)}>
                 {state.cancelLabel}
-              </button>
-              <button
-                className={`btn ${
-                  state.tone === "danger" ? "btn-danger" : "btn-primary"
-                }`}
+              </Button>
+              <Button
+                variant={state.tone === "danger" ? "danger" : "primary"}
                 onClick={() => settle(true)}
                 autoFocus
               >
                 {state.confirmLabel}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

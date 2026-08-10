@@ -7,6 +7,7 @@
   gap: var(--space-3);
   padding: var(--space-8) var(--space-5);
   min-height: 240px;
+  font-family: var(--sans);
 }
 .empty-state-icon {
   display: inline-flex;
@@ -15,21 +16,23 @@
   width: 48px;
   height: 48px;
   border-radius: var(--radius-full);
-  background: var(--color-surface-subtle);
-  color: var(--color-text-faint);
+  background: var(--ivory);
+  border: 1px solid var(--border);
+  color: var(--gold-deep);
   font-size: 1.35rem;
   margin-bottom: var(--space-1);
 }
 .empty-state-title {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
 }
 .empty-state-desc {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  font-size: 14px;
+  color: var(--muted);
   max-width: 380px;
-  line-height: var(--leading-relaxed);
+  line-height: 1.6;
 }
 .empty-state-action {
   margin-top: var(--space-3);

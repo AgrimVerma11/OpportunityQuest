@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import Button from "./Button";
 import "./AvatarCropper.css";
 
 const BOX = 300; // crop viewport size (px)
@@ -133,16 +134,12 @@ export default function AvatarCropper({ file, onCancel, onSave }) {
         />
 
         <div className="cropper-actions">
-          <button className="btn btn-secondary" onClick={onCancel}>
+          <Button variant="outline" onClick={onCancel}>
             Cancel
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={handleSave}
-            disabled={saving}
-          >
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
             {saving ? "Saving…" : "Save photo"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

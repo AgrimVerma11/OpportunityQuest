@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-modal);
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(20, 23, 46, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,15 +11,17 @@
 }
 
 .modal {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(20, 23, 46, 0.18);
   width: 100%;
   max-height: calc(100vh - var(--space-7));
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  font-family: var(--sans);
+  color: var(--ink);
   animation: modal-in var(--transition-slow) ease;
 }
 .modal:focus { outline: none; }
@@ -34,12 +36,13 @@
   justify-content: space-between;
   gap: var(--space-4);
   padding: var(--space-5) var(--space-5) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--border);
 }
 .modal-title {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-bold);
-  color: var(--color-text);
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--ink);
 }
 .modal-close {
   flex-shrink: 0;
@@ -51,14 +54,14 @@
   border: none;
   background: transparent;
   border-radius: var(--radius-sm);
-  color: var(--color-text-muted);
+  color: var(--muted-2);
   font-size: 1.15rem;
   cursor: pointer;
   transition: background var(--transition), color var(--transition);
 }
 .modal-close:hover {
-  background: var(--color-surface-subtle);
-  color: var(--color-text);
+  background: var(--ivory);
+  color: var(--gold-deep);
 }
 
 .modal-body {
@@ -72,8 +75,8 @@
   justify-content: flex-end;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface-subtle);
+  border-top: 1px solid var(--border);
+  background: var(--ivory);
 }
 
 @keyframes modal-overlay-in {
@@ -89,7 +92,7 @@
   .modal-overlay { padding: 0; align-items: flex-end; }
   .modal {
     max-width: none;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-radius: 16px 16px 0 0;
     max-height: 92vh;
   }
 }

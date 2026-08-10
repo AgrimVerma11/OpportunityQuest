@@ -1,7 +1,7 @@
 .spinner {
   display: inline-block;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-primary);
+  border: 2px solid var(--border);
+  border-top-color: var(--gold-deep);
   border-radius: var(--radius-full);
   animation: spinner-rotate 0.7s linear infinite;
 }
@@ -19,8 +19,8 @@
   padding: var(--space-7) 0;
 }
 .spinner-label {
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
+  font-size: 14px;
+  color: var(--muted);
 }
 
 @keyframes spinner-rotate {
