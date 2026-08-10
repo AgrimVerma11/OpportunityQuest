@@ -52,3 +52,13 @@ export const send = async (req, res) => {
     respondError(res, error);
   }
 };
+
+// DELETE /api/conversations/:id  (either participant deletes the thread)
+export const remove = async (req, res) => {
+  try {
+    await conversationService.deleteConversation(req.user.id, req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    respondError(res, error);
+  }
+};

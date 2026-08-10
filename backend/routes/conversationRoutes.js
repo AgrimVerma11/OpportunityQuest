@@ -5,6 +5,7 @@ import {
   list,
   thread,
   send,
+  remove,
 } from "../controllers/conversationController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import authorizeRoles from "../middleware/authorizeRoles.js";
@@ -23,5 +24,7 @@ router.post(
   validateObjectId("id"),
   send
 );
+
+router.delete("/:id", authMiddleware, validateObjectId("id"), remove);
 
 export default router;

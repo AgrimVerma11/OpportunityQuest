@@ -166,6 +166,29 @@
   font-size: 12.5px;
   color: var(--muted-2);
 }
+.msg-delete {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.msg-delete:hover {
+  background: var(--status-expired-bg);
+  color: var(--status-expired-text);
+}
+.msg-delete svg {
+  width: 17px;
+  height: 17px;
+}
 
 .msg-messages {
   flex: 1;
@@ -175,6 +198,21 @@
   flex-direction: column;
   gap: 8px;
   background: var(--ivory);
+}
+.msg-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0 2px;
+}
+.msg-day span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted-2);
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 12px;
 }
 .msg-bubble-row {
   display: flex;

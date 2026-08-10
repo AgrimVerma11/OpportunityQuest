@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Navbar from "./Navbar";
@@ -6,11 +6,14 @@ import Avatar from "../components/Avatar";
 import Button from "../components/Button";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
-import { IconArrowLeft, IconInbox, IconAlert } from "../components/Icons";
+import { useConfirm } from "../components/ConfirmProvider";
+import { useToast } from "../components/ToastProvider";
+import { IconArrowLeft, IconInbox, IconAlert, IconTrash } from "../components/Icons";
 import { useAuth } from "../context/AuthContext";
-import { fetchWithAuth, postWithAuth } from "../utils/api";
+import { fetchWithAuth, postWithAuth, deleteWithAuth } from "../utils/api";
 import "./Messages.css";
 
+// Compact relative time for the inbox list: "just now", "5m", "3h", "2d", else a date.
 function timeShort(iso) {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -24,12 +27,57 @@ function timeShort(iso) {
   return new Date(iso).toLocaleDateString();
 }
 
+function sameDay(a, b) {
+  const da = new Date(a);
+  const db = new Date(b);
+  return (
+    da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate()
+  );
+}
+
+// Clock time on a message bubble, e.g. "3:45 PM".
+function messageTime(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+// Exact date + time for the hover tooltip, e.g. "6 Aug 2026, 3:45 pm".
+function fullTimestamp(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+// Day-divider label between messages: "Today" / "Yesterday" / a full date.
+function dayLabel(iso) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (sameDay(d, today)) return "Today";
+  if (sameDay(d, yesterday)) return "Yesterday";
+  return d.toLocaleDateString([], {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 const THREAD_POLL_MS = 12000;
 
 export default function Messages() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const confirm = useConfirm();
+  const toast = useToast();
 
   const [conversations, setConversations] = useState([]);
   const [thread, setThread] = useState(null);
@@ -106,11 +154,37 @@ export default function Messages() {
         );
         setDraft("");
         loadInbox();
+      } else {
+        toast.error(data?.message || "Could not send the message.");
       }
     } catch {
-      /* leave the draft so the user can retry */
+      toast.error("Could not send the message.");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: "Delete this conversation?",
+      message:
+        "This permanently deletes the conversation and all its messages for both people. This can't be undone.",
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
+    try {
+      const data = await deleteWithAuth(`/conversations/${id}`);
+      if (data?.success) {
+        setConversations((prev) => prev.filter((c) => c._id !== id));
+        setThread(null);
+        navigate("/messages");
+        toast.success("Conversation deleted.");
+      } else {
+        toast.error(data?.message || "Could not delete the conversation.");
+      }
+    } catch {
+      toast.error("Could not delete the conversation.");
     }
   };
 
@@ -160,7 +234,10 @@ export default function Messages() {
                           {c.lastMessageSnippet}
                         </span>
                       </span>
-                      <span className="msg-inbox-time">
+                      <span
+                        className="msg-inbox-time"
+                        title={fullTimestamp(c.lastMessageAt)}
+                      >
                         {timeShort(c.lastMessageAt)}
                       </span>
                     </button>
@@ -217,24 +294,46 @@ export default function Messages() {
                       {thread.conversation.opportunityTitle}
                     </span>
                   </div>
+                  <button
+                    type="button"
+                    className="msg-delete"
+                    onClick={handleDelete}
+                    aria-label="Delete conversation"
+                  >
+                    <IconTrash />
+                  </button>
                 </header>
 
                 <div className="msg-messages">
-                  {thread.messages.map((m) => (
-                    <div
-                      key={m._id}
-                      className={`msg-bubble-row${
-                        m.sender === user?.id ? " mine" : ""
-                      }`}
-                    >
-                      <div className="msg-bubble">
-                        <span className="msg-bubble-body">{m.body}</span>
-                        <span className="msg-bubble-time">
-                          {timeShort(m.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                  {thread.messages.map((m, i) => {
+                    const prev = thread.messages[i - 1];
+                    const showDay =
+                      !prev || !sameDay(prev.createdAt, m.createdAt);
+                    return (
+                      <Fragment key={m._id}>
+                        {showDay && (
+                          <div className="msg-day">
+                            <span>{dayLabel(m.createdAt)}</span>
+                          </div>
+                        )}
+                        <div
+                          className={`msg-bubble-row${
+                            m.sender === user?.id ? " mine" : ""
+                          }`}
+                        >
+                          <div className="msg-bubble">
+                            <span className="msg-bubble-body">{m.body}</span>
+                            <span
+                              className="msg-bubble-time"
+                              title={fullTimestamp(m.createdAt)}
+                            >
+                              {messageTime(m.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+                      </Fragment>
+                    );
+                  })}
                   <div ref={bottomRef} />
                 </div>
 

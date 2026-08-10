@@ -2,6 +2,7 @@ import * as conversationRepo from "../repositories/conversationRepository.js";
 import * as messageRepo from "../repositories/messageRepository.js";
 import * as applicationRepo from "../repositories/applicationRepository.js";
 import * as opportunityRepo from "../repositories/opportunityRepository.js";
+import * as userRepo from "../repositories/userRepository.js";
 import * as notificationService from "./notificationService.js";
 import { AppError } from "../utils/AppError.js";
 import { MESSAGEABLE_STATUSES } from "../constants/applicationConstants.js";
@@ -102,6 +103,12 @@ export const startConversation = async (
     );
   }
 
+  // The applicant may have been removed. Don't open a thread into the void.
+  const student = await userRepo.findById(application.student);
+  if (!student) {
+    throw new AppError("This applicant is no longer available.", 410);
+  }
+
   let conversation = await conversationRepo.findByApplication(applicationId);
   if (!conversation) {
     conversation = await conversationRepo.create({
@@ -131,6 +138,16 @@ export const sendMessage = async (userId, conversationId, body) => {
   const application = await applicationRepo.findById(conversation.application);
   if (!application || !isOpen(application)) {
     throw new AppError("This conversation is read-only", 403);
+  }
+
+  // The other participant may have been removed since the thread was opened.
+  const recipientId =
+    roleOf(conversation, userId) === "student"
+      ? idOf(conversation.faculty)
+      : idOf(conversation.student);
+  const recipient = await userRepo.findById(recipientId);
+  if (!recipient) {
+    throw new AppError("The other participant is no longer available.", 410);
   }
 
   return deliverMessage(conversation, userId, body);
@@ -180,4 +197,19 @@ export const getThread = async (userId, conversationId) => {
     messages,
     canSend: application ? isOpen(application) : false,
   };
+};
+
+// ── Either participant: delete the conversation and all its messages ──
+// A hard delete that removes the shared thread for both people. Allowed for
+// either participant; anyone else reads as not-found (never leaks existence).
+
+export const deleteConversation = async (userId, conversationId) => {
+  const conversation = await conversationRepo.findById(conversationId);
+  if (!conversation || !roleOf(conversation, userId)) {
+    throw new AppError("Conversation not found", 404);
+  }
+
+  // Remove the messages first so a mid-way failure can't orphan them.
+  await messageRepo.deleteByConversation(conversation._id);
+  await conversationRepo.deleteById(conversation._id);
 };

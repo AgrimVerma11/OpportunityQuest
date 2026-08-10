@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createApp } from "../app.js";
 import Organization from "../models/Organization.js";
 import User from "../models/User.js";
+import Message from "../models/Message.js";
 import AuditLog from "../models/AuditLog.js";
 import * as auditRepo from "../repositories/auditRepository.js";
 import bcrypt from "bcryptjs";
@@ -1227,6 +1228,88 @@ describe("messaging", () => {
     expect(
       notifs.body.notifications.some((n) => n.type === "message.received")
     ).toBe(true);
+  });
+
+  it("lets a participant delete the conversation and cascades its messages", async () => {
+    const { faculty, student, applicationId } = await setupShortlisted();
+    const start = await request(app)
+      .post("/api/conversations")
+      .set(auth(faculty.token))
+      .send({ applicationId, body: "First message" });
+    const convoId = start.body.conversation._id;
+
+    // A reply, so the cascade has more than one message to remove.
+    await request(app)
+      .post(`/api/conversations/${convoId}/messages`)
+      .set(auth(student.token))
+      .send({ body: "A reply" })
+      .expect(201);
+    expect(await Message.countDocuments({ conversationId: convoId })).toBe(2);
+
+    // A participant (the student) deletes it.
+    await request(app)
+      .delete(`/api/conversations/${convoId}`)
+      .set(auth(student.token))
+      .expect(200);
+
+    // Gone for both sides, and its messages were cascaded away.
+    expect(
+      (
+        await request(app)
+          .get(`/api/conversations/${convoId}`)
+          .set(auth(faculty.token))
+      ).status
+    ).toBe(404);
+    expect(await Message.countDocuments({ conversationId: convoId })).toBe(0);
+  });
+
+  it("does not let a non-participant delete a conversation", async () => {
+    const { faculty, applicationId } = await setupShortlisted();
+    const start = await request(app)
+      .post("/api/conversations")
+      .set(auth(faculty.token))
+      .send({ applicationId, body: "Private" });
+    const convoId = start.body.conversation._id;
+
+    const outsider = await registerAndLogin({
+      email: "outsider@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+    });
+
+    await request(app)
+      .delete(`/api/conversations/${convoId}`)
+      .set(auth(outsider.token))
+      .expect(404);
+
+    // Still there for its participants.
+    expect(
+      (
+        await request(app)
+          .get(`/api/conversations/${convoId}`)
+          .set(auth(faculty.token))
+      ).status
+    ).toBe(200);
+  });
+
+  it("blocks messaging once the other participant is deleted", async () => {
+    const { faculty, applicationId } = await setupShortlisted();
+    const start = await request(app)
+      .post("/api/conversations")
+      .set(auth(faculty.token))
+      .send({ applicationId, body: "Hello" });
+    const convoId = start.body.conversation._id;
+
+    // The student's account is removed directly, as an operator might.
+    await User.deleteOne({ email: "student@thapar.edu" });
+
+    // Sending into the void is refused rather than silently succeeding.
+    const res = await request(app)
+      .post(`/api/conversations/${convoId}/messages`)
+      .set(auth(faculty.token))
+      .send({ body: "Are you there?" });
+    expect(res.status).toBe(410);
   });
 });
 

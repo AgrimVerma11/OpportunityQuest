@@ -19,6 +19,8 @@ export const create = (data) => Conversation.create(data);
 
 export const save = (conversation) => conversation.save();
 
+export const deleteById = (id) => Conversation.findByIdAndDelete(id);
+
 // A user's inbox: every conversation they are a participant in, most-recently
 // active first, with both participants populated for display.
 export const findForUser = (userId) =>
