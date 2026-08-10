@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import Modal from "./Modal";
 import Field from "./Field";
+import Button from "./Button";
 import { postPublic } from "../utils/api";
 import {
   BRANCH_OPTIONS,
@@ -172,21 +173,21 @@ export default function GoogleAuthButton({
           size="sm"
           footer={
             <>
-              <button
+              <Button
                 type="button"
-                className="btn btn-secondary"
+                variant="outline"
                 onClick={() => setOnboarding(null)}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-primary"
+                variant="primary"
                 onClick={submitOnboarding}
                 disabled={submitting}
               >
                 {submitting ? "Creating…" : "Continue"}
-              </button>
+              </Button>
             </>
           }
         >

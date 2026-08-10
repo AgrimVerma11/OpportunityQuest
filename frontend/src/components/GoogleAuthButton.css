@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--muted-2);
   font-size: var(--text-xs);
   margin-bottom: var(--space-4);
 }
@@ -21,7 +21,7 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--color-border);
+  background: var(--border);
 }
 
 .google-auth-divider span {
@@ -37,7 +37,7 @@
 }
 
 .google-auth-error {
-  color: var(--color-danger);
+  color: var(--status-expired-text);
   font-size: var(--text-sm);
   margin-top: var(--space-3);
   text-align: center;
@@ -46,7 +46,7 @@
 /* ── Onboarding — form inside the shared <Modal> ── */
 .google-onboard-hint {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  color: var(--muted);
   line-height: var(--leading-normal);
   margin-bottom: var(--space-4);
 }

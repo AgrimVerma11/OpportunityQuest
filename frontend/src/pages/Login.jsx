@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { IconCheck } from "../components/Icons";
 import Field from "../components/Field";
+import Button from "../components/Button";
 import { useAuth } from "../context/AuthContext";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import "./Auth.css";
@@ -132,14 +133,15 @@ function Login() {
             />
           </Field>
 
-          <button
+          <Button
             id="loginBtn"
             type="submit"
-            className="btn btn-primary btn-block"
+            variant="primary"
+            block
             disabled={loading}
           >
             {loading ? "Signing in…" : "Sign in"}
-          </button>
+          </Button>
 
           <GoogleAuthButton
             allowRegister={false}

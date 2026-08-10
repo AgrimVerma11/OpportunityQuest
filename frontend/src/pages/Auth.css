@@ -37,7 +37,7 @@
 }
 
 .auth-tagline {
-  font-family: var(--font-serif);
+  font-family: var(--serif);
   font-size: var(--text-body);
   line-height: var(--leading-relaxed);
   color: rgba(255, 255, 255, 0.74);
@@ -88,7 +88,7 @@
 /* ── Right — form column ── */
 .auth-right {
   flex: 1;
-  background: var(--color-bg);
+  background: var(--ivory);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,28 +98,30 @@
 .auth-form {
   width: 100%;
   max-width: 440px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
   padding: var(--space-7);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  font-family: var(--sans);
+  color: var(--ink);
 }
 
 .auth-form-header h2 {
-  font-family: var(--font-serif);
-  font-size: var(--text-h1);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-tight);
-  color: var(--color-text);
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink);
   margin: 0 0 var(--space-2);
 }
 
 .auth-form-header p {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  color: var(--muted);
   line-height: var(--leading-normal);
   margin: 0;
 }
@@ -136,7 +138,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  color: var(--color-text-muted);
+  color: var(--muted-2);
   font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
@@ -146,27 +148,27 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--color-border);
+  background: var(--border);
 }
 
 .auth-optional {
   font-weight: var(--weight-regular);
-  color: var(--color-text-faint);
+  color: var(--muted-2);
 }
 
 /* Sign-in notice carried over from another screen (e.g. "please sign in"). */
 .auth-notice {
   padding: var(--space-3);
-  background: var(--color-success-soft);
+  background: var(--status-active-bg);
   border-radius: var(--radius-sm);
   font-size: var(--text-sm);
-  color: var(--color-success);
+  color: var(--status-active-text);
 }
 
 /* Explanatory copy on the faculty "request submitted" screen. */
 .auth-note {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  color: var(--muted);
   line-height: var(--leading-relaxed);
   margin: 0;
 }
@@ -174,11 +176,11 @@
 .auth-redirect {
   text-align: center;
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  color: var(--muted);
   margin: 0;
 }
 .auth-redirect a {
-  color: var(--color-primary);
+  color: var(--gold-deep);
   font-weight: var(--weight-semibold);
 }
 .auth-redirect a:hover {

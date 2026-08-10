@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { IconCheck } from "../components/Icons";
 import Field from "../components/Field";
+import Button from "../components/Button";
 import { useAuth } from "../context/AuthContext";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import { BRANCH_OPTIONS, DEPARTMENT_OPTIONS } from "../constants/profileOptions";
@@ -168,13 +169,14 @@ function Register() {
               keep it under your Thapar email. Come back and sign in when
               it&rsquo;s ready.
             </p>
-            <button
+            <Button
               type="button"
-              className="btn btn-primary btn-block"
+              variant="primary"
+              block
               onClick={() => navigate("/")}
             >
               Back to sign in
-            </button>
+            </Button>
           </div>
         ) : (
           <form className="auth-form" onSubmit={handleSubmit}>
@@ -335,14 +337,15 @@ function Register() {
               </>
             )}
 
-            <button
+            <Button
               id="registerBtn"
               type="submit"
-              className="btn btn-primary btn-block"
+              variant="primary"
+              block
               disabled={loading}
             >
               {loading ? "Creating account…" : "Create account"}
-            </button>
+            </Button>
 
             <GoogleAuthButton
               onSignedIn={handleGoogleSignedIn}
