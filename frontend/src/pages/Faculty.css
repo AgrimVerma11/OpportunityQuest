@@ -1,12 +1,20 @@
 /* ─────────────────────────────────────────
-   FACULTY DASHBOARD.
-   Masthead = <PageHeader>; modals = <Modal>+<Field>; loading/empty = primitives;
-   category/status pills = <CategoryTag>/<StatusBadge>. This file owns the
-   dashboard body: stats, profile card, and the management cards.
+   FACULTY DASHBOARD (design refresh).
+   Masthead = shared <PageHero>; stats = <StatCard>; nudge uses <ProgressBar>;
+   management cards sit on <Card>/.oq-card. This file owns the dashboard body
+   layout + accents. The extend/reactivate modals keep the legacy chrome for
+   now (they migrate with the form/modal pass).
 ───────────────────────────────────────── */
 
+.faculty {
+  flex: 1;
+  background: var(--ivory);
+  font-family: var(--sans);
+  color: var(--ink);
+}
+
 .faculty-body {
-  padding-bottom: var(--space-8);
+  padding-bottom: 64px;
 }
 .faculty-status {
   display: flex;
@@ -15,162 +23,149 @@
   min-height: 320px;
 }
 
-/* ── Stats ── */
+/* ── Stats (cards are <StatCard>/.oq-stat) ── */
 .faculty-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
+  gap: 18px;
+  margin-top: 16px;
 }
-.faculty-stat {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-sm);
-}
-.faculty-stat-value {
-  font-size: 2rem;
-  font-weight: var(--weight-extrabold);
-  letter-spacing: var(--tracking-tight);
-  line-height: 1;
-  color: var(--color-text);
-}
-.faculty-stat-label {
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  color: var(--color-text-muted);
-}
-/* Value colour mirrors the status badges so counts read at a glance. */
-.faculty-stat-active .faculty-stat-value { color: var(--color-success); }
-.faculty-stat-archived .faculty-stat-value { color: var(--color-warning); }
-.faculty-stat-expired .faculty-stat-value { color: var(--color-danger); }
-.faculty-stat-closed .faculty-stat-value { color: var(--color-text-secondary); }
 
-/* ── Profile nudge — a slim banner, shown only when incomplete ── */
-.faculty-profile {
+/* ── Profile nudge — a warm gradient banner, shown only when incomplete ── */
+.faculty-nudge {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-5);
-  margin-bottom: var(--space-6);
-  background: var(--color-primary-soft);
-  border: 1px solid var(--color-primary-border);
-  border-radius: var(--radius-lg);
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 22px;
+  padding: 22px 26px;
+  background: linear-gradient(135deg, #fffdf8, #faf6ec);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-panel);
 }
-.faculty-profile-text {
+.faculty-nudge-text {
   min-width: 0;
-  flex: 1;
 }
-.faculty-profile-title {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
+.faculty-nudge-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
 }
-.faculty-profile-desc {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  line-height: var(--leading-normal);
+.faculty-nudge-desc {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.5;
 }
-.faculty-progress-track {
-  width: 120px;
-  height: 6px;
+.faculty-nudge-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   flex-shrink: 0;
-  background: var(--color-surface);
-  border-radius: var(--radius-full);
-  overflow: hidden;
 }
-.faculty-progress-fill {
-  height: 100%;
-  background: var(--color-primary);
-  border-radius: var(--radius-full);
-  transition: width var(--transition-slow) ease;
+.faculty-nudge .faculty-nudge-progress {
+  width: 160px;
 }
-.faculty-progress-value {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
-  color: var(--color-primary);
-  flex-shrink: 0;
+.faculty-nudge-pct {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--gold-deep);
 }
 
-/* ── Section headings ── */
+/* ── Section headings — serif with a trailing hairline rule ── */
 .faculty-section-title {
-  font-size: var(--text-h2);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--tracking-snug);
-  color: var(--color-text);
-  margin: var(--space-7) 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--serif);
+  font-size: 25px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin: 46px 0 18px;
+}
+.faculty-section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 .faculty-section-subtitle {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+  font-size: 14px;
+  color: var(--muted);
+  margin: -8px 0 18px;
   max-width: 620px;
+  line-height: 1.55;
 }
 
-/* ── Management cards ── */
+/* ── Management cards (surface + elevation from .oq-card) ── */
 .faculty-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--space-4);
+  gap: 20px;
 }
 .faculty-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 14px;
 }
 .faculty-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 8px;
 }
 .faculty-card-title {
-  font-size: var(--text-h3);
-  font-weight: var(--weight-bold);
-  color: var(--color-text);
-  line-height: var(--leading-snug);
-  letter-spacing: var(--tracking-snug);
+  font-family: var(--sans);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+  letter-spacing: 0;
 }
 .faculty-card-facts {
   display: flex;
+  gap: 32px;
+}
+.faculty-card-facts > div {
+  display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
+  gap: 3px;
+  font-size: 14px;
+  color: var(--ink-soft);
 }
 .faculty-fact-label {
-  display: inline-block;
-  min-width: 76px;
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted-2);
+  font-weight: 700;
 }
 .faculty-card-notes {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: 16px;
 }
 .faculty-note {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
 }
 .faculty-note svg {
   width: 14px;
   height: 14px;
-  color: var(--color-text-muted);
+  color: var(--muted-2);
 }
 .faculty-card-actions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 10px;
   margin-top: auto;
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
 /* Overflow menu for the less-common actions, keeping the row uncluttered. */
@@ -179,8 +174,22 @@
   margin-left: auto;
 }
 .faculty-menu-trigger {
-  padding: 0;
-  width: 32px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition),
+    background var(--transition);
+}
+.faculty-menu-trigger:hover {
+  border-color: var(--gold-deep);
+  color: var(--gold-deep);
 }
 .faculty-menu-trigger svg {
   width: 18px;
@@ -188,50 +197,96 @@
 }
 .faculty-menu {
   position: absolute;
-  top: calc(100% + var(--space-2));
+  top: calc(100% + 8px);
   right: 0;
   min-width: 180px;
-  padding: var(--space-1);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
   z-index: var(--z-dropdown);
 }
 .faculty-menu-item {
   display: block;
   width: 100%;
   text-align: left;
-  padding: var(--space-2) var(--space-3);
+  padding: 8px 12px;
   border: none;
   background: transparent;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  color: var(--color-text);
+  border-radius: 6px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
   cursor: pointer;
   transition: background var(--transition);
 }
 .faculty-menu-item:hover {
-  background: var(--color-surface-subtle);
+  background: var(--ivory);
 }
 .faculty-menu-danger {
-  color: var(--color-danger);
+  color: var(--status-expired-text);
 }
 .faculty-menu-danger:hover {
-  background: var(--color-danger-soft);
+  background: var(--status-expired-bg);
 }
 .faculty-menu-sep {
   height: 1px;
-  margin: var(--space-1) 0;
-  background: var(--color-border);
+  margin: 6px 0;
+  background: var(--border);
 }
 
-/* ── Modal bodies ── */
+/* ── "Post another" placeholder card ── */
+.faculty-card-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  min-height: 200px;
+  padding: 24px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--muted-2);
+  transition: border-color var(--transition), background var(--transition);
+}
+.faculty-card-placeholder:hover {
+  border-color: var(--gold-deep);
+  background: var(--paper);
+}
+.faculty-placeholder-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold-deep);
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+.faculty-placeholder-title {
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+}
+.faculty-placeholder-desc {
+  font-size: 13px;
+  max-width: 220px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────
+   Modal bodies (design refresh).
+───────────────────────────────────────── */
 .faculty-modal-hint {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  line-height: var(--leading-normal);
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
   margin-bottom: var(--space-4);
 }
 .faculty-modal-fields {
@@ -251,17 +306,17 @@
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   cursor: pointer;
   transition: border-color var(--transition), background var(--transition);
 }
 .unarchive-option:hover {
-  border-color: var(--color-border-strong);
+  border-color: var(--gold-deep);
 }
 .unarchive-option:has(input:checked) {
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft);
+  border-color: var(--gold-deep);
+  background: var(--ivory);
 }
 .unarchive-option.is-disabled {
   opacity: 0.55;
@@ -269,6 +324,7 @@
 }
 .unarchive-option input {
   margin-top: 3px;
+  accent-color: var(--gold-deep);
 }
 .unarchive-option span {
   display: flex;
@@ -276,13 +332,13 @@
   gap: 2px;
 }
 .unarchive-option strong {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
 }
 .unarchive-option small {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+  font-size: 12.5px;
+  color: var(--muted);
 }
 .unarchive-options + .field {
   margin-top: var(--space-4);
@@ -296,10 +352,13 @@
   .faculty-stats {
     grid-template-columns: repeat(2, 1fr);
   }
-  .faculty-profile {
+  .faculty-nudge {
     flex-wrap: wrap;
   }
-  .faculty-progress-track {
+  .faculty-nudge-right {
+    flex-wrap: wrap;
+  }
+  .faculty-nudge .faculty-nudge-progress {
     flex: 1;
     width: auto;
   }

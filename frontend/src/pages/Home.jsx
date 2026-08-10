@@ -4,13 +4,16 @@ import { Link } from "react-router-dom";
 import "./Home.css";
 
 import Navbar from "./Navbar";
+import PageHero from "../components/PageHero";
 import Avatar from "../components/Avatar";
-import CategoryTag from "../components/CategoryTag";
-import DeadlineChip from "../components/DeadlineChip";
-import PageHeader from "../components/PageHeader";
+import Tag from "../components/Tag";
+import UrgencyChip from "../components/UrgencyChip";
+import SkillChip from "../components/SkillChip";
+import Card from "../components/Card";
+import Button from "../components/Button";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
-import { IconSearch, IconAlert, IconPlus, IconArrowRight } from "../components/Icons";
+import { IconSearch, IconAlert, IconArrowRight } from "../components/Icons";
 import { BRANCH_OPTIONS, YEAR_OPTIONS } from "../constants/profileOptions";
 
 import { fetchWithAuth } from "../utils/api";
@@ -121,7 +124,8 @@ function Home() {
       <Navbar />
 
       <div className="home">
-        <PageHeader
+        <PageHero
+          eyebrow="Home"
           title={`Welcome back, ${
             currentUser?.prefix ? `${currentUser.prefix} ` : ""
           }${currentUser?.name || ""}`}
@@ -132,20 +136,19 @@ function Home() {
           }
           action={
             canPost ? (
-              <Link to="/create-opportunity" className="btn btn-primary">
-                <IconPlus /> Post an opportunity
-              </Link>
+              <Button as={Link} to="/create-opportunity" variant="primary" leadingPlus>
+                Post an opportunity
+              </Button>
             ) : isStudent ? (
-              <Link to="/my-applications" className="btn btn-secondary">
+              <Button as={Link} to="/my-applications" variant="outline">
                 My applications
-              </Link>
+              </Button>
             ) : null
           }
         />
 
         <div className="container home-body">
-
-          {/* Filter toolbar */}
+          {/* Filter panel */}
           <div className="home-filters">
             <div
               className="home-chips"
@@ -209,13 +212,9 @@ function Home() {
               </select>
 
               {hasFilters && (
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={clearFilters}
-                >
+                <Button type="button" variant="text" onClick={clearFilters}>
                   Clear
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -243,13 +242,13 @@ function Home() {
               title="Something went wrong"
               description={error}
               action={
-                <button
+                <Button
                   type="button"
-                  className="btn btn-secondary"
+                  variant="outline"
                   onClick={() => setReloadKey((k) => k + 1)}
                 >
                   Try again
-                </button>
+                </Button>
               }
             />
           ) : opportunities.length === 0 ? (
@@ -259,13 +258,9 @@ function Home() {
               description="Try a different category, or clear your filters to see everything."
               action={
                 hasFilters && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={clearFilters}
-                  >
+                  <Button type="button" variant="outline" onClick={clearFilters}>
                     Clear filters
-                  </button>
+                  </Button>
                 )
               }
             />
@@ -273,14 +268,16 @@ function Home() {
             <>
               <div className="opportunities-grid">
                 {opportunities.map((item) => (
-                  <Link
+                  <Card
+                    as={Link}
                     to={`/opportunity/${item._id}`}
-                    className="card card-hover opportunity-card"
+                    elevated
+                    className="opportunity-card"
                     key={item._id}
                   >
                     <div className="oc-header">
-                      <CategoryTag category={item.category} />
-                      <DeadlineChip deadline={item.deadline} />
+                      <Tag category={item.category} />
+                      <UrgencyChip deadline={item.deadline} />
                     </div>
 
                     <h3 className="oc-title">{item.title}</h3>
@@ -289,7 +286,7 @@ function Home() {
                       <Avatar
                         name={item.postedBy?.name}
                         image={item.postedBy?.profileImage}
-                        size={28}
+                        size={26}
                       />
                       <span className="oc-faculty-name">
                         {item.postedBy?.prefix ? `${item.postedBy.prefix} ` : ""}
@@ -310,9 +307,7 @@ function Home() {
                           .filter((tag) => tag.trim() !== "")
                           .slice(0, 3)
                           .map((tag, index) => (
-                            <span key={index} className="oc-tag">
-                              {tag}
-                            </span>
+                            <SkillChip key={index}>{tag}</SkillChip>
                           ))}
                       </div>
                     )}
@@ -332,20 +327,20 @@ function Home() {
                         View details <IconArrowRight className="oc-cta-icon" />
                       </span>
                     </div>
-                  </Link>
+                  </Card>
                 ))}
               </div>
 
               {hasMore && (
                 <div className="home-loadmore">
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-secondary"
+                    variant="outline"
                     onClick={loadMore}
                     disabled={loadingMore}
                   >
                     {loadingMore ? "Loading…" : "Load more"}
-                  </button>
+                  </Button>
                 </div>
               )}
             </>

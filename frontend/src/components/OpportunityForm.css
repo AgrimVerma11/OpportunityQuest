@@ -1,54 +1,53 @@
 .opp-fields {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 20px;
 }
 
 /* Two-up row that collapses on small screens. */
 .opp-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
+  gap: 16px;
 }
 
 /* Multi-select (branches / years) */
 .opp-multi {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 10px;
 }
 .opp-multi-label {
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
 }
 .opp-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 8px;
 }
 .opp-chip {
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  color: var(--color-text-secondary);
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--paper);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
   cursor: pointer;
   transition: background var(--transition), border-color var(--transition),
     color var(--transition);
 }
 .opp-chip:hover {
-  background: var(--color-surface-subtle);
-  border-color: var(--color-text-faint);
-  color: var(--color-text);
+  border-color: var(--gold-deep);
+  color: var(--ink);
 }
 .opp-chip.selected {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #fff;
-  font-weight: var(--weight-semibold);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--cream);
 }
 
 @media (max-width: 640px) {

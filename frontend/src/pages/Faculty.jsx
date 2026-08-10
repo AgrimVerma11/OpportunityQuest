@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import Navbar from "./Navbar";
 import "./Faculty.css";
 
-import PageHeader from "../components/PageHeader";
-import CategoryTag from "../components/CategoryTag";
-import StatusBadge from "../components/StatusBadge";
+import PageHero from "../components/PageHero";
+import Tag from "../components/Tag";
+import StatCard from "../components/StatCard";
+import ProgressBar from "../components/ProgressBar";
+import Button from "../components/Button";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import Field from "../components/Field";
@@ -16,7 +18,6 @@ import { useToast } from "../components/ToastProvider";
 import {
   IconHistory,
   IconPaperclip,
-  IconPlus,
   IconFile,
   IconMore,
 } from "../components/Icons";
@@ -81,10 +82,10 @@ function OpportunityCard({
   const hasSecondary = showExtend || showArchive || showClose;
 
   return (
-    <div className="card faculty-card">
+    <div className="oq-card oq-card--elevated faculty-card">
       <div className="faculty-meta">
-        <CategoryTag category={item.category} />
-        <StatusBadge status={displayStatus} />
+        <Tag category={item.category} />
+        <Tag status={displayStatus} />
       </div>
 
       <h3 className="faculty-card-title">{item.title}</h3>
@@ -118,42 +119,39 @@ function OpportunityCard({
       )}
 
       <div className="faculty-card-actions">
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={() => onView(item._id)}
-        >
+        <Button variant="primary" size="sm" onClick={() => onView(item._id)}>
           View
-        </button>
+        </Button>
 
-        <button
-          className="btn btn-secondary btn-sm"
+        <Button
+          variant="subtle"
+          size="sm"
           onClick={() => onApplicants(item._id)}
         >
-          Applicants{item.applicationsCount ? ` · ${item.applicationsCount}` : ""}
-        </button>
+          Applicants
+          {item.applicationsCount ? ` · ${item.applicationsCount}` : ""}
+        </Button>
 
         {item.status !== "Closed" && (
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => onEdit(item._id)}
-          >
+          <Button variant="text" size="sm" onClick={() => onEdit(item._id)}>
             Edit
-          </button>
+          </Button>
         )}
 
         {showUnarchive && (
-          <button
-            className="btn btn-primary btn-sm"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onUnarchive(item._id, item.deadline)}
           >
             Reactivate
-          </button>
+          </Button>
         )}
 
         <div className="faculty-menu-wrap" ref={menuRef}>
           <button
             type="button"
-            className="btn btn-secondary btn-sm faculty-menu-trigger"
+            className="faculty-menu-trigger"
             aria-haspopup="menu"
             aria-expanded={menuOpen}
             aria-label="More actions"
@@ -473,11 +471,22 @@ function Faculty() {
     onExtend: handleOpenExtend,
   };
 
-  const renderGrid = (items, flags) => (
+  const renderGrid = (items, flags, withPlaceholder = false) => (
     <div className="faculty-grid">
       {items.map((item) => (
         <OpportunityCard key={item._id} item={item} {...flags} {...cardProps} />
       ))}
+      {withPlaceholder && (
+        <Link to="/create-opportunity" className="faculty-card-placeholder">
+          <span className="faculty-placeholder-icon">+</span>
+          <span className="faculty-placeholder-title">
+            Post another opportunity
+          </span>
+          <span className="faculty-placeholder-desc">
+            Internships, research roles, and paid work all live here.
+          </span>
+        </Link>
+      )}
     </div>
   );
 
@@ -486,18 +495,20 @@ function Faculty() {
       <Navbar />
 
       <div className="faculty">
-        <PageHeader
+        <PageHero
+          eyebrow="Faculty Corner"
           title={`Welcome back, ${
             currentUser?.prefix ? `${currentUser.prefix} ` : ""
           }${currentUser?.name || ""}`}
           subtitle="Manage opportunities, research projects, internships and student engagement from one central place."
           action={
-            <button
-              className="btn btn-primary"
+            <Button
+              variant="primary"
+              leadingPlus
               onClick={() => navigate("/create-opportunity")}
             >
-              <IconPlus /> Create opportunity
-            </button>
+              Create opportunity
+            </Button>
           }
         />
 
@@ -511,48 +522,40 @@ function Faculty() {
               {/* Stats */}
               <div className="faculty-stats">
                 {stats.map((s) => (
-                  <div
-                    className={`card faculty-stat faculty-stat-${s.tone}`}
+                  <StatCard
                     key={s.label}
-                  >
-                    <span className="faculty-stat-value">{s.value}</span>
-                    <span className="faculty-stat-label">{s.label}</span>
-                  </div>
+                    value={s.value}
+                    label={s.label}
+                    tone={s.tone}
+                  />
                 ))}
               </div>
 
               {/* Profile nudge: only when there is something worth completing */}
               {profile && completion < 100 && (
-                <div className="faculty-profile">
-                  <div className="faculty-profile-text">
-                    <p className="faculty-profile-title">
-                      Complete your profile
-                    </p>
-                    <p className="faculty-profile-desc">
+                <div className="faculty-nudge">
+                  <div className="faculty-nudge-text">
+                    <p className="faculty-nudge-title">Complete your profile</p>
+                    <p className="faculty-nudge-desc">
                       Add your bio, department and interests so students can find
                       your work.
                     </p>
                   </div>
-                  <div
-                    className="faculty-progress-track"
-                    role="progressbar"
-                    aria-valuenow={completion}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-label="Profile completion"
-                  >
-                    <div
-                      className="faculty-progress-fill"
-                      style={{ width: `${completion}%` }}
+                  <div className="faculty-nudge-right">
+                    <ProgressBar
+                      value={completion}
+                      label="Profile completion"
+                      className="faculty-nudge-progress"
                     />
+                    <span className="faculty-nudge-pct">{completion}%</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate("/profile")}
+                    >
+                      Manage profile
+                    </Button>
                   </div>
-                  <span className="faculty-progress-value">{completion}%</span>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => navigate("/profile")}
-                  >
-                    Manage profile
-                  </button>
                 </div>
               )}
 
@@ -564,19 +567,21 @@ function Faculty() {
                   title="No active opportunities"
                   description="Create your first opportunity and start connecting with students."
                   action={
-                    <button
-                      className="btn btn-primary"
+                    <Button
+                      variant="primary"
+                      leadingPlus
                       onClick={() => navigate("/create-opportunity")}
                     >
-                      <IconPlus /> Create opportunity
-                    </button>
+                      Create opportunity
+                    </Button>
                   }
                 />
               ) : (
-                renderGrid(activeOpportunities, {
-                  showArchive: true,
-                  showClose: true,
-                })
+                renderGrid(
+                  activeOpportunities,
+                  { showArchive: true, showClose: true },
+                  true
+                )
               )}
 
               {/* Expired */}
@@ -631,16 +636,16 @@ function Faculty() {
           size="sm"
           footer={
             <>
-              <button className="btn btn-secondary" onClick={closeExtendModal}>
+              <Button variant="outline" onClick={closeExtendModal}>
                 Cancel
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleExtendDeadline}
                 disabled={extending}
               >
                 {extending ? "Extending…" : "Confirm extension"}
-              </button>
+              </Button>
             </>
           }
         >
@@ -681,19 +686,16 @@ function Faculty() {
           size="sm"
           footer={
             <>
-              <button
-                className="btn btn-secondary"
-                onClick={closeUnarchiveModal}
-              >
+              <Button variant="outline" onClick={closeUnarchiveModal}>
                 Cancel
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleUnarchive}
                 disabled={unarchiving}
               >
                 {unarchiving ? "Reactivating…" : "Reactivate"}
-              </button>
+              </Button>
             </>
           }
         >

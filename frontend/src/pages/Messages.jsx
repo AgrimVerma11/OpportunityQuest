@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import Navbar from "./Navbar";
 import Avatar from "../components/Avatar";
+import Button from "../components/Button";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import { IconArrowLeft, IconInbox, IconAlert } from "../components/Icons";
@@ -252,13 +253,14 @@ export default function Messages() {
                       }}
                       rows={1}
                     />
-                    <button
-                      className="btn btn-primary btn-sm"
+                    <Button
+                      variant="primary"
+                      size="sm"
                       type="submit"
                       disabled={sending || !draft.trim()}
                     >
                       Send
-                    </button>
+                    </Button>
                   </form>
                 ) : (
                   <div className="msg-readonly">

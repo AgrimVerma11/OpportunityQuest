@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 
 import Navbar from "./Navbar";
-import PageHeader from "../components/PageHeader";
+import PageHero from "../components/PageHero";
 import Avatar from "../components/Avatar";
-import StatusBadge from "../components/StatusBadge";
+import Tag from "../components/Tag";
+import StatCard from "../components/StatCard";
+import Button from "../components/Button";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import ProfileModal from "../components/ProfileModal";
@@ -117,9 +119,11 @@ export default function Analytics() {
     <>
       <Navbar />
       <div className="an">
-        <PageHeader
+        <PageHero
+          eyebrow="Analytics"
           title="Analytics"
           subtitle="An overview of activity across your institution."
+          mark={false}
         />
         <div className="container an-body">
           <div className="an-tabs" role="tablist" aria-label="Analytics views">
@@ -201,15 +205,25 @@ function Overview({ a }) {
   const trendTotal = applicationsTrend.reduce((s, d) => s + d.count, 0);
 
   const kpiCards = [
-    { label: "Students", value: kpis.students },
-    { label: "Active Faculty", value: kpis.activeFaculty },
+    { label: "Students", value: kpis.students, iconTone: "students" },
+    { label: "Active Faculty", value: kpis.activeFaculty, iconTone: "faculty" },
     {
       label: "Pending Approvals",
       value: kpis.pendingFaculty,
-      warn: kpis.pendingFaculty > 0,
+      iconTone: "approvals",
+      // Draw the eye when there's something waiting: tint the number gold.
+      tone: kpis.pendingFaculty > 0 ? "pending" : undefined,
     },
-    { label: "Active Opportunities", value: kpis.activeOpportunities },
-    { label: "Total Applications", value: kpis.totalApplications },
+    {
+      label: "Active Opportunities",
+      value: kpis.activeOpportunities,
+      iconTone: "opps",
+    },
+    {
+      label: "Total Applications",
+      value: kpis.totalApplications,
+      iconTone: "apps",
+    },
   ];
 
   // A few evenly-spaced date ticks under the trend.
@@ -221,15 +235,18 @@ function Overview({ a }) {
     <>
       <div className="an-kpis">
         {kpiCards.map((k) => (
-          <div className={`an-kpi${k.warn ? " warn" : ""}`} key={k.label}>
-            <span className="an-kpi-value">{k.value}</span>
-            <span className="an-kpi-label">{k.label}</span>
-          </div>
+          <StatCard
+            key={k.label}
+            value={k.value}
+            label={k.label}
+            tone={k.tone}
+            iconTone={k.iconTone}
+          />
         ))}
       </div>
 
-      <div className="an-grid">
-        <section className="card an-card">
+      <div className="an-grid-3">
+        <section className="oq-card an-card">
           <h2>Application funnel</h2>
           {FUNNEL_ORDER.map((s) => (
             <BarRow
@@ -242,7 +259,7 @@ function Overview({ a }) {
           ))}
         </section>
 
-        <section className="card an-card">
+        <section className="oq-card an-card">
           <h2>Opportunities by category</h2>
           {CATEGORY_ORDER.map((c) => (
             <BarRow
@@ -255,7 +272,7 @@ function Overview({ a }) {
           ))}
         </section>
 
-        <section className="card an-card">
+        <section className="oq-card an-card">
           <h2>Opportunities by status</h2>
           <div className="an-stat-row">
             {OPPORTUNITY_STATUS_ORDER.map((s) => (
@@ -268,8 +285,10 @@ function Overview({ a }) {
             ))}
           </div>
         </section>
+      </div>
 
-        <section className="card an-card">
+      <div className="an-grid-2">
+        <section className="oq-card an-card">
           <h2>Faculty by status</h2>
           <div className="an-stat-row">
             {FACULTY_ORDER.map((s) => (
@@ -281,7 +300,7 @@ function Overview({ a }) {
           </div>
         </section>
 
-        <section className="card an-card">
+        <section className="oq-card an-card">
           <h2>Top opportunities</h2>
           {topOpportunities.length === 0 ? (
             <p className="an-empty">No applications yet.</p>
@@ -299,7 +318,7 @@ function Overview({ a }) {
         </section>
       </div>
 
-      <section className="card an-card an-trend-card">
+      <section className="oq-card an-card an-trend-card">
         <div className="an-trend-head">
           <h2>Applications in the last 30 days</h2>
           <span className="an-trend-total">{trendTotal} total</span>
@@ -335,13 +354,13 @@ function FacultyTable({ rows, onView }) {
     );
   if (rows.length === 0)
     return (
-      <section className="card an-card">
+      <section className="oq-card an-card">
         <p className="an-empty">No faculty in your institution yet.</p>
       </section>
     );
 
   return (
-    <section className="card an-card an-table-card">
+    <section className="oq-card an-card an-table-card">
       <div className="table-wrap">
         <table className="table table-hover">
           <thead>
@@ -373,7 +392,7 @@ function FacultyTable({ rows, onView }) {
                 <td>{f.department || "-"}</td>
                 <td>{f.employeeId || "-"}</td>
                 <td>
-                  <StatusBadge status={f.accountStatus} />
+                  <Tag status={f.accountStatus} />
                 </td>
                 <td>{fmtDate(f.createdAt)}</td>
                 <td>{fmtDate(f.approvedAt)}</td>
@@ -398,13 +417,13 @@ function StudentsTable({ data, loading, onMore, onView }) {
   if (!data) return null;
   if (data.list.length === 0)
     return (
-      <section className="card an-card">
+      <section className="oq-card an-card">
         <p className="an-empty">No students registered yet.</p>
       </section>
     );
 
   return (
-    <section className="card an-card an-table-card">
+    <section className="oq-card an-card an-table-card">
       <div className="an-table-count">{data.total} students</div>
       <div className="table-wrap">
         <table className="table table-hover">
@@ -444,14 +463,15 @@ function StudentsTable({ data, loading, onMore, onView }) {
       </div>
       {data.hasMore && (
         <div className="an-more">
-          <button
+          <Button
             type="button"
-            className="btn btn-secondary btn-sm"
+            variant="outline"
+            size="sm"
             onClick={onMore}
             disabled={loading}
           >
             {loading ? "Loading…" : "Load more"}
-          </button>
+          </Button>
         </div>
       )}
     </section>

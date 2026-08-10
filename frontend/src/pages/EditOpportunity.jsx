@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import "./CreateOpportunity.css";
 import Navbar from "./Navbar";
-import PageHeader from "../components/PageHeader";
+import PageHero from "../components/PageHero";
+import Button from "../components/Button";
 import OpportunityForm from "../components/OpportunityForm";
 import AttachmentField from "../components/AttachmentField";
 import Spinner from "../components/Spinner";
@@ -199,12 +200,9 @@ function EditOpportunity() {
             title="Could not load opportunity"
             description={loadError}
             action={
-              <button
-                className="btn btn-secondary"
-                onClick={() => navigate("/faculty")}
-              >
+              <Button variant="outline" onClick={() => navigate("/faculty")}>
                 Back to Faculty Corner
-              </button>
+              </Button>
             }
           />
         </div>
@@ -217,13 +215,14 @@ function EditOpportunity() {
       <Navbar />
 
       <div className="opp-page">
-        <PageHeader
+        <PageHero
           title="Edit opportunity"
           subtitle="Update the details of your posted opportunity."
+          mark={false}
         />
 
         <div className="opp-body">
-          <form className="card opp-card" onSubmit={handleSubmit}>
+          <form className="oq-card opp-card" onSubmit={handleSubmit}>
             {deadlinePassed && (
               <p className="opp-notice">
                 <IconAlert />
@@ -242,26 +241,22 @@ function EditOpportunity() {
             />
 
             <div className="opp-actions">
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={saving}
-              >
+              <Button type="submit" variant="primary" disabled={saving}>
                 {saving ? "Saving…" : "Save changes"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-secondary"
+                variant="outline"
                 onClick={() => navigate("/faculty")}
                 disabled={saving}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
 
           {/* Attachments are managed independently of the text form. */}
-          <div className="card opp-attach-card">
+          <div className="oq-card opp-attach-card">
             <h2 className="opp-attach-title">PDF attachments</h2>
             <AttachmentField
               label={null}

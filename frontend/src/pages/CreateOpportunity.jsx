@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import "./CreateOpportunity.css";
 import { postWithAuth, uploadWithAuth } from "../utils/api";
 import Navbar from "./Navbar";
-import PageHeader from "../components/PageHeader";
+import PageHero from "../components/PageHero";
+import Button from "../components/Button";
 import OpportunityForm from "../components/OpportunityForm";
 import AttachmentField from "../components/AttachmentField";
 import { useConfirm } from "../components/ConfirmProvider";
@@ -112,13 +113,14 @@ function CreateOpportunity() {
       <Navbar />
 
       <div className="opp-page">
-        <PageHeader
+        <PageHero
           title="Create opportunity"
           subtitle="Publish internships, research work, paid gigs and collaborations across campus."
+          mark={false}
         />
 
         <div className="opp-body">
-          <form className="card opp-card" onSubmit={handleSubmit}>
+          <form className="oq-card opp-card" onSubmit={handleSubmit}>
             <OpportunityForm
               form={form}
               onChange={handleChange}
@@ -137,21 +139,17 @@ function CreateOpportunity() {
             </div>
 
             <div className="opp-actions">
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={submitting}
-              >
+              <Button type="submit" variant="primary" disabled={submitting}>
                 {submitting ? "Publishing…" : "Publish opportunity"}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-secondary"
+                variant="outline"
                 onClick={() => navigate("/faculty")}
                 disabled={submitting}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
         </div>

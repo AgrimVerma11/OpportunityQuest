@@ -11,14 +11,15 @@ import { useAuth } from "../context/AuthContext";
 
 import Navbar from "./Navbar";
 import Avatar from "../components/Avatar";
-import CategoryTag from "../components/CategoryTag";
-import DeadlineChip from "../components/DeadlineChip";
-import StatusBadge from "../components/StatusBadge";
+import Tag from "../components/Tag";
+import UrgencyChip from "../components/UrgencyChip";
+import SkillChip from "../components/SkillChip";
+import Button from "../components/Button";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import Field from "../components/Field";
 import ProfileModal from "../components/ProfileModal";
-import { IconFile, IconAlert, IconArrowLeft, IconUser } from "../components/Icons";
+import { IconFile, IconAlert, IconArrowLeft } from "../components/Icons";
 import { useConfirm } from "../components/ConfirmProvider";
 
 import "./OpportunityDetail.css";
@@ -180,12 +181,9 @@ function OpportunityDetail() {
             title="Opportunity not found"
             description="This opportunity may have been removed, or the link is incorrect."
             action={
-              <button
-                className="btn btn-secondary"
-                onClick={() => navigate("/home")}
-              >
+              <Button variant="outline" onClick={() => navigate("/home")}>
                 Back to opportunities
-              </button>
+              </Button>
             }
           />
         </div>
@@ -205,17 +203,18 @@ function OpportunityDetail() {
   const renderApplicationPanel = () => {
     if (isOwner) {
       return (
-        <div className="card detail-apply">
+        <div className="oq-card detail-apply">
           <h2 className="detail-apply-title">Applicants</h2>
           <p className="detail-apply-hint">
             Review and manage students who applied to this opportunity.
           </p>
-          <button
-            className="btn btn-primary btn-block"
+          <Button
+            variant="primary"
+            block
             onClick={() => navigate(`/opportunity/${id}/applicants`)}
           >
             View applicants
-          </button>
+          </Button>
         </div>
       );
     }
@@ -224,10 +223,10 @@ function OpportunityDetail() {
 
     if (hasActiveApplication) {
       return (
-        <div className="card detail-apply">
+        <div className="oq-card detail-apply">
           <h2 className="detail-apply-title">Your application</h2>
           <div className="detail-apply-status">
-            <StatusBadge status={myApplication.status} />
+            <Tag status={myApplication.status} />
             <span className="detail-apply-date">
               Submitted{" "}
               {new Date(
@@ -236,12 +235,14 @@ function OpportunityDetail() {
             </span>
           </div>
           {WITHDRAWABLE.includes(myApplication.status) && (
-            <button
-              className="btn btn-danger-ghost btn-block"
+            <Button
+              variant="outline"
+              block
+              className="detail-withdraw"
               onClick={handleWithdraw}
             >
               Withdraw application
-            </button>
+            </Button>
           )}
         </div>
       );
@@ -251,7 +252,7 @@ function OpportunityDetail() {
 
     if (!isEligible(profile, opportunity)) {
       return (
-        <div className="card detail-apply">
+        <div className="oq-card detail-apply">
           <h2 className="detail-apply-title">Apply</h2>
           <p className="detail-apply-hint">
             You do not meet the eligibility criteria for this opportunity.
@@ -262,7 +263,7 @@ function OpportunityDetail() {
 
     if (!isOpen) {
       return (
-        <div className="card detail-apply">
+        <div className="oq-card detail-apply">
           <h2 className="detail-apply-title">Apply</h2>
           <p className="detail-apply-hint">
             This opportunity is no longer accepting applications.
@@ -272,7 +273,7 @@ function OpportunityDetail() {
     }
 
     return (
-      <form className="card detail-apply" onSubmit={handleApply}>
+      <form className="oq-card detail-apply" onSubmit={handleApply}>
         <h2 className="detail-apply-title">Apply to this opportunity</h2>
         {myApplication?.status === "Withdrawn" && (
           <p className="detail-apply-hint">
@@ -298,7 +299,7 @@ function OpportunityDetail() {
         <div className="detail-file">
           <span className="detail-file-label">Resume (PDF, optional)</span>
           <div className="detail-file-row">
-            <label className="btn btn-secondary btn-sm detail-file-btn">
+            <label className="detail-file-btn">
               Choose PDF
               <input
                 type="file"
@@ -315,13 +316,9 @@ function OpportunityDetail() {
 
         {applyError && <p className="field-error">{applyError}</p>}
 
-        <button
-          type="submit"
-          className="btn btn-primary btn-block"
-          disabled={applying}
-        >
+        <Button type="submit" variant="primary" block disabled={applying}>
           {applying ? "Submitting…" : "Submit application"}
-        </button>
+        </Button>
       </form>
     );
   };
@@ -343,8 +340,8 @@ function OpportunityDetail() {
           </button>
 
           <div className="detail-hero-tags">
-            <CategoryTag category={opportunity.category} />
-            <DeadlineChip deadline={opportunity.deadline} />
+            <Tag category={opportunity.category} />
+            <UrgencyChip deadline={opportunity.deadline} />
           </div>
 
           <h1 className="detail-title">{opportunity.title}</h1>
@@ -369,25 +366,26 @@ function OpportunityDetail() {
               )}
             </div>
             {opportunity.postedBy?._id && (
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm detail-poster-btn"
+              <Button
+                variant="outline"
+                size="sm"
+                className="detail-poster-btn"
                 onClick={() => setShowFaculty(true)}
               >
-                <IconUser /> View profile
-              </button>
+                View profile
+              </Button>
             )}
           </div>
         </div>
 
         <div className="container detail-body">
           <div className="detail-main">
-            <section className="card detail-section">
+            <section className="oq-card detail-section">
               <h2 className="detail-section-title">About this opportunity</h2>
               <p className="detail-about">{opportunity.description}</p>
             </section>
 
-            <section className="card detail-section">
+            <section className="oq-card detail-section">
               <h2 className="detail-section-title">Details</h2>
               <dl className="detail-facts">
                 <div className="detail-fact">
@@ -428,22 +426,20 @@ function OpportunityDetail() {
             </section>
 
             {opportunity.tags?.filter((t) => t.trim() !== "").length > 0 && (
-              <section className="card detail-section">
+              <section className="oq-card detail-section">
                 <h2 className="detail-section-title">Tags</h2>
                 <div className="detail-tags">
                   {opportunity.tags
                     .filter((t) => t.trim() !== "")
                     .map((tag, index) => (
-                      <span className="detail-tag" key={index}>
-                        {tag}
-                      </span>
+                      <SkillChip key={index}>{tag}</SkillChip>
                     ))}
                 </div>
               </section>
             )}
 
             {opportunity.attachments?.length > 0 && (
-              <section className="card detail-section">
+              <section className="oq-card detail-section">
                 <h2 className="detail-section-title">Attachments</h2>
                 <div className="detail-attachments">
                   {opportunity.attachments.map((att) => (
@@ -463,7 +459,7 @@ function OpportunityDetail() {
             )}
 
             {opportunity.deadlineHistory?.length > 0 && (
-              <section className="card detail-section">
+              <section className="oq-card detail-section">
                 <h2 className="detail-section-title">Deadline history</h2>
                 <ul className="detail-history">
                   {opportunity.deadlineHistory.map((entry, i) => (

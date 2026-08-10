@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
 import Navbar from "./Navbar";
-import PageHeader from "../components/PageHeader";
+import PageHero from "../components/PageHero";
+import Button from "../components/Button";
 import Avatar from "../components/Avatar";
 import Modal from "../components/Modal";
 import Field from "../components/Field";
@@ -129,7 +130,7 @@ function Approvals() {
       <Navbar />
 
       <div className="approvals">
-        <PageHeader title="Faculty approvals" subtitle={subtitle} />
+        <PageHero title="Faculty approvals" subtitle={subtitle} />
 
         <div className="container approvals-body">
           {loading ? (
@@ -145,7 +146,7 @@ function Approvals() {
           ) : (
             <div className="approvals-list">
               {pending.map((f) => (
-                <div className="card approval-card" key={f._id}>
+                <div className="oq-card approval-card" key={f._id}>
                   <div className="approval-top">
                     <div className="approval-identity">
                       <Avatar name={f.name} image={f.profileImage} size={52} />
@@ -159,20 +160,23 @@ function Approvals() {
                     </div>
 
                     <div className="approval-actions">
-                      <button
-                        className="btn btn-danger-ghost btn-sm"
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="approval-reject"
                         onClick={() => openReject(f)}
                         disabled={busyId === f._id}
                       >
                         Reject
-                      </button>
-                      <button
-                        className="btn btn-primary btn-sm"
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
                         onClick={() => handleApprove(f)}
                         disabled={busyId === f._id}
                       >
                         {busyId === f._id ? "Working…" : "Approve"}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -216,16 +220,16 @@ function Approvals() {
           size="sm"
           footer={
             <>
-              <button className="btn btn-secondary" onClick={closeReject}>
+              <Button variant="outline" onClick={closeReject}>
                 Cancel
-              </button>
-              <button
-                className="btn btn-danger"
+              </Button>
+              <Button
+                variant="danger"
                 onClick={handleReject}
                 disabled={busyId === rejecting._id}
               >
                 {busyId === rejecting._id ? "Rejecting…" : "Reject account"}
-              </button>
+              </Button>
             </>
           }
         >

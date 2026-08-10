@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import Navbar from "./Navbar";
-import PageHeader from "../components/PageHeader";
-import StatusBadge from "../components/StatusBadge";
+import PageHero from "../components/PageHero";
+import Tag from "../components/Tag";
 import Avatar from "../components/Avatar";
+import Button from "../components/Button";
 import ProfileView from "../components/ProfileView";
 import Modal from "../components/Modal";
 import Spinner from "../components/Spinner";
@@ -195,21 +196,22 @@ function Applicants() {
       <Navbar />
 
       <div className="appl">
-        <PageHeader
+        <PageHero
           title="Applicants"
           subtitle={opportunity ? opportunity.title : "Loading…"}
           action={
-            <button
-              className="btn btn-secondary"
-              onClick={() => navigate("/faculty")}
-            >
+            <Button variant="outline" onClick={() => navigate("/faculty")}>
               <IconArrowLeft /> Faculty Corner
-            </button>
+            </Button>
           }
         />
 
         <div className="container appl-body">
-          <div className="appl-filters" role="group" aria-label="Filter by status">
+          <div
+            className="appl-filters"
+            role="group"
+            aria-label="Filter by status"
+          >
             {FILTERS.map((f) => (
               <button
                 key={f}
@@ -235,7 +237,7 @@ function Applicants() {
           ) : (
             <div className="appl-list">
               {visible.map((app) => (
-                <div className="card appl-row" key={app._id}>
+                <div className="oq-card appl-row" key={app._id}>
                   <div className="appl-identity">
                     <Avatar
                       name={app.student?.name}
@@ -247,7 +249,7 @@ function Applicants() {
                         <span className="appl-name">
                           {app.student?.name || "Student"}
                         </span>
-                        <StatusBadge status={app.status} />
+                        <Tag status={app.status} />
                       </div>
                       <div className="appl-meta">
                         {app.student?.branch && <span>{app.student.branch}</span>}
@@ -261,12 +263,13 @@ function Applicants() {
                     </div>
                   </div>
 
-                  <button
-                    className="btn btn-secondary btn-sm"
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => openDetail(app._id)}
                   >
                     Review
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
@@ -285,31 +288,28 @@ function Applicants() {
             detail && (
               <div className="appl-foot">
                 {detail.resume ? (
-                  <button
-                    className="btn btn-secondary btn-sm"
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => viewResume(detail._id)}
                   >
                     View resume
-                  </button>
+                  </Button>
                 ) : (
                   <span className="appl-no-resume">No resume attached</span>
                 )}
 
                 <div className="appl-status-actions">
                   {actionsFor(detail.status).map((target) => (
-                    <button
+                    <Button
                       key={target}
-                      className={`btn btn-sm ${
-                        target === "Rejected"
-                          ? "btn-danger-ghost"
-                          : target === "Selected"
-                          ? "btn-primary"
-                          : "btn-secondary"
-                      }`}
+                      variant={target === "Selected" ? "primary" : "outline"}
+                      size="sm"
+                      className={target === "Rejected" ? "appl-reject" : undefined}
                       onClick={() => changeStatus(detail._id, target)}
                     >
                       {ACTION_LABEL[target]}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -319,7 +319,7 @@ function Applicants() {
           {detail ? (
             <div className="appl-detail">
               <div className="appl-detail-status">
-                <StatusBadge status={detail.status} />
+                <Tag status={detail.status} />
               </div>
 
               <ProfileView profile={detail.student} />
@@ -346,12 +346,14 @@ function Applicants() {
                 <div className="appl-section">
                   <span className="appl-label">Message</span>
                   {!composing ? (
-                    <button
-                      className="btn btn-secondary btn-sm appl-message-start"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="appl-message-start"
                       onClick={() => setComposing(true)}
                     >
                       Message applicant
-                    </button>
+                    </Button>
                   ) : (
                     <div className="appl-composer">
                       <textarea
@@ -364,22 +366,24 @@ function Applicants() {
                         rows={3}
                       />
                       <div className="appl-composer-actions">
-                        <button
-                          className="btn btn-ghost btn-sm"
+                        <Button
+                          variant="text"
+                          size="sm"
                           onClick={() => {
                             setComposing(false);
                             setMessageDraft("");
                           }}
                         >
                           Cancel
-                        </button>
-                        <button
-                          className="btn btn-primary btn-sm"
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
                           disabled={messageSending || !messageDraft.trim()}
                           onClick={startConversation}
                         >
                           {messageSending ? "Sending…" : "Send"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}

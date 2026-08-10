@@ -3,7 +3,8 @@ import Navbar from "./Navbar";
 import { useAuth } from "../context/AuthContext";
 import Avatar from "../components/Avatar";
 import AvatarCropper from "../components/AvatarCropper";
-import Badge from "../components/Badge";
+import Button from "../components/Button";
+import ProgressBar from "../components/ProgressBar";
 import Spinner from "../components/Spinner";
 import { useToast } from "../components/ToastProvider";
 import { IconX } from "../components/Icons";
@@ -277,7 +278,7 @@ function Profile() {
       <div className="profile">
         <div className="profile-body">
           {/* Hero */}
-          <div className="card profile-hero">
+          <div className="oq-card profile-hero">
             <div className="profile-avatar">
               <Avatar name={profile.name} image={profile.profileImage} size={96} />
               <input
@@ -288,9 +289,10 @@ function Profile() {
                 onChange={handleImagePick}
               />
               <div className="profile-avatar-actions">
-                <button
+                <Button
                   type="button"
-                  className="btn btn-secondary btn-sm"
+                  variant="outline"
+                  size="sm"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingImage}
                 >
@@ -299,15 +301,17 @@ function Profile() {
                     : profile.profileImage
                     ? "Change"
                     : "Add photo"}
-                </button>
+                </Button>
                 {profile.profileImage && !uploadingImage && (
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-ghost btn-sm profile-avatar-remove"
+                    variant="text"
+                    size="sm"
+                    className="profile-avatar-remove"
                     onClick={handleRemoveImage}
                   >
                     Remove
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -315,7 +319,7 @@ function Profile() {
             <div className="profile-identity">
               <h1 className="profile-name">{displayName}</h1>
               <div className="profile-role">
-                <Badge tone="primary">{profile.role}</Badge>
+                <span className="profile-role-badge">{profile.role}</span>
                 {roleContext && <span className="profile-role-sub">{roleContext}</span>}
               </div>
 
@@ -324,50 +328,38 @@ function Profile() {
                   <span>Profile completion</span>
                   <span className="profile-completion-pct">{completion}%</span>
                 </div>
-                <div
+                <ProgressBar
+                  value={completion}
+                  label="Profile completion"
                   className="profile-progress"
-                  role="progressbar"
-                  aria-valuenow={completion}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-label="Profile completion"
-                >
-                  <div
-                    className="profile-progress-fill"
-                    style={{ width: `${completion}%` }}
-                  />
-                </div>
+                />
               </div>
             </div>
 
             <div className="profile-actions">
               {editMode ? (
                 <>
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleSave}
-                    disabled={saving}
-                  >
+                  <Button variant="primary" onClick={handleSave} disabled={saving}>
                     {saving ? "Saving…" : "Save changes"}
-                  </button>
-                  <button
-                    className="btn btn-secondary"
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={handleCancel}
                     disabled={saving}
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </>
               ) : (
-                <button className="btn btn-primary" onClick={handleEdit}>
+                <Button variant="primary" onClick={handleEdit}>
                   Edit profile
-                </button>
+                </Button>
               )}
             </div>
           </div>
 
           {/* About */}
-          <section className="card profile-section">
+          <section className="oq-card profile-section">
             <h2 className="profile-section-title">About</h2>
             {editMode ? (
               <>
@@ -415,7 +407,7 @@ function Profile() {
   function renderFaculty() {
     return (
       <div className="profile-grid">
-        <section className="card profile-section">
+        <section className="oq-card profile-section">
           <h3 className="profile-section-title">Professional information</h3>
 
           <ProfileField label="Title" value={profile.prefix} editMode={editMode}>
@@ -511,7 +503,7 @@ function Profile() {
     return (
       <>
         <div className="profile-grid">
-          <section className="card profile-section">
+          <section className="oq-card profile-section">
             <h3 className="profile-section-title">Academic details</h3>
 
             <ProfileField label="Full name" value={profile.name} editMode={editMode}>
@@ -564,7 +556,7 @@ function Profile() {
         </div>
 
         {/* Skills */}
-        <section className="card profile-section">
+        <section className="oq-card profile-section">
           <h3 className="profile-section-title">Top skills</h3>
           {editMode && (
             <div className="profile-skill-picker">
@@ -610,7 +602,7 @@ function Profile() {
         </section>
 
         {/* Society */}
-        <section className="card profile-section">
+        <section className="oq-card profile-section">
           <h3 className="profile-section-title">Society / club</h3>
           {Number(current.year) === 4 && editMode && (
             <p className="profile-hint profile-hint-block">
@@ -656,7 +648,7 @@ function Profile() {
         </section>
 
         {/* Projects */}
-        <section className="card profile-section">
+        <section className="oq-card profile-section">
           <h3 className="profile-section-title">Projects</h3>
           {!editMode && projects.every((p) => !p.title) && (
             <span className="pf-empty">No projects added.</span>
@@ -695,7 +687,7 @@ function Profile() {
         </section>
 
         {/* Interests */}
-        <section className="card profile-section">
+        <section className="oq-card profile-section">
           <h3 className="profile-section-title">Areas of interest</h3>
           {editMode ? (
             <input
@@ -723,7 +715,7 @@ function Profile() {
     );
 
     return (
-      <section className="card profile-section">
+      <section className="oq-card profile-section">
         <h3 className="profile-section-title">Contact &amp; links</h3>
         <ProfileField label="Email" value={profile.email} />
         <ProfileField label="LinkedIn" value={linkedin} editMode={editMode}>

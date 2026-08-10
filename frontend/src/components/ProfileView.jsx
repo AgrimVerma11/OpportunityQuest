@@ -1,5 +1,4 @@
 import Avatar from "./Avatar";
-import Badge from "./Badge";
 import { IconLocation } from "./Icons";
 import "./ProfileView.css";
 
@@ -28,7 +27,7 @@ export default function ProfileView({ profile }) {
         <div className="pv-head-text">
           <h3 className="pv-name">{displayName}</h3>
           <div className="pv-sub">
-            <Badge tone="primary">{profile.role}</Badge>
+            <span className="pv-role">{profile.role}</span>
             {subline && <span className="pv-subline">{subline}</span>}
           </div>
           {isFacultyLike && profile.office && (

@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Navbar from "./Navbar";
-import PageHeader from "../components/PageHeader";
-import StatusBadge from "../components/StatusBadge";
-import CategoryTag from "../components/CategoryTag";
+import PageHero from "../components/PageHero";
+import Tag from "../components/Tag";
+import Button from "../components/Button";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import { useConfirm } from "../components/ConfirmProvider";
@@ -66,7 +66,7 @@ function MyApplications() {
       <Navbar />
 
       <div className="myapps">
-        <PageHeader
+        <PageHero
           title="My applications"
           subtitle="Track the opportunities you have applied to and their status."
         />
@@ -82,12 +82,9 @@ function MyApplications() {
               title="No applications yet"
               description="Browse opportunities and apply to the ones that fit you."
               action={
-                <button
-                  className="btn btn-primary"
-                  onClick={() => navigate("/home")}
-                >
+                <Button variant="primary" onClick={() => navigate("/home")}>
                   Explore opportunities
-                </button>
+                </Button>
               }
             />
           ) : (
@@ -96,16 +93,16 @@ function MyApplications() {
                 const opp = app.opportunity;
                 const removed = !opp || opp.isDeleted;
                 return (
-                  <div className="card myapps-row" key={app._id}>
+                  <div className="oq-card myapps-row" key={app._id}>
                     <div className="myapps-main">
                       <div className="myapps-title-line">
                         <h3 className="myapps-title">
                           {removed ? "Opportunity removed" : opp.title}
                         </h3>
-                        <StatusBadge status={app.status} />
+                        <Tag status={app.status} />
                       </div>
                       <div className="myapps-meta">
-                        {!removed && <CategoryTag category={opp.category} />}
+                        {!removed && <Tag category={opp.category} />}
                         <span>
                           Applied {new Date(app.createdAt).toLocaleDateString()}
                         </span>
@@ -114,20 +111,23 @@ function MyApplications() {
 
                     <div className="myapps-actions">
                       {!removed && (
-                        <button
-                          className="btn btn-secondary btn-sm"
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => navigate(`/opportunity/${opp._id}`)}
                         >
                           View
-                        </button>
+                        </Button>
                       )}
                       {WITHDRAWABLE.includes(app.status) && (
-                        <button
-                          className="btn btn-danger-ghost btn-sm"
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="myapps-withdraw"
                           onClick={() => handleWithdraw(app._id)}
                         >
                           Withdraw
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
