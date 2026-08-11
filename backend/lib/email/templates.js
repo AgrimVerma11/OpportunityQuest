@@ -1,8 +1,24 @@
 // Email templates. Each returns { subject, html, text }. Styles are inlined
 // because email clients ignore <style> blocks and external CSS. The palette is
-// kept restrained and academic, matching the product.
+// the product's own: academic ink + gold on warm paper, so the mail reads as
+// part of Opportunity Quest rather than a generic transactional notice.
 
 const BRAND = "Opportunity Quest";
+
+// Brand palette (mirrors the app's design tokens).
+const INK = "#14172e"; // headings, primary button, monogram tile
+const INK_SOFT = "#383b5c"; // body copy
+const GOLD = "#b8924a"; // the fine top-rule on the card
+const GOLD_LIGHT = "#d4af5a"; // monogram lettering
+const CREAM = "#f7f3ec"; // text on ink
+const IVORY = "#faf9f5"; // outer ground
+const PAPER = "#ffffff"; // card
+const BORDER = "#e9e4d9"; // warm hairline
+const MUTED = "#8a8d99"; // footer / meta
+
+const SERIF = "Georgia, 'Times New Roman', serif";
+const SANS =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
 const escapeHtml = (value = "") =>
   String(value)
@@ -11,30 +27,57 @@ const escapeHtml = (value = "") =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-// Wraps a body in the shared shell: a titled header, a content card, and a
-// muted footer. `heading` sits at the top of the card; `bodyHtml` is trusted
-// (built here), so callers must escape any user-supplied values first.
+// Wraps a body in the shared shell: a centered wordmark lockup, a paper card
+// edged with a gold rule, and a quiet footer. The mark is a pure-CSS monogram
+// (ink tile, gold serif letters) rather than a hosted image, so it always
+// renders — email clients block remote images, and Gmail drops SVG/data URIs.
+// `heading` sits at the top of the card in serif; `bodyHtml` is trusted (built
+// here), so callers must escape any user-supplied values first.
 const layout = ({ heading, bodyHtml }) => `
-  <div style="margin:0;padding:24px;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-    <div style="max-width:520px;margin:0 auto;">
-      <div style="padding:8px 4px 16px;font-size:15px;font-weight:700;color:#1e293b;letter-spacing:-0.2px;">
-        ${BRAND}
-      </div>
-      <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:32px;">
-        <h1 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;letter-spacing:-0.3px;">
-          ${heading}
-        </h1>
-        ${bodyHtml}
-      </div>
-      <div style="padding:16px 4px;font-size:12px;color:#94a3b8;line-height:1.6;">
-        This is an automated message from ${BRAND}. Please do not reply to this email.
-      </div>
-    </div>
+  <div style="margin:0;padding:0;background:${IVORY};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${IVORY};">
+      <tr>
+        <td align="center" style="padding:36px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" style="width:520px;max-width:520px;">
+            <tr>
+              <td align="center" style="padding:4px 0 24px;">
+                <div style="width:46px;height:46px;line-height:46px;border-radius:12px;background:${INK};font-family:${SERIF};font-size:18px;font-weight:700;letter-spacing:0.5px;color:${GOLD_LIGHT};text-align:center;">OQ</div>
+                <div style="margin-top:11px;font-family:${SERIF};font-size:15px;font-weight:700;letter-spacing:0.3px;color:${INK};">${BRAND}</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="background:${PAPER};border:1px solid ${BORDER};border-top:3px solid ${GOLD};border-radius:14px;padding:38px 36px;">
+                <h1 style="margin:0 0 20px;font-family:${SERIF};font-size:23px;font-weight:600;line-height:1.3;letter-spacing:-0.2px;color:${INK};">
+                  ${heading}
+                </h1>
+                ${bodyHtml}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:22px 8px 4px;font-family:${SANS};font-size:12px;line-height:1.6;color:${MUTED};">
+                This is an automated message from ${BRAND}. Please do not reply to this email.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </div>
 `;
 
 const paragraph = (html) =>
-  `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#334155;">${html}</p>`;
+  `<p style="margin:0 0 16px;font-family:${SANS};font-size:15px;line-height:1.7;color:${INK_SOFT};">${html}</p>`;
+
+// Bulletproof email button: a table cell carries the fill so it renders in
+// Outlook too, with the anchor padded on top for the click target.
+const button = (label, url) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 2px;">
+    <tr>
+      <td style="border-radius:9px;background:${INK};">
+        <a href="${escapeHtml(url)}" style="display:inline-block;padding:13px 28px;font-family:${SANS};font-size:14px;font-weight:600;letter-spacing:0.2px;color:${CREAM};text-decoration:none;border-radius:9px;">${escapeHtml(label)}</a>
+      </td>
+    </tr>
+  </table>`;
 
 export const facultyApproval = ({ name }) => {
   const safeName = escapeHtml(name || "there");
@@ -45,14 +88,14 @@ export const facultyApproval = ({ name }) => {
       bodyHtml:
         paragraph(`Hi ${safeName},`) +
         paragraph(
-          `Your faculty account on ${BRAND} has been approved by your coordinator. You can now sign in and start posting opportunities, reviewing applicants, and collaborating across campus.`
+          `Your faculty account on ${BRAND} has been approved by your coordinator. You can now sign in to post opportunities, review applicants, and collaborate across campus.`
         ) +
         paragraph(`Welcome aboard.`),
     }),
     text:
       `Hi ${name || "there"},\n\n` +
       `Your faculty account on ${BRAND} has been approved by your coordinator. ` +
-      `You can now sign in and start posting opportunities, reviewing applicants, and collaborating across campus.\n\n` +
+      `You can now sign in to post opportunities, review applicants, and collaborate across campus.\n\n` +
       `Welcome aboard.\n\n— ${BRAND}`,
   };
 };
@@ -63,14 +106,13 @@ export const facultyApproval = ({ name }) => {
 export const notification = ({ title, body, actionUrl }) => {
   const safeTitle = escapeHtml(title);
   const safeBody = escapeHtml(body || "");
-  const button = actionUrl
-    ? `<a href="${escapeHtml(actionUrl)}" style="display:inline-block;margin-top:8px;padding:10px 18px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">Open Opportunity Quest</a>`
-    : "";
   return {
     subject: title,
     html: layout({
       heading: safeTitle,
-      bodyHtml: (safeBody ? paragraph(safeBody) : "") + button,
+      bodyHtml:
+        (safeBody ? paragraph(safeBody) : "") +
+        (actionUrl ? button("Open Opportunity Quest", actionUrl) : ""),
     }),
     text:
       `${title}\n\n` +
@@ -93,7 +135,7 @@ export const facultyRejection = ({ name, reason }) => {
           `After review, your faculty account request on ${BRAND} was not approved at this time.`
         ) +
         (safeReason
-          ? paragraph(`<strong>Reason:</strong> ${safeReason}`)
+          ? paragraph(`<strong style="color:${INK};font-weight:600;">Reason:</strong> ${safeReason}`)
           : "") +
         paragraph(
           `If you believe this was a mistake, please contact your department coordinator, who can review the decision.`
