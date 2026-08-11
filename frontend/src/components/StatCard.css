@@ -17,11 +17,14 @@
   font-size: 14px;
   margin-bottom: 14px;
 }
-.oq-stat__icon--students  { background: var(--tag-internship-bg); color: var(--tag-internship-text); }
-.oq-stat__icon--faculty   { background: var(--tag-faculty-bg);    color: var(--tag-faculty-text); }
-.oq-stat__icon--approvals { background: var(--status-pending-bg); color: var(--status-pending-text); }
-.oq-stat__icon--opps      { background: var(--tag-research-bg);   color: var(--tag-research-text); }
-.oq-stat__icon--apps      { background: var(--tag-paidgig-bg);    color: var(--tag-paidgig-text); }
+/* Chips are tinted from the same category -text tokens as the tags/bars (single
+   source), mixed with paper for a soft-but-legible swatch — the raw -bg tokens
+   read as near-white against the card. */
+.oq-stat__icon--students  { background: color-mix(in srgb, var(--tag-internship-text) 26%, var(--paper)); color: var(--tag-internship-text); }
+.oq-stat__icon--faculty   { background: color-mix(in srgb, var(--tag-faculty-text) 26%, var(--paper));    color: var(--tag-faculty-text); }
+.oq-stat__icon--approvals { background: color-mix(in srgb, var(--status-pending-text) 26%, var(--paper)); color: var(--status-pending-text); }
+.oq-stat__icon--opps      { background: color-mix(in srgb, var(--tag-research-text) 26%, var(--paper));   color: var(--tag-research-text); }
+.oq-stat__icon--apps      { background: color-mix(in srgb, var(--tag-paidgig-text) 26%, var(--paper));    color: var(--tag-paidgig-text); }
 
 .oq-stat__num {
   font-family: var(--serif);

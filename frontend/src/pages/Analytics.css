@@ -90,7 +90,9 @@
 /* ── Bars ── */
 .an-bar-row {
   display: grid;
-  grid-template-columns: 90px 1fr 26px;
+  /* Label column sized so the longest label ("Faculty Project", "Shortlisted")
+     fits without a mid-word ellipsis; a title tooltip covers any edge case. */
+  grid-template-columns: 120px 1fr 26px;
   align-items: center;
   gap: 14px;
   margin-bottom: 13px;
@@ -250,20 +252,86 @@
 .an-trend {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
   height: 120px;
-  margin-top: 4px;
+  /* Headroom above the chart for the hover tooltip to sit in. */
+  margin-top: 30px;
+}
+/* Each bar sits in a full-height, full-width column so the whole strip is a
+   hover target — not just the thin bar — and short/zero days are still easy to
+   read. The 3px side padding gives the visual gap between bars. */
+.an-trend-col {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 3px;
+  display: flex;
+  align-items: flex-end;
 }
 .an-trend-bar {
-  flex: 1;
+  width: 100%;
   min-height: 4px;
   background: linear-gradient(180deg, var(--gold-light), var(--gold-deep));
   border-radius: 4px 4px 2px 2px;
   opacity: 0.85;
   transition: opacity var(--transition);
 }
-.an-trend-bar:hover {
+.an-trend-col:hover .an-trend-bar {
   opacity: 1;
+}
+/* Styled tooltip: date + count, pinned just above the chart, centered on the
+   hovered column, with a downward arrow. Edge columns align in so it can't
+   spill outside the card. */
+.an-trend-tip {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, calc(-100% - 8px));
+  padding: 5px 9px;
+  background: var(--ink);
+  color: var(--cream);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(20, 23, 46, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition);
+  pointer-events: none;
+  z-index: 5;
+}
+.an-trend-tip strong {
+  font-weight: 700;
+}
+.an-trend-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--ink);
+}
+.an-trend-col:hover .an-trend-tip {
+  opacity: 1;
+  visibility: visible;
+}
+.an-trend-col:first-child .an-trend-tip {
+  left: 0;
+  transform: translate(0, calc(-100% - 8px));
+}
+.an-trend-col:first-child .an-trend-tip::after {
+  left: 12px;
+}
+.an-trend-col:last-child .an-trend-tip {
+  left: auto;
+  right: 0;
+  transform: translate(0, calc(-100% - 8px));
+}
+.an-trend-col:last-child .an-trend-tip::after {
+  left: auto;
+  right: 12px;
 }
 .an-trend-axis {
   display: flex;
@@ -320,7 +388,6 @@
   .an-grid-2 {
     grid-template-columns: 1fr;
   }
-  .an-bar-row {
-    grid-template-columns: 80px 1fr 26px;
-  }
+  /* Cards are full-width here, so the label column keeps its roomy desktop size
+     (inherited) rather than narrowing — no truncation on tablet/mobile. */
 }

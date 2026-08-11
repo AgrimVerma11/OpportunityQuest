@@ -38,12 +38,22 @@ const fmtDate = (iso) =>
 
 const toneOf = (label) => label.toLowerCase().replace(/\s+/g, "-");
 
+const TREND_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// "2026-08-03" → "Aug 3", parsed from parts so it never shifts by a timezone.
+const trendDate = (iso) => {
+  const [, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return `${TREND_MONTHS[m - 1]} ${d}`;
+};
+const plural = (n) => `${n} application${n === 1 ? "" : "s"}`;
+
 // A labelled horizontal bar, colored by its `tone` and sized to the section max.
 function BarRow({ label, value, max, tone }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className="an-bar-row">
-      <span className="an-bar-label">{label}</span>
+      <span className="an-bar-label" title={label}>
+        {label}
+      </span>
       <span className="an-bar-track">
         <span
           className={`an-bar-fill ${tone}`}
@@ -321,23 +331,41 @@ function Overview({ a }) {
       <section className="oq-card an-card an-trend-card">
         <div className="an-trend-head">
           <h2>Applications in the last 30 days</h2>
-          <span className="an-trend-total">{trendTotal} total</span>
+          {trendTotal > 0 && (
+            <span className="an-trend-total">{trendTotal} total</span>
+          )}
         </div>
-        <div className="an-trend">
-          {applicationsTrend.map((d) => (
-            <span
-              key={d.date}
-              className="an-trend-bar"
-              style={{ height: `${Math.round((d.count / trendMax) * 100)}%` }}
-              title={`${d.date}: ${d.count}`}
-            />
-          ))}
-        </div>
-        <div className="an-trend-axis">
-          {ticks.map((t) => (
-            <span key={t}>{t}</span>
-          ))}
-        </div>
+        {trendTotal > 0 ? (
+          <>
+            <div className="an-trend">
+              {applicationsTrend.map((d) => {
+                const label = trendDate(d.date);
+                return (
+                  <div
+                    key={d.date}
+                    className="an-trend-col"
+                    aria-label={`${label}: ${plural(d.count)}`}
+                  >
+                    <span
+                      className="an-trend-bar"
+                      style={{ height: `${Math.round((d.count / trendMax) * 100)}%` }}
+                    />
+                    <span className="an-trend-tip" aria-hidden="true">
+                      <strong>{label}</strong> · {plural(d.count)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="an-trend-axis">
+              {ticks.map((t) => (
+                <span key={t}>{t}</span>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="an-empty">No applications yet.</p>
+        )}
       </section>
     </>
   );
