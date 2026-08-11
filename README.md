@@ -1,243 +1,251 @@
 # Opportunity Quest
 
-> The bridge between faculty and students — and the record of it.
-> Opportunity Quest turns scattered, word-of-mouth academic opportunity into a structured, equitable, on-record exchange.
+**The bridge between faculty and students — and the record of it.**
+
+Opportunity Quest turns scattered, word-of-mouth academic opportunity into a structured, on-record exchange: faculty post internships, research roles, and paid work; students discover the ones they're actually eligible for and apply on equal footing. It runs in production for Thapar Institute as a multi-tenant product.
+
+**Live:** [opportunityquest.agrimverma.dev](https://opportunityquest.agrimverma.dev)  ·  API: `api.opportunityquest.agrimverma.dev`
+
+![CI](https://github.com/AgrimVerma11/OpportunityQuest/actions/workflows/ci.yml/badge.svg)
+![Tests](https://img.shields.io/badge/tests-91%20passing-3f6b45)
+![React](https://img.shields.io/badge/React-19-14172e)
+![Express](https://img.shields.io/badge/Express-5-14172e)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-3f6b45)
+![License](https://img.shields.io/badge/license-proprietary-9c4a3a)
 
 ---
 
 ## Why this exists
 
-**1. What I saw.**
-Campuses are full of opportunity — research, papers, internships, paid projects — and almost none of it is discoverable. It lives in WhatsApp groups that scroll faster than anyone can read, on noticeboards no one checks, and in the handful of conversations a professor has after class. If you are not in the group, you never hear about it. If you are not in that professor's section, the hallway conversation never happens.
+Campuses are full of opportunity — research, papers, internships, paid projects — and almost none of it is discoverable. It lives in WhatsApp groups that scroll faster than anyone can read, on noticeboards nobody checks, and in the handful of conversations a professor has after class. If you're not in the group, you never hear about it. If you're not in that professor's section, the hallway conversation never happens.
 
-The students who lose the most are the ones who are not loud. An introvert rarely walks up to a professor to ask for a project, and when a connection does happen by chance, the student often agrees to whatever is offered — even when it sits far outside their interests — simply because finding another door, and working up the nerve to knock on it again, costs more than it should. Opportunity ends up distributed by proximity and confidence rather than by fit or merit.
+The students who lose the most are the ones who aren't loud. An introvert rarely walks up to a professor to ask for a project, and when a connection does happen by chance, the student often takes whatever is offered — even when it sits far outside their interests — because finding another door, and working up the nerve to knock again, costs more than it should. Opportunity ends up handed out by proximity and confidence instead of by fit or merit.
 
-**2. What it should be.**
-There should be one place where faculty post what they need and every eligible student can see it — narrowed to their branch, year and interests — and apply on equal footing. No group to be in. No nerve required. The match is made on relevance, not on who happened to be standing nearby.
+There should be one place where faculty post what they need and every eligible student can see it, narrowed to their branch, year, and interests, and apply on the same footing as everyone else. No group to be in. No nerve required.
 
-**3. What this becomes.**
-Once that exchange is structured, it is also *on record*. Every opportunity, application and decision is captured — which gives a university something it has rarely had: visibility into faculty–student engagement (research participation, mentorship, collaboration) as data rather than as folklore. Opportunity Quest is that bridge, and that record.
+And once that exchange is structured, it's also *on record*. Every opportunity, application, and decision is captured — which gives a university something it has rarely had: visibility into faculty–student engagement as data rather than as folklore.
 
 ---
 
-## What it does
+## What it is
 
-Opportunity Quest gives faculty a place to publish opportunities and run a disciplined review of applicants, and gives students a place to find roles they are genuinely eligible for, apply with a cover letter and resume, and follow each application from submission to decision. Access is governed by a strict two-role model — Student and Faculty — and the interface is deliberately quiet: academic, uncluttered, and built to be trusted rather than to impress.
+A single-page React app on an Express + MongoDB API, built as a proper multi-tenant product rather than a demo. One deployment serves any institution: an organization is resolved from the email domain, and every query is scoped to it, so two universities on the same instance never see each other's data.
 
-Under the hood it is a React single-page application backed by an Express and MongoDB REST API, organised in clean layers so the codebase stays maintainable as the platform grows.
+Three roles, each with a distinct surface:
 
----
+- **Students** discover opportunities, apply with a cover letter and résumé, and track each application from submission to decision.
+- **Faculty** post opportunities, run a disciplined applicant review, and message shortlisted candidates.
+- **Coordinators** are the institution's trust anchor: they approve or reject faculty registrations, see org-wide analytics, and can post and manage opportunities themselves.
 
-## Key Features
-
-**Authentication & roles**
-- JWT authentication with bcrypt-hashed passwords.
-- Role-based access control (Student / Faculty) enforced by middleware.
-- Profile-aware sessions — name, title prefix and avatar follow the user across the UI.
-
-**Opportunities (Faculty)**
-- Create, edit and soft-delete opportunities.
-- A full status lifecycle — **Active → Archived → Closed** — with **Expired** derived automatically once a deadline passes (evaluated at query time, no scheduler required).
-- Reactivate archived opportunities, keeping or resetting the deadline.
-- Extend deadlines, with an audited deadline-change history.
-- Attach supporting PDFs to an opportunity.
-
-**Discovery (Student)**
-- A public feed of active, in-date opportunities with search and filters (category, branch, year).
-- Opportunity detail showing eligibility, attachments, and the posting faculty member's public profile.
-
-**Applications**
-- Students apply with a required cover letter and an optional PDF resume.
-- A strict eligibility gate (branch / year / gender) enforced on the server.
-- Duplicate applications prevented at the database level; re-applying after a withdrawal is subject to a cooldown window.
-- A faculty applicant dashboard with a status pipeline — **Applied → Viewed → Shortlisted → Selected / Rejected** — enforced as a server-side state machine.
-- resumes stored privately and streamed only to the owning student and the owning faculty member.
-
-**Profiles**
-- Distinct student and faculty profiles. Students present skills, society/club role, projects and areas of interest; faculty present department, designation, cabin/office, research interests and a title prefix.
-- Profile-image upload with an in-browser circular cropper (zoom and reposition), and one-click revert to initials.
-- Symmetric visibility — faculty see a student's full profile while reviewing an application, and students see a faculty member's profile from any opportunity they posted.
-
-**Security & hardening**
-- Helmet security headers, global and per-route rate limiting, and request-body size limits.
-- NoSQL-operator sanitization, Joi schema validation, and ObjectId parameter guards.
-- Ownership (IDOR) checks on every application and resume access; mass-assignment blocked via field whitelisting.
-
-**Design system**
-- Centralized design tokens (color, type, spacing, radius, elevation) and shared `.btn` / `.card` primitives.
-- A custom confirmation dialog (in place of native `window.confirm`), an inline SVG icon set, status badges, and deadline-urgency chips.
+The interface is deliberately quiet — an academic "ink and gold" design system, built on design tokens with a hand-written component kit and no UI framework.
 
 ---
 
-## Tech Stack
+## Highlights
 
-**Frontend**
-- JavaScript (ES Modules), [React 19](https://react.dev/)
-- [Vite 7](https://vitejs.dev/) build tooling and dev server
-- [React Router 7](https://reactrouter.com/) for routing
-- Plain CSS on a custom design-token system (no UI framework)
-- Native `fetch` for HTTP
-- ESLint 9 with the `react-hooks` and `react-refresh` plugins
+The parts worth a closer look:
 
-**Backend**
-- [Node.js](https://nodejs.org/) and [Express 5](https://expressjs.com/) (ES Modules)
-- [MongoDB](https://www.mongodb.com/) via [Mongoose 9](https://mongoosejs.com/)
-- [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken) and [bcryptjs](https://github.com/dcodeIO/bcrypt.js) for authentication
-- [Joi 18](https://joi.dev/) for request validation
-- [Helmet 8](https://helmetjs.github.io/) and [express-rate-limit 8](https://express-rate-limit.mintlify.app/) for hardening
-- [Multer 2](https://github.com/expressjs/multer) for file uploads
-- `cors`, `dotenv`
-
-**Architecture pattern**
-The backend follows a strict layered flow — **Controller → Service → Repository → Model**. Controllers handle HTTP only, services own the business rules, repositories are the single point of database access, and models define schemas. This separation is intentional and load-bearing: it keeps business logic testable and the data layer swappable.
+- **Layered backend with a hard data boundary.** Every request flows Route → Controller → Service → Repository → Model. The repository is the *only* place that touches a collection, so business rules stay testable and the storage layer stays swappable.
+- **Multi-tenancy isolated by construction.** Organizations are keyed by email domain; user and application queries lead with `organizationId` on compound indexes, and cross-tenant reads return *not found* rather than leaking existence. Covered by an isolation test.
+- **Ownership-based authorization, not role sprawl.** Access is decided by who owns a record (`postedBy`, conversation participant), not by a growing matrix of roles. Adding "coordinators can post opportunities" was a one-line guard change because the checks were never role-bound in the first place.
+- **Provider ports for storage, email, and cache.** Object storage (Cloudflare R2 / local disk), email (Resend), and the rate-limit cache (Redis) sit behind small interfaces selected by config — no business code changes to swap a provider.
+- **Transactions with an append-only audit log.** Coordinator decisions (approve/reject) write the status change and the audit entry in one transaction; if the audit write fails, the whole thing rolls back. There's a test that forces exactly that failure.
+- **Derived state instead of stored state.** A conversation's read-only status is derived from the live application status, and an opportunity's "expired" is derived from its deadline at query time — no schedulers, no flags to drift out of sync.
+- **A rate limiter that fails open.** The Redis-backed limiter is wrapped so that if Redis is unreachable, requests are served instead of dropped — availability over strict limiting when the cache is down.
+- **Referential integrity as first-class tooling.** MongoDB won't enforce foreign keys, so deleting a user is a cascade script (`deleteUser`), and a reconciliation sweep (`cleanupOrphans`) heals any drift from out-of-band edits, down to denormalized counters.
 
 ---
 
-## Project Architecture / Directory Structure
+## Architecture
 
-```
-Opportunity-Quest/
-├── backend/                      Express + MongoDB REST API
-│   ├── config/                   Database connection (db.js)
-│   ├── constants/                Domain constants (application lifecycle, cooldown)
-│   ├── controllers/              HTTP request/response handling
-│   ├── middleware/               Auth, RBAC, validation, sanitization, rate limits, uploads
-│   ├── models/                   Mongoose schemas — User, Opportunity, Application
-│   ├── repositories/             Data-access layer (the only place that touches the database)
-│   ├── routes/                   Express route definitions (auth, opportunities, applications, users)
-│   ├── services/                 Business logic
-│   ├── utils/                    AppError, error responder, ObjectId guard
-│   ├── validators/               Joi request schemas
-│   ├── uploads/                  Public files: opportunity PDFs, avatars (gitignored)
-│   ├── storage/                  Private files: resumes (gitignored, never served statically)
-│   └── server.js                 Application entry point
-│
-├── frontend/                     React + Vite single-page app
-│   ├── index.html                SPA host page
-│   ├── vite.config.js            Vite configuration
-│   ├── eslint.config.js          ESLint configuration
-│   └── src/
-│       ├── components/           Reusable UI (Avatar, AvatarCropper, ProfileView/Modal,
-│       │                         StatusBadge, Icons, ConfirmProvider)
-│       ├── constants/            Option lists (skills, branches, positions)
-│       ├── pages/                Route-level screens (Home, Login, Register, Profile,
-│       │                         Faculty, Applicants, MyApplications, OpportunityDetail, …)
-│       ├── utils/api.js          Fetch helpers (public, authed, multipart, blob)
-│       ├── tokens.css            Design tokens (single source of truth for styling)
-│       ├── global.css            Base element styles + shared .btn / .card primitives
-│       └── main.jsx              Application entry point
-│
-└── .gitignore
+```mermaid
+flowchart LR
+  subgraph Client
+    SPA["React 19 SPA<br/>Vercel"]
+  end
+  subgraph Edge
+    CF["Cloudflare DNS"]
+  end
+  subgraph API["Express 5 API · Render"]
+    direction TB
+    R["Routes"] --> C["Controllers"] --> S["Services"] --> Repo["Repositories"]
+  end
+  SPA -->|HTTPS · JWT| CF --> API
+  SPA -->|OAuth| G["Google Identity"]
+  Repo --> DB[("MongoDB Atlas")]
+  S --> Cache[("Upstash Redis")]
+  S --> Obj[("Cloudflare R2")]
+  S --> Mail["Resend"]
 ```
 
-**Key folders at a glance**
-- `backend/repositories/` is the database boundary — services never query Mongoose directly.
-- `backend/middleware/` holds the security stack (`authMiddleware`, `authorizeRoles`, `sanitizeMiddleware`, `rateLimiters`) and the upload configs (`uploadResume` → private, `uploadAvatar` / `uploadMiddleware` → public).
-- `frontend/src/tokens.css` and `global.css` define the design system; pages and components consume tokens instead of hard-coded values.
-- `frontend/src/utils/api.js` centralizes every backend call and all JWT handling.
+The server is organized so responsibilities don't bleed into each other:
+
+| Layer | Owns | Never does |
+| --- | --- | --- |
+| **Routes** | URL shape, middleware wiring | business logic |
+| **Controllers** | HTTP in/out, status codes | data access |
+| **Services** | business rules, transactions, orchestration | Mongoose queries |
+| **Repositories** | all database access | HTTP, business decisions |
+| **Models** | schema, indexes, invariants | — |
+
+Cross-cutting concerns live in middleware: JWT auth, role and ownership checks, Joi validation, NoSQL-operator sanitization, ObjectId guards, Helmet headers, and the rate limiters.
 
 ---
 
-## Getting Started & Installation
+## Tech & infrastructure
 
-### Prerequisites
-- **Node.js 20+** (the backend dev script uses `node --watch`).
-- **MongoDB** — a connection string from MongoDB Atlas or a local `mongod` instance.
-- **npm** (ships with Node).
+**Frontend** — React 19, Vite, React Router, plain CSS on a design-token system (no component library), native `fetch`. Tested with Vitest + React Testing Library.
 
-### 1. Clone and install
+**Backend** — Node 20+, Express 5 (ESM), MongoDB via Mongoose, JWT + bcrypt, Google `google-auth-library`, Joi, Helmet, `express-rate-limit` + `rate-limit-redis`, Multer, Resend, AWS S3 SDK (for R2). Tested with Vitest + Supertest + `mongodb-memory-server`.
+
+**Runs on** — Vercel (web), Render (API), MongoDB Atlas, Cloudflare (DNS + R2 object storage), Upstash Redis, Resend (email), on custom subdomains. CI is GitHub Actions.
+
+---
+
+## Feature tour
+
+**Discovery & applications (students)**
+- A server-paginated feed of active, in-date opportunities with search and branch/year/category filters.
+- A strict eligibility gate — branch, year, gender — enforced on the server, not just hinted at in the UI.
+- Apply with a required cover letter and an optional PDF résumé; duplicate applications are impossible at the database level, and re-applying after a withdrawal is gated by a cooldown.
+- Every application tracked through a server-enforced state machine: **Applied → Viewed → Shortlisted → Selected / Rejected / Withdrawn**, with illegal transitions rejected.
+
+**Posting & review (faculty)**
+- Create and edit opportunities across four categories, with PDF attachments.
+- A full lifecycle — **Active → Archived → Closed**, plus **Expired** derived from the deadline — with reactivation and deadline extensions that keep an audited change history.
+- An applicant dashboard with a status pipeline and counts, résumé viewing, and one-to-one messaging with shortlisted or selected candidates.
+
+**Governance (coordinators)**
+- Faculty don't self-activate: they register as *pending* and a coordinator approves or rejects them (with a reason), every decision written to an append-only audit log and pushed as an in-app + email notification.
+- Institution analytics — application funnel, opportunities by category and status, faculty roster, and a 30-day activity trend — all org-scoped.
+
+**Across the platform**
+- Google + password auth, domain-restricted, verified server-side; a Google identity links to an existing account by email on first sign-in.
+- Application-scoped private messaging with per-participant unread counts and precise, dated timestamps.
+- In-app notifications with selective email nudges (approvals, decisions, and messages email; routine events stay in-app).
+- Résumés and avatars held in private storage and streamed only through authorized, ownership-checked routes.
+
+---
+
+## Security
+
+- **Authentication:** JWT sessions (bcrypt-hashed passwords) and Google Identity, both restricted to recognized institutional domains and verified on the server.
+- **Authorization:** role checks plus per-record ownership (IDOR) checks on every application, résumé, and conversation; mass assignment blocked by field whitelisting.
+- **Tenant isolation:** every read is organization-scoped; cross-tenant access reads as *not found*.
+- **Input & transport:** Joi schema validation, NoSQL-operator sanitization, ObjectId parameter guards, Helmet headers, CORS locked to a configured origin, and request-body size limits.
+- **Abuse control:** global and per-route rate limiting backed by Redis, with a fail-open wrapper so a cache outage degrades limiting rather than the whole API.
+- **Private files:** résumés are never served statically — only through an authenticated endpoint that checks ownership before streaming.
+
+---
+
+## Testing & CI
+
+**91 automated tests**, gated in CI on every push:
+
+- **61 API tests** (Vitest + Supertest against an in-memory MongoDB) drive real requests through the full stack — auth and RBAC, the eligibility gate, the application state machine, tenant isolation, the faculty-approval flow with its transaction rollback, Google sign-in and account linking, feed pagination and search, private file storage and authorized streaming, messaging, notifications, and analytics.
+- **30 UI tests** (Vitest + React Testing Library) cover the component kit and page logic.
+
+GitHub Actions lints, tests, and builds both the API and the web app on every push and pull request.
+
+```bash
+cd backend && npm test     # 61 API tests
+cd frontend && npm test    # 30 UI tests
+```
+
+---
+
+## Run it locally
+
+**Prerequisites:** Node 20+, and a MongoDB connection string (Atlas or a local `mongod`).
+
 ```bash
 git clone https://github.com/AgrimVerma11/OpportunityQuest.git
 cd OpportunityQuest
-
-# Backend dependencies
 cd backend && npm install
-
-# Frontend dependencies
 cd ../frontend && npm install
 ```
 
-### 2. Configure environment variables
-
-Create `backend/.env`:
+**`backend/.env`**
 ```bash
-# Port the API listens on
 PORT=5174
-
-# MongoDB connection string (Atlas or local)
-MONGO_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/opportunity-quest
-
-# Secret used to sign JWTs — use a long, random string. The server refuses to start without it.
-JWT_SECRET=replace-with-a-long-random-secret
-
-# Origin allowed by CORS (the frontend dev server)
+MONGO_URI=mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/opportunity-quest
+JWT_SECRET=a-long-random-secret          # required; the server refuses to start without it
 ALLOWED_ORIGIN=http://localhost:5173
+
+# Optional integrations — the app runs without them in development:
+GOOGLE_CLIENT_ID=                        # enables "Continue with Google"
+STORAGE_DRIVER=local                     # local | r2   (R2 needs its own credentials)
+EMAIL_PROVIDER=                          # e.g. resend  (needs EMAIL_FROM + provider key)
+REDIS_URL=                               # rate-limit store; falls back to in-memory if unset
 ```
 
-Create `frontend/.env`:
+**`frontend/.env`**
 ```bash
-# Base URL of the backend API (note the /api suffix)
 VITE_API_URL=http://localhost:5174/api
+VITE_GOOGLE_CLIENT_ID=                   # match the backend GOOGLE_CLIENT_ID (optional)
 ```
 
-> The `.env` files are gitignored — never commit real secrets. `JWT_SECRET` is required; the backend exits on startup if it is missing.
-
-### 3. Run the app (two terminals)
+**Start both:**
 ```bash
-# Terminal 1 — API (http://localhost:5174)
-cd backend && npm run dev
-
-# Terminal 2 — web app (http://localhost:5173)
-cd frontend && npm run dev
+cd backend && npm run dev     # API on http://localhost:5174  (node --watch)
+cd frontend && npm run dev    # web on http://localhost:5173
 ```
 
-Open `http://localhost:5173`, register a Faculty and a Student account, post an opportunity as the faculty, then apply as the student.
-
-> Registration is currently gated to `@thapar.edu` email addresses (a deliberate institutional restriction enforced on the client). Use addresses such as `prof@thapar.edu` and `student@thapar.edu` when testing locally.
-
-### 4. Production build (frontend)
-```bash
-cd frontend
-npm run build      # outputs static assets to dist/
-npm run preview    # serves the production build locally
-```
-
-In production, run the backend with `npm start` (plain `node server.js`) and serve the built frontend from your host or CDN of choice.
+Registration is restricted to institutional domains (`@thapar.edu` on this deployment), enforced server-side from the organization table. Seed a working dataset with `npm run seed` in `backend/`, then register a faculty and a student, post an opportunity, and apply.
 
 ---
 
-## Usage & Development Commands
+## Operations
 
-**Backend** (`/backend`)
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the API with file watching (`node --watch`) on `PORT` (default 5174). |
-| `npm start` | Start the API once, without watching. |
+Coordinators are provisioned by an operator, and a few maintenance scripts keep the data honest:
 
-**Frontend** (`/frontend`)
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the Vite dev server on port 5173. |
-| `npm run build` | Produce an optimized production build in `dist/`. |
-| `npm run preview` | Serve the production build locally. |
-| `npm run lint` | Run ESLint over the source. |
+```bash
+# Provision the institution's coordinator (the approval trust anchor)
+COORD_NAME="Name" COORD_EMAIL="coord@thapar.edu" COORD_PASSWORD="…" \
+  node scripts/provisionCoordinator.js
 
-> **Testing:** there is no automated test suite yet. The current quality gates are `npm run lint` and `npm run build` on the frontend, plus manual verification of the core flows (register, login, post, apply, review). A test runner (Vitest / Jest with Supertest) is the natural next addition before the team scales.
+# Remove a user and their entire footprint (opportunities, applications,
+# conversations, messages, notifications) — never delete users by hand
+USER_EMAIL="someone@thapar.edu" node scripts/deleteUser.js
+
+# Heal any records/counters left dangling by an out-of-band edit
+node scripts/cleanupOrphans.js
+
+# Keep Mongoose indexes in sync with the schemas
+npm run sync:indexes
+```
 
 ---
 
-## API Overview
+## Repository layout
 
-All API routes are prefixed with `/api`. Protected routes require an `Authorization: Bearer <token>` header.
-
-| Group | Base path | Purpose |
-| --- | --- | --- |
-| Auth | `/api/auth` | Register, login, get/update own profile, profile-image upload and removal. |
-| Opportunities | `/api/opportunities` | Public feed and detail; faculty create / edit / archive / close / reactivate / extend / attachments. |
-| Applications | `/api/applications` | Apply, list own applications, faculty applicant lists, status updates, withdraw, authorized resume streaming. |
-| Users | `/api/users/:id` | Public-safe profile of another user (e.g. a student viewing the posting faculty). |
-
-Public uploads (opportunity PDFs, avatars) are served from `/uploads`. resumes are **never** served statically — they are streamed only through an authenticated, ownership-checked endpoint.
+```
+Opportunity-Quest/
+├── backend/                 Express + MongoDB API
+│   ├── config/              DB connection, Google client
+│   ├── constants/           Domain constants (statuses, roles, notification policy)
+│   ├── controllers/         HTTP in/out only
+│   ├── services/            Business logic, transactions, orchestration
+│   ├── repositories/        The single database boundary
+│   ├── models/              Mongoose schemas + indexes
+│   ├── middleware/          Auth, RBAC, validation, sanitization, rate limits, uploads
+│   ├── lib/                 Storage, email, and cache provider ports
+│   ├── validators/          Joi request schemas
+│   ├── scripts/             Provisioning + maintenance tooling
+│   └── tests/               API integration tests (Supertest + in-memory Mongo)
+│
+├── frontend/                React + Vite SPA
+│   └── src/
+│       ├── components/      The UI kit (Tag, Button, Card, StatCard, PageHero, …)
+│       ├── pages/           Route-level screens
+│       ├── context/         Auth session
+│       ├── utils/api.js     Centralized fetch + JWT handling
+│       └── tokens.css       Design tokens — the single source of truth for styling
+│
+├── docs/                    Architecture notes and phase records
+├── render.yaml              API deploy blueprint
+└── .github/workflows/ci.yml Lint · test · build (API + web)
+```
 
 ---
 
@@ -245,6 +253,6 @@ Public uploads (opportunity PDFs, avatars) are served from `/uploads`. resumes a
 
 Copyright © 2026 Agrim Verma. All rights reserved.
 
-Opportunity Quest is proprietary software. Its source code, design and documentation may not be copied, modified, distributed or used in any form, in whole or in part, without the prior written consent of the author. See [LICENSE](LICENSE) for the full terms.
+Opportunity Quest is proprietary software. Its source code, design, and documentation may not be copied, modified, distributed, or used in any form, in whole or in part, without the author's prior written consent. See [LICENSE](LICENSE) for the full terms.
 
-For permission or licensing inquiries: **masteragrim11@gmail.com**
+Licensing or permission inquiries: **agrim.works@gmail.com**
