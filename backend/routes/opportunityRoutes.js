@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 
 import {
   createOpportunity,
@@ -32,6 +33,20 @@ import {
 } from "../validators/updateOpportunityValidator.js";
 
 const router = express.Router();
+
+// Reject a malformed :id / :attachmentId up front so a bad path parameter
+// returns a clean 400 instead of surfacing a Mongoose cast error as a 500.
+// Guards every route in this router that carries the param.
+const rejectInvalidId = (req, res, next, value) => {
+  if (!mongoose.Types.ObjectId.isValid(value)) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid identifier" });
+  }
+  next();
+};
+router.param("id", rejectInvalidId);
+router.param("attachmentId", rejectInvalidId);
 
 
 
