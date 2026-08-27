@@ -16,7 +16,7 @@ dotenv.config();
 // applications that belong to it — so local work and staging share the same
 // starting point. Refuses to run against production.
 
-const DEMO_PASSWORD = "password123";
+const DEMO_PASSWORD = "Password@123";
 
 const daysFromNow = (days) =>
   new Date(Date.now() + days * 24 * 60 * 60 * 1000);

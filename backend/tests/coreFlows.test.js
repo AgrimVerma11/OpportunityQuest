@@ -33,8 +33,8 @@ const futureISO = (days = 30) =>
 async function registerUser(overrides = {}) {
   const payload = {
     name: "Test Person",
-    password: "password123",
-    confirmPassword: "password123",
+    password: "Password@123",
+    confirmPassword: "Password@123",
     role: "Student",
     gender: "Male",
     ...overrides,
@@ -47,7 +47,7 @@ async function registerUser(overrides = {}) {
   return payload;
 }
 
-async function loginUser(email, password = "password123") {
+async function loginUser(email, password = "Password@123") {
   const res = await request(app)
     .post("/api/auth/login")
     .send({ email, password });
@@ -89,7 +89,7 @@ const asStudent = (extra = {}) =>
 // Coordinators are provisioned, not self-registered, so create one directly.
 async function createCoordinator(email = "coord@thapar.edu", domain = "thapar.edu") {
   const org = await Organization.findOne({ emailDomains: domain });
-  const passwordHash = await bcrypt.hash("password123", 10);
+  const passwordHash = await bcrypt.hash("Password@123", 10);
   await User.create({
     organizationId: org._id,
     name: "Coordinator",
@@ -165,7 +165,7 @@ describe("auth", () => {
     const res = await request(app).post("/api/auth/register").send({
       name: "Mismatch",
       email: "mismatch@thapar.edu",
-      password: "password123",
+      password: "Password@123",
       confirmPassword: "different1",
       role: "Student",
       gender: "Male",
@@ -179,8 +179,8 @@ describe("auth", () => {
     const res = await request(app).post("/api/auth/register").send({
       name: "Duplicate",
       email: "student@thapar.edu",
-      password: "password123",
-      confirmPassword: "password123",
+      password: "Password@123",
+      confirmPassword: "Password@123",
       role: "Student",
       gender: "Male",
     });
@@ -204,8 +204,8 @@ describe("auth", () => {
     const res = await request(app).post("/api/auth/register").send({
       name: "Outsider",
       email: "someone@gmail.com",
-      password: "password123",
-      confirmPassword: "password123",
+      password: "Password@123",
+      confirmPassword: "Password@123",
       role: "Student",
       gender: "Male",
     });
@@ -218,6 +218,31 @@ describe("auth", () => {
       email: "shortpass@thapar.edu",
       password: "pass12",
       confirmPassword: "pass12",
+      role: "Student",
+      gender: "Male",
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a password that lacks complexity", async () => {
+    // Long enough (8+) but no uppercase, digit, or special character.
+    const res = await request(app).post("/api/auth/register").send({
+      name: "Weakpass",
+      email: "weakpass@thapar.edu",
+      password: "onlylowercase",
+      confirmPassword: "onlylowercase",
+      role: "Student",
+      gender: "Male",
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a name that is not a real name", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      name: "12345",
+      email: "numname@thapar.edu",
+      password: "Password@123",
+      confirmPassword: "Password@123",
       role: "Student",
       gender: "Male",
     });
@@ -469,7 +494,7 @@ describe("faculty approval", () => {
     });
     const blocked = await request(app)
       .post("/api/auth/login")
-      .send({ email: "newprof@thapar.edu", password: "password123" });
+      .send({ email: "newprof@thapar.edu", password: "Password@123" });
     expect(blocked.status).toBe(403);
 
     // A coordinator sees them in the pending list and approves.
@@ -489,7 +514,7 @@ describe("faculty approval", () => {
     // Now the faculty can sign in.
     const ok = await request(app)
       .post("/api/auth/login")
-      .send({ email: "newprof@thapar.edu", password: "password123" });
+      .send({ email: "newprof@thapar.edu", password: "Password@123" });
     expect(ok.status).toBe(200);
   });
 
@@ -514,7 +539,7 @@ describe("faculty approval", () => {
 
     const blocked = await request(app)
       .post("/api/auth/login")
-      .send({ email: "badprof@thapar.edu", password: "password123" });
+      .send({ email: "badprof@thapar.edu", password: "Password@123" });
     expect(blocked.status).toBe(403);
   });
 

@@ -28,6 +28,7 @@ import {
 } from "../controllers/authController.js";
 
 import { uploadAvatar } from "../middleware/uploadAvatar.js";
+import { registerLimiter } from "../middleware/rateLimiters.js";
 
 const router = express.Router();
 
@@ -48,9 +49,11 @@ const handleAvatarUpload = (req, res, next) => {
 // AUTH ROUTES
 
 
-// Register
+// Register — an extra, stricter per-IP cap on account creation on top of the
+// router-level auth limiter and the global API limiter.
 router.post(
   "/register",
+  registerLimiter,
   validate(registerValidation),
   registerUser
 );

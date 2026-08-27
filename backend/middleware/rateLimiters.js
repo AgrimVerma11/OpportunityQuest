@@ -65,3 +65,18 @@ export const applyLimiter = buildLimiter({
     "Too many application attempts. Please try again in a few minutes."
   ),
 });
+
+// Account creation is the scarcest, most abuse-prone action: a script could
+// otherwise register accounts in bulk and bloat the database. This is far
+// stricter than the shared auth limit and applies only to the register route.
+// Keyed per IP — a campus NAT shares one budget, so this is generous enough for
+// a normal onboarding burst but low enough to stop automated sign-up spam.
+// Tune `max` up if a large cohort registers from one network in a short window.
+export const registerLimiter = buildLimiter({
+  prefix: "rl:register:",
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  handler: jsonResponse(
+    "Too many accounts created from this network. Please try again later."
+  ),
+});

@@ -37,16 +37,26 @@ function Register() {
     e.preventDefault();
     const newErrors = {};
 
-    if (!formData.name.trim()) {
+    const trimmedName = formData.name.trim();
+    if (!trimmedName) {
       newErrors.name = "Full name is required.";
+    } else if (!/^\p{L}[\p{L}\p{M} .'-]*$/u.test(trimmedName)) {
+      newErrors.name =
+        "Name may contain only letters, spaces, hyphens, apostrophes, and periods.";
     }
 
     if (!formData.email.endsWith("@thapar.edu")) {
       newErrors.email = "Only thapar.edu emails are allowed.";
     }
 
-    if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters.";
+    // Mirror the server rule so users see the requirement before submitting.
+    if (
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,64}$/.test(
+        formData.password
+      )
+    ) {
+      newErrors.password =
+        "At least 8 characters, with an uppercase and lowercase letter, a number, and a special character.";
     }
 
     if (formData.password !== formData.confirmPassword) {
