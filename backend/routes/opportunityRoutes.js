@@ -21,6 +21,7 @@ import authMiddleware from "../middleware/authMiddleware.js";
 import authorizeRoles from "../middleware/authorizeRoles.js";
 import validate from "../middleware/validateMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
+import { facultyActionLimiter } from "../middleware/rateLimiters.js";
 
 import {
   createOpportunityValidation,
@@ -57,6 +58,7 @@ router.post(
   "/create",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   validate(createOpportunityValidation),
   createOpportunity
 );
@@ -93,6 +95,7 @@ router.put(
   "/:id",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   validate(updateOpportunityValidation),
   updateOpportunity
 );
@@ -104,6 +107,7 @@ router.delete(
   "/:id",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   softDeleteOpportunity
 );
 
@@ -114,6 +118,7 @@ router.patch(
   "/:id/archive",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   archiveOpportunity
 );
 
@@ -124,6 +129,7 @@ router.patch(
   "/:id/unarchive",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   validate(unarchiveValidation),
   unarchiveOpportunity
 );
@@ -135,6 +141,7 @@ router.patch(
   "/:id/close",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   closeOpportunity
 );
 
@@ -145,6 +152,7 @@ router.patch(
   "/:id/extend-deadline",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   validate(extendDeadlineValidation),
   extendDeadline
 );
@@ -156,6 +164,7 @@ router.post(
   "/:id/attachments",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   (req, res, next) => {
     upload.single("attachment")(req, res, (err) => {
       if (err) {
@@ -174,6 +183,7 @@ router.delete(
   "/:id/attachments/:attachmentId",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   deleteAttachment
 );
 

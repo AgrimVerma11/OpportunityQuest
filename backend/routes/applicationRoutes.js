@@ -15,7 +15,7 @@ import authorizeRoles from "../middleware/authorizeRoles.js";
 import validate from "../middleware/validateMiddleware.js";
 import { validateObjectId } from "../utils/validateObjectId.js";
 import { uploadResume } from "../middleware/uploadResume.js";
-import { applyLimiter } from "../middleware/rateLimiters.js";
+import { applyLimiter, facultyActionLimiter } from "../middleware/rateLimiters.js";
 import {
   applyValidation,
   statusUpdateValidation,
@@ -78,6 +78,7 @@ router.patch(
   "/:id/status",
   authMiddleware,
   authorizeRoles("Faculty", "Coordinator"),
+  facultyActionLimiter,
   validateObjectId("id"),
   validate(statusUpdateValidation),
   updateStatus

@@ -28,7 +28,7 @@ import {
 } from "../controllers/authController.js";
 
 import { uploadAvatar } from "../middleware/uploadAvatar.js";
-import { registerLimiter } from "../middleware/rateLimiters.js";
+import { registerLimiter, loginLimiter } from "../middleware/rateLimiters.js";
 
 const router = express.Router();
 
@@ -58,9 +58,13 @@ router.post(
   registerUser
 );
 
-// Login
+// Login — stacked with the router-level, IP-keyed authLimiter: this adds an
+// account-keyed counter so a shared campus IP never shares one login budget
+// across different students' own accounts (see rateLimiters.js's loginLimiter
+// comment for the full trade-off).
 router.post(
   "/login",
+  loginLimiter,
   validate(loginValidation),
   loginUser
 );
