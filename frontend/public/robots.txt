@@ -1,0 +1,11 @@
+# Opportunity Quest is an authenticated app — only the sign-in and register
+# screens have anything meaningful for a crawler to index. Every other route
+# renders a "please sign in" shell for an unauthenticated crawler, which is
+# thin/duplicate content not worth indexing, so it's excluded rather than left
+# to waste crawl budget. $ anchors an exact match (Google/Bing extension).
+User-agent: *
+Disallow: /
+Allow: /$
+Allow: /register$
+
+Sitemap: https://opportunityquest.agrimverma.dev/sitemap.xml

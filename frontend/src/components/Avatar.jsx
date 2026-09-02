@@ -14,6 +14,8 @@ export default function Avatar({ name, image, size = 40 }) {
         src={fileUrl(image)}
         alt={name || "Profile"}
         style={style}
+        loading="lazy"
+        decoding="async"
       />
     );
   }
