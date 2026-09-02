@@ -122,6 +122,73 @@ export const notification = ({ title, body, actionUrl }) => {
   };
 };
 
+export const accountBanned = ({ name, reason }) => {
+  const safeName = escapeHtml(name || "there");
+  const safeReason = reason ? escapeHtml(reason) : "";
+  return {
+    subject: "Your account has been suspended",
+    html: layout({
+      heading: "Account suspended",
+      bodyHtml:
+        paragraph(`Hi ${safeName},`) +
+        paragraph(
+          `Your account on ${BRAND} has been suspended by your coordinator. You will not be able to sign in while your account is in this state.`
+        ) +
+        (safeReason
+          ? paragraph(`<strong style="color:${INK};font-weight:600;">Reason:</strong> ${safeReason}`)
+          : "") +
+        paragraph(
+          `Please get in touch with your department coordinator in person to discuss this and resolve it.`
+        ),
+    }),
+    text:
+      `Hi ${name || "there"},\n\n` +
+      `Your account on ${BRAND} has been suspended by your coordinator. You will not be able to sign in while your account is in this state.\n\n` +
+      (reason ? `Reason: ${reason}\n\n` : "") +
+      `Please get in touch with your department coordinator in person to discuss this and resolve it.\n\n— ${BRAND}`,
+  };
+};
+
+export const accountUnbanned = ({ name }) => {
+  const safeName = escapeHtml(name || "there");
+  return {
+    subject: "Your account has been restored",
+    html: layout({
+      heading: "You're back in",
+      bodyHtml:
+        paragraph(`Hi ${safeName},`) +
+        paragraph(
+          `Your account on ${BRAND} has been restored by your coordinator. You can sign in and use ${BRAND} again as normal.`
+        ),
+    }),
+    text:
+      `Hi ${name || "there"},\n\n` +
+      `Your account on ${BRAND} has been restored by your coordinator. You can sign in and use ${BRAND} again as normal.\n\n— ${BRAND}`,
+  };
+};
+
+export const accountRemoved = ({ name }) => {
+  const safeName = escapeHtml(name || "there");
+  return {
+    subject: "Your account has been removed",
+    html: layout({
+      heading: "Account removed",
+      bodyHtml:
+        paragraph(`Hi ${safeName},`) +
+        paragraph(
+          `Your account on ${BRAND}, and the data associated with it, has been removed by your coordinator.`
+        ) +
+        paragraph(
+          `If you believe this was a mistake, please get in touch with your department coordinator in person.`
+        ),
+    }),
+    text:
+      `Hi ${name || "there"},\n\n` +
+      `Your account on ${BRAND}, and the data associated with it, has been removed by your coordinator.\n\n` +
+      `If you believe this was a mistake, please get in touch with your department coordinator in person.\n\n— ${BRAND}`,
+  };
+};
+
 export const facultyRejection = ({ name, reason }) => {
   const safeName = escapeHtml(name || "there");
   const safeReason = reason ? escapeHtml(reason) : "";
