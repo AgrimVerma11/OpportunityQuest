@@ -59,7 +59,7 @@ export const findStudentsByOrg = async (organizationId, { page, limit }) => {
   const query = { organizationId, role: ROLES.STUDENT };
   const [students, total] = await Promise.all([
     User.find(query)
-      .select("name email branch year createdAt profileImage")
+      .select("name email branch year createdAt profileImage accountStatus")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit),

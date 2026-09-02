@@ -77,3 +77,47 @@ export const rejectFaculty = async (req, res) => {
     respondError(res, error);
   }
 };
+
+// PATCH /api/admin/users/:id/ban  (Coordinator)
+export const banUser = async (req, res) => {
+  try {
+    const user = await adminService.banUser(
+      req.params.id,
+      req.user.id,
+      req.user.organizationId,
+      req.body.reason
+    );
+    res.json({ success: true, message: "Account suspended", user });
+  } catch (error) {
+    respondError(res, error);
+  }
+};
+
+// PATCH /api/admin/users/:id/unban  (Coordinator)
+export const unbanUser = async (req, res) => {
+  try {
+    const user = await adminService.unbanUser(
+      req.params.id,
+      req.user.id,
+      req.user.organizationId
+    );
+    res.json({ success: true, message: "Account restored", user });
+  } catch (error) {
+    respondError(res, error);
+  }
+};
+
+// DELETE /api/admin/users/:id  (Coordinator)
+export const removeUser = async (req, res) => {
+  try {
+    const result = await adminService.removeUser(
+      req.params.id,
+      req.user.id,
+      req.user.organizationId,
+      req.body.reason
+    );
+    res.json({ success: true, message: "Account removed", ...result });
+  } catch (error) {
+    respondError(res, error);
+  }
+};

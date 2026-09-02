@@ -693,6 +693,283 @@ describe("faculty approval", () => {
   });
 });
 
+// ── Account moderation: ban / unban / remove ──────────────────────
+
+describe("account moderation", () => {
+  const bearer = (token) => ({ Authorization: `Bearer ${token}` });
+
+  it("bans an active student, blocking login, with an audit entry and email", async () => {
+    const coordinator = await createCoordinator();
+    const student = await asStudent();
+
+    const spy = vi.spyOn(emailTransport, "sendEmail").mockResolvedValue();
+
+    const ban = await request(app)
+      .patch(`/api/admin/users/${student.user.id}/ban`)
+      .set(bearer(coordinator.token))
+      .send({ reason: "Reported for harassment in messages" });
+    expect(ban.status).toBe(200);
+    expect(ban.body.user.accountStatus).toBe("Suspended");
+
+    const blocked = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "student@thapar.edu", password: "Password@123" });
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.message).toMatch(/suspended/i);
+    expect(blocked.body.message).toMatch(/coordinator/i);
+
+    const entries = await AuditLog.find({ targetUser: student.user.id });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].action).toBe("user.banned");
+    expect(entries[0].actor.toString()).toBe(coordinator.user.id);
+    expect(entries[0].targetEmail).toBe("student@thapar.edu");
+    expect(entries[0].reason).toBe("Reported for harassment in messages");
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    const email = spy.mock.calls[0][0];
+    expect(email.to).toBe("student@thapar.edu");
+    expect(email.subject).toMatch(/suspended/i);
+    expect(email.text).toContain("Reported for harassment in messages");
+    spy.mockRestore();
+  });
+
+  it("blocks re-registration of a banned account with a specific message", async () => {
+    const coordinator = await createCoordinator();
+    const student = await asStudent();
+    await request(app)
+      .patch(`/api/admin/users/${student.user.id}/ban`)
+      .set(bearer(coordinator.token))
+      .send({ reason: "Policy violation" })
+      .expect(200);
+
+    const res = await request(app).post("/api/auth/register").send({
+      name: "Test Person",
+      email: "student@thapar.edu",
+      password: "Password@123",
+      confirmPassword: "Password@123",
+      role: "Student",
+      gender: "Male",
+    });
+    expect(res.status).toBe(403);
+    expect(res.body.message).toMatch(/suspended/i);
+    expect(res.body.message).toMatch(/coordinator/i);
+  });
+
+  it("unbans a suspended account, restoring login, with an audit entry and email", async () => {
+    const coordinator = await createCoordinator();
+    const student = await asStudent();
+    await request(app)
+      .patch(`/api/admin/users/${student.user.id}/ban`)
+      .set(bearer(coordinator.token))
+      .send({ reason: "Under review" })
+      .expect(200);
+
+    const spy = vi.spyOn(emailTransport, "sendEmail").mockResolvedValue();
+
+    const unban = await request(app)
+      .patch(`/api/admin/users/${student.user.id}/unban`)
+      .set(bearer(coordinator.token));
+    expect(unban.status).toBe(200);
+    expect(unban.body.user.accountStatus).toBe("Active");
+
+    const ok = await request(app)
+      .post("/api/auth/login")
+      .send({ email: "student@thapar.edu", password: "Password@123" });
+    expect(ok.status).toBe(200);
+
+    const entries = await AuditLog.find({
+      targetUser: student.user.id,
+      action: "user.unbanned",
+    });
+    expect(entries).toHaveLength(1);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0].subject).toMatch(/restored/i);
+    spy.mockRestore();
+  });
+
+  it("rejects banning an account that is not currently active", async () => {
+    const coordinator = await createCoordinator();
+    await registerUser({
+      email: "pendingprof@thapar.edu",
+      role: "Faculty",
+      department: "DCSE",
+      employeeId: "EMP-BAN-1",
+    });
+    const pending = await User.findOne({ email: "pendingprof@thapar.edu" });
+
+    const res = await request(app)
+      .patch(`/api/admin/users/${pending._id}/ban`)
+      .set(bearer(coordinator.token))
+      .send({ reason: "Testing" });
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects unbanning an account that is not currently suspended", async () => {
+    const coordinator = await createCoordinator();
+    const student = await asStudent();
+
+    const res = await request(app)
+      .patch(`/api/admin/users/${student.user.id}/unban`)
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(400);
+  });
+
+  it("refuses to let a coordinator ban their own account", async () => {
+    const coordinator = await createCoordinator();
+    const res = await request(app)
+      .patch(`/api/admin/users/${coordinator.user.id}/ban`)
+      .set(bearer(coordinator.token))
+      .send({ reason: "Testing" });
+    expect(res.status).toBe(400);
+  });
+
+  it("refuses to let a coordinator ban a peer coordinator", async () => {
+    const coordinator = await createCoordinator();
+    const peer = await createCoordinator("peer@thapar.edu");
+
+    const res = await request(app)
+      .patch(`/api/admin/users/${peer.user.id}/ban`)
+      .set(bearer(coordinator.token))
+      .send({ reason: "Testing" });
+    expect(res.status).toBe(400);
+  });
+
+  it("does not let a coordinator ban an account outside their organization", async () => {
+    const student = await asStudent();
+    await Organization.create({
+      name: "Other University",
+      emailDomains: ["other.edu"],
+    });
+    const otherCoord = await createCoordinator("coord@other.edu", "other.edu");
+
+    const res = await request(app)
+      .patch(`/api/admin/users/${student.user.id}/ban`)
+      .set(bearer(otherCoord.token))
+      .send({ reason: "Testing" });
+    expect(res.status).toBe(404);
+  });
+
+  it("rolls back the ban if writing the audit entry fails", async () => {
+    const coordinator = await createCoordinator();
+    const student = await asStudent();
+
+    const spy = vi
+      .spyOn(auditRepo, "record")
+      .mockRejectedValueOnce(new Error("audit write failed"));
+
+    const res = await request(app)
+      .patch(`/api/admin/users/${student.user.id}/ban`)
+      .set(bearer(coordinator.token))
+      .send({ reason: "Testing" });
+    expect(res.status).toBe(500);
+
+    spy.mockRestore();
+
+    const stillActive = await User.findById(student.user.id);
+    expect(stillActive.accountStatus).toBe("Active");
+    expect(await AuditLog.countDocuments({ targetUser: student.user.id })).toBe(
+      0
+    );
+  });
+
+  it("requires a reason to ban or remove an account", async () => {
+    const coordinator = await createCoordinator();
+    const student = await asStudent();
+
+    const ban = await request(app)
+      .patch(`/api/admin/users/${student.user.id}/ban`)
+      .set(bearer(coordinator.token))
+      .send({});
+    expect(ban.status).toBe(400);
+
+    const remove = await request(app)
+      .delete(`/api/admin/users/${student.user.id}`)
+      .set(bearer(coordinator.token))
+      .send({});
+    expect(remove.status).toBe(400);
+  });
+
+  it("forbids a non-coordinator from every moderation endpoint", async () => {
+    const student = await asStudent();
+    const other = await registerAndLogin({
+      email: "other@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+    });
+
+    expect(
+      (
+        await request(app)
+          .patch(`/api/admin/users/${student.user.id}/ban`)
+          .set(bearer(other.token))
+          .send({ reason: "x" })
+      ).status
+    ).toBe(403);
+    expect(
+      (
+        await request(app)
+          .patch(`/api/admin/users/${student.user.id}/unban`)
+          .set(bearer(other.token))
+      ).status
+    ).toBe(403);
+    expect(
+      (
+        await request(app)
+          .delete(`/api/admin/users/${student.user.id}`)
+          .set(bearer(other.token))
+          .send({ reason: "x" })
+      ).status
+    ).toBe(403);
+  });
+
+  it("removes an account, cascading its footprint, with a permanent audit record and email", async () => {
+    const coordinator = await createCoordinator();
+    const faculty = await asFaculty();
+    const opportunity = await createOpportunity(faculty.token);
+    const student = await asStudent();
+    await applyTo(student.token, opportunity._id).expect(201);
+
+    expect(await Application.countDocuments({ student: student.user.id })).toBe(
+      1
+    );
+
+    const spy = vi.spyOn(emailTransport, "sendEmail").mockResolvedValue();
+
+    const remove = await request(app)
+      .delete(`/api/admin/users/${student.user.id}`)
+      .set(bearer(coordinator.token))
+      .send({ reason: "Requested account deletion" });
+    expect(remove.status).toBe(200);
+    expect(remove.body.removed.applications).toBe(1);
+
+    // The student's footprint is gone.
+    expect(await User.findById(student.user.id)).toBeNull();
+    expect(await Application.countDocuments({ student: student.user.id })).toBe(
+      0
+    );
+
+    // The audit entry survives the deletion, and stays readable via its
+    // snapshot — the same ghost-record problem already fixed once for
+    // messaging, now guarded against for the audit trail too.
+    const entries = await AuditLog.find({
+      action: "user.deleted",
+      targetEmail: "student@thapar.edu",
+    });
+    expect(entries).toHaveLength(1);
+    expect(entries[0].targetName).toBe("Test Person");
+    expect(entries[0].reason).toBe("Requested account deletion");
+
+    // The email used the name/email captured before deletion.
+    expect(spy).toHaveBeenCalledTimes(1);
+    const email = spy.mock.calls[0][0];
+    expect(email.to).toBe("student@thapar.edu");
+    expect(email.subject).toMatch(/removed/i);
+    spy.mockRestore();
+  });
+});
+
 // ── Google sign-in ────────────────────────────────────────────────
 
 describe("google sign-in", () => {
@@ -1560,6 +1837,9 @@ describe("coordinator analytics", () => {
     expect(res.body.total).toBe(2);
     expect(res.body.students).toHaveLength(2);
     expect(res.body.hasMore).toBe(false);
+    // accountStatus must be projected — the coordinator UI's ban/unban row
+    // actions decide what to show per student from this exact field.
+    expect(res.body.students[0]).toHaveProperty("accountStatus", "Active");
   });
 
   it("forbids a non-coordinator from the roster endpoints", async () => {
