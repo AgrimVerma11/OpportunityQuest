@@ -30,6 +30,25 @@ const auditLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    // A snapshot of the target's name/email at the moment of the action —
+    // populated for actions that can outlive the target record itself (namely
+    // user.deleted). Without this, a populate("targetUser") on a deleted user
+    // renders as "Unknown", the same ghost-record problem already fixed once
+    // for messaging (see conversationService's deleted-participant guard). For
+    // actions where the target still exists (banned, unbanned), these are
+    // redundant with the live User document but harmless to set anyway, so the
+    // audit trail is self-contained and never needs a join to be readable.
+    targetName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    targetEmail: {
+      type: String,
+      default: "",
+      trim: true,
+      lowercase: true,
+    },
     reason: {
       type: String,
       default: "",

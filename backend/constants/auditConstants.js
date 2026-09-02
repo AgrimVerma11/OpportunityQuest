@@ -5,6 +5,9 @@
 export const AUDIT_ACTIONS = {
   FACULTY_APPROVED: "faculty.approved",
   FACULTY_REJECTED: "faculty.rejected",
+  USER_BANNED: "user.banned",
+  USER_UNBANNED: "user.unbanned",
+  USER_DELETED: "user.deleted",
 };
 
 export const AUDIT_ACTION_VALUES = Object.values(AUDIT_ACTIONS);
