@@ -79,11 +79,17 @@ export const patchWithAuth = async (endpoint, data = {}) => {
   return res.json();
 };
 
-// DELETE with token
-export const deleteWithAuth = async (endpoint) => {
+// DELETE with token. `data`, if provided, is sent as a JSON body (e.g. a
+// required moderation reason) — omitted entirely for existing callers that
+// pass none, so their request is byte-for-byte unchanged.
+export const deleteWithAuth = async (endpoint, data) => {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     method: "DELETE",
-    headers: { ...authHeader() },
+    headers: {
+      ...authHeader(),
+      ...(data !== undefined ? { "Content-Type": "application/json" } : {}),
+    },
+    ...(data !== undefined ? { body: JSON.stringify(data) } : {}),
   });
   handleUnauthorized(res);
   return res.json();
