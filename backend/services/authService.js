@@ -78,7 +78,10 @@ const assertCanSignIn = (user) => {
     );
   }
   if (user.accountStatus === ACCOUNT_STATUS.SUSPENDED) {
-    throw new AppError("Your account has been suspended.", 403);
+    throw new AppError(
+      "Your account has been suspended. Please get in touch with your coordinator in person to resolve this.",
+      403
+    );
   }
 };
 
@@ -101,9 +104,20 @@ export const registerUserService = async (
   const existingUser =
     await findUserByEmail(userData.email);
 
+  // A banned account gets a specific, actionable message — distinct from the
+  // generic "already exists" a duplicate active/pending account gets — so a
+  // banned person trying to sign up again is clearly told why, rather than
+  // left assuming it's a routine duplicate-email error.
+  if (existingUser && existingUser.accountStatus === ACCOUNT_STATUS.SUSPENDED) {
+    throw new AppError(
+      "This account has been suspended. Please get in touch with your coordinator in person before registering again.",
+      403
+    );
+  }
+
   // Only a previously *rejected* applicant may register again — e.g. a faculty
   // member rejected for a mistyped employee ID. Any other existing account
-  // (active, pending, or suspended) still blocks re-registration.
+  // (active or pending) still blocks re-registration.
   if (existingUser && existingUser.accountStatus !== ACCOUNT_STATUS.REJECTED) {
     throw new AppError("User already exists", 409);
   }
