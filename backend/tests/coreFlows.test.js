@@ -15,6 +15,7 @@ import { verifyGoogleCredential } from "../config/googleClient.js";
 import * as storage from "../lib/storage/index.js";
 import { avatarKey, resumeKey } from "../lib/storage/keys.js";
 import { ResilientStore } from "../middleware/resilientStore.js";
+import { byUserThenIp, loginKeyGenerator } from "../middleware/rateLimiters.js";
 import * as emailTransport from "../lib/email/index.js";
 
 // Google token verification is mocked so the tests exercise the account-linking
@@ -976,6 +977,53 @@ describe("rate-limit resilient store", () => {
     expect(() => store.init({ windowMs: 1000 })).not.toThrow();
     // Give the rejected init promise a tick to settle; it must be handled.
     await new Promise((resolve) => setTimeout(resolve, 10));
+  });
+});
+
+// ── Rate-limit key generators ──────────────────────────────────────
+// Rate limiting itself is skipped under NODE_ENV=test (setup.js), so these
+// exercise the exported keying functions directly, the same technique already
+// used for ResilientStore above — proving two different real users never share
+// a rate-limit budget just because they share an IP (the campus-NAT problem),
+// while an anonymous request still falls back to a real, per-IP key.
+
+describe("rate-limit key generators", () => {
+  it("byUserThenIp keys by the authenticated user, not the shared IP", () => {
+    const sameIp = "10.0.0.5";
+    const reqA = { user: { id: "user-a" }, ip: sameIp };
+    const reqB = { user: { id: "user-b" }, ip: sameIp };
+
+    const keyA = byUserThenIp(reqA);
+    const keyB = byUserThenIp(reqB);
+
+    expect(keyA).toBe("user-a");
+    expect(keyB).toBe("user-b");
+    expect(keyA).not.toBe(keyB);
+  });
+
+  it("byUserThenIp falls back to req.rateLimitUserId when req.user is absent", () => {
+    const req = { rateLimitUserId: "soft-identified-user", ip: "10.0.0.5" };
+    expect(byUserThenIp(req)).toBe("soft-identified-user");
+  });
+
+  it("byUserThenIp falls back to a real per-IP key for an anonymous request", () => {
+    const req = { ip: "203.0.113.7" };
+    expect(byUserThenIp(req)).toBe("203.0.113.7");
+  });
+
+  it("loginKeyGenerator keys by the attempted email, case- and whitespace-insensitively", () => {
+    const sameIp = "10.0.0.5";
+    const reqAlice = { body: { email: "Alice@Thapar.edu " }, ip: sameIp };
+    const reqBob = { body: { email: "bob@thapar.edu" }, ip: sameIp };
+
+    expect(loginKeyGenerator(reqAlice)).toBe("alice@thapar.edu");
+    expect(loginKeyGenerator(reqBob)).toBe("bob@thapar.edu");
+    expect(loginKeyGenerator(reqAlice)).not.toBe(loginKeyGenerator(reqBob));
+  });
+
+  it("loginKeyGenerator falls back to IP when the body has no usable email", () => {
+    const req = { body: {}, ip: "203.0.113.7" };
+    expect(loginKeyGenerator(req)).toBe("203.0.113.7");
   });
 });
 

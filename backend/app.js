@@ -12,6 +12,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import conversationRoutes from "./routes/conversationRoutes.js";
 import sanitize from "./middleware/sanitizeMiddleware.js";
+import identifyForRateLimit from "./middleware/identifyForRateLimit.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiters.js";
 
 // Builds the configured Express application. Startup concerns — loading the
@@ -47,6 +48,10 @@ export function createApp() {
 
   // Strip NoSQL operator keys ($gt, $where, dotted paths) from input.
   app.use(sanitize);
+
+  // Best-effort identity (for rate-limit keying only) ahead of apiLimiter, so
+  // it can bound abuse per-account instead of per-IP when a token is present.
+  app.use(identifyForRateLimit);
 
   // Throttle the whole API; auth routes get an additional, stricter limit.
   app.use("/api", apiLimiter);
