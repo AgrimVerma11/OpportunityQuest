@@ -9,8 +9,12 @@ import Button from "../components/Button";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
 import ProfileModal from "../components/ProfileModal";
-import { IconAlert } from "../components/Icons";
-import { fetchWithAuth } from "../utils/api";
+import Modal from "../components/Modal";
+import Field from "../components/Field";
+import { useConfirm } from "../components/ConfirmProvider";
+import { useToast } from "../components/ToastProvider";
+import { IconAlert, IconTrash } from "../components/Icons";
+import { fetchWithAuth, patchWithAuth, deleteWithAuth } from "../utils/api";
 import "./Analytics.css";
 
 const FUNNEL_ORDER = [
@@ -66,6 +70,9 @@ function BarRow({ label, value, max, tone }) {
 }
 
 export default function Analytics() {
+  const confirm = useConfirm();
+  const toast = useToast();
+
   const [tab, setTab] = useState("Overview");
   const [viewUserId, setViewUserId] = useState(null);
 
@@ -76,6 +83,12 @@ export default function Analytics() {
   const [faculty, setFaculty] = useState(null);
   const [students, setStudents] = useState(null); // { list, total, page, hasMore }
   const [studentsLoading, setStudentsLoading] = useState(false);
+
+  // Ban/remove modal — kept separate (like faculty rejection) so a reason can
+  // be captured deliberately; { user, action: "ban" | "delete" } or null.
+  const [moderating, setModerating] = useState(null);
+  const [reason, setReason] = useState("");
+  const [moderatingBusy, setModeratingBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -125,6 +138,119 @@ export default function Analytics() {
     if (tab === "Students" && students === null) loadStudents(1, false);
   }, [tab, faculty, students, loadFaculty, loadStudents]);
 
+  // ── Account moderation: ban / unban / delete ──────────────────────
+  // Updates roster state in place rather than re-fetching, matching
+  // Approvals.jsx's removeFromList pattern — the row the coordinator just
+  // acted on reflects the change immediately.
+
+  const patchStatus = useCallback((id, accountStatus) => {
+    setFaculty((prev) =>
+      prev ? prev.map((f) => (f._id === id ? { ...f, accountStatus } : f)) : prev
+    );
+    setStudents((prev) =>
+      prev
+        ? {
+            ...prev,
+            list: prev.list.map((s) =>
+              s._id === id ? { ...s, accountStatus } : s
+            ),
+          }
+        : prev
+    );
+  }, []);
+
+  const removeFromRosters = useCallback((id) => {
+    setFaculty((prev) => (prev ? prev.filter((f) => f._id !== id) : prev));
+    setStudents((prev) =>
+      prev
+        ? {
+            ...prev,
+            list: prev.list.filter((s) => s._id !== id),
+            total: Math.max(0, prev.total - 1),
+          }
+        : prev
+    );
+  }, []);
+
+  const openBan = (user) => {
+    setModerating({ user, action: "ban" });
+    setReason("");
+  };
+
+  const openDelete = (user) => {
+    setModerating({ user, action: "delete" });
+    setReason("");
+  };
+
+  const closeModerate = () => {
+    setModerating(null);
+    setReason("");
+  };
+
+  const handleUnban = async (user) => {
+    const ok = await confirm({
+      title: `Restore ${user.name}'s account?`,
+      message: "They will be able to sign in again immediately.",
+      confirmLabel: "Restore access",
+    });
+    if (!ok) return;
+
+    try {
+      const res = await patchWithAuth(`/admin/users/${user._id}/unban`);
+      if (res.success) {
+        patchStatus(user._id, "Active");
+        toast.success(`${user.name}'s account was restored.`);
+      } else {
+        toast.error(res.message || "Could not restore this account.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong. Please try again.");
+    }
+  };
+
+  const handleModerateSubmit = async () => {
+    const { user, action } = moderating;
+    const trimmed = reason.trim();
+    if (trimmed.length < 3) {
+      toast.error("Please give a short reason (at least 3 characters).");
+      return;
+    }
+
+    setModeratingBusy(true);
+    try {
+      const res =
+        action === "ban"
+          ? await patchWithAuth(`/admin/users/${user._id}/ban`, {
+              reason: trimmed,
+            })
+          : await deleteWithAuth(`/admin/users/${user._id}`, {
+              reason: trimmed,
+            });
+
+      if (res.success) {
+        if (action === "ban") {
+          patchStatus(user._id, "Suspended");
+          toast.success(`${user.name}'s account was suspended.`);
+        } else {
+          removeFromRosters(user._id);
+          toast.success(`${user.name}'s account was removed.`);
+        }
+        closeModerate();
+      } else {
+        toast.error(
+          res.message ||
+            `Could not ${action === "ban" ? "suspend" : "remove"} this account.`
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setModeratingBusy(false);
+    }
+  };
+
   const shell = (inner) => (
     <>
       <Navbar />
@@ -159,6 +285,55 @@ export default function Analytics() {
           onClose={() => setViewUserId(null)}
         />
       )}
+      {moderating && (
+        <Modal
+          open
+          onClose={closeModerate}
+          title={
+            moderating.action === "ban"
+              ? `Suspend ${moderating.user.name}?`
+              : `Remove ${moderating.user.name}'s account?`
+          }
+          size="sm"
+          footer={
+            <>
+              <Button variant="outline" onClick={closeModerate}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleModerateSubmit}
+                disabled={moderatingBusy}
+              >
+                {moderatingBusy
+                  ? "Working…"
+                  : moderating.action === "ban"
+                  ? "Suspend account"
+                  : "Remove account"}
+              </Button>
+            </>
+          }
+        >
+          <p className="approvals-modal-hint">
+            {moderating.action === "ban"
+              ? "They will not be able to sign in until you restore access. They'll be emailed and asked to get in touch with you in person."
+              : "This permanently removes their account and everything tied to it — opportunities, applications, conversations and notifications. This cannot be undone."}
+          </p>
+          <Field id="moderate-reason" label="Reason (required)">
+            <textarea
+              placeholder={
+                moderating.action === "ban"
+                  ? "e.g. Reported for inappropriate messages to an applicant."
+                  : "e.g. Requested account deletion in person."
+              }
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              maxLength={500}
+              rows={3}
+            />
+          </Field>
+        </Modal>
+      )}
     </>
   );
 
@@ -181,7 +356,15 @@ export default function Analytics() {
   if (!analytics) return null;
 
   if (tab === "Faculty")
-    return shell(<FacultyTable rows={faculty} onView={setViewUserId} />);
+    return shell(
+      <FacultyTable
+        rows={faculty}
+        onView={setViewUserId}
+        onBan={openBan}
+        onUnban={handleUnban}
+        onDelete={openDelete}
+      />
+    );
   if (tab === "Students") {
     return shell(
       <StudentsTable
@@ -189,6 +372,9 @@ export default function Analytics() {
         loading={studentsLoading}
         onMore={() => loadStudents((students?.page || 1) + 1, true)}
         onView={setViewUserId}
+        onBan={openBan}
+        onUnban={handleUnban}
+        onDelete={openDelete}
       />
     );
   }
@@ -373,7 +559,40 @@ function Overview({ a }) {
 
 // ── Faculty roster ────────────────────────────────────────────────
 
-function FacultyTable({ rows, onView }) {
+// Row-level ban/unban/delete controls, shared by both rosters. Stops
+// propagation on every button so acting on a row never also triggers the
+// row's own onClick (open profile).
+function ModerationActions({ person, onBan, onUnban, onDelete }) {
+  const stop = (fn) => (e) => {
+    e.stopPropagation();
+    fn(person);
+  };
+  return (
+    <div className="an-row-actions">
+      {person.accountStatus === "Suspended" ? (
+        <Button variant="outline" size="sm" onClick={stop(onUnban)}>
+          Restore
+        </Button>
+      ) : (
+        person.accountStatus === "Active" && (
+          <Button variant="outline" size="sm" onClick={stop(onBan)}>
+            Suspend
+          </Button>
+        )
+      )}
+      <button
+        type="button"
+        className="an-row-delete"
+        aria-label={`Remove ${person.name}'s account`}
+        onClick={stop(onDelete)}
+      >
+        <IconTrash />
+      </button>
+    </div>
+  );
+}
+
+function FacultyTable({ rows, onView, onBan, onUnban, onDelete }) {
   if (rows === null)
     return (
       <div className="an-state">
@@ -399,6 +618,7 @@ function FacultyTable({ rows, onView }) {
               <th>Status</th>
               <th>Registered</th>
               <th>Approved</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -424,6 +644,14 @@ function FacultyTable({ rows, onView }) {
                 </td>
                 <td>{fmtDate(f.createdAt)}</td>
                 <td>{fmtDate(f.approvedAt)}</td>
+                <td>
+                  <ModerationActions
+                    person={f}
+                    onBan={onBan}
+                    onUnban={onUnban}
+                    onDelete={onDelete}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -435,7 +663,7 @@ function FacultyTable({ rows, onView }) {
 
 // ── Student roster ────────────────────────────────────────────────
 
-function StudentsTable({ data, loading, onMore, onView }) {
+function StudentsTable({ data, loading, onMore, onView, onBan, onUnban, onDelete }) {
   if (!data && loading)
     return (
       <div className="an-state">
@@ -462,6 +690,7 @@ function StudentsTable({ data, loading, onMore, onView }) {
               <th>Year</th>
               <th>Email</th>
               <th>Registered</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -484,6 +713,14 @@ function StudentsTable({ data, loading, onMore, onView }) {
                 <td>{s.year || "-"}</td>
                 <td className="an-email">{s.email}</td>
                 <td>{fmtDate(s.createdAt)}</td>
+                <td>
+                  <ModerationActions
+                    person={s}
+                    onBan={onBan}
+                    onUnban={onUnban}
+                    onDelete={onDelete}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>

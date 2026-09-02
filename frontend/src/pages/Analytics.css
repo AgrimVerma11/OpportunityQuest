@@ -382,6 +382,36 @@
   padding: 16px;
 }
 
+/* ── Row-level ban/unban/delete controls ── */
+.an-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.an-row-delete {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.an-row-delete:hover {
+  background: var(--status-expired-bg);
+  color: var(--status-expired-text);
+}
+.an-row-delete svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 1024px) {
   .an-grid-3,
