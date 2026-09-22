@@ -16,5 +16,6 @@ Allow: /register$
 Allow: /sitemap.xml$
 Allow: /robots.txt$
 Allow: /og-image.png$
+Allow: /BingSiteAuth.xml$
 
 Sitemap: https://opportunityquest.agrimverma.dev/sitemap.xml
