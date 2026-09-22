@@ -25,6 +25,10 @@
 .oq-tag--status-expired  { background: var(--status-expired-bg);  color: var(--status-expired-text); }
 .oq-tag--status-closed   { background: var(--status-closed-bg);   color: var(--status-closed-text); }
 .oq-tag--status-pending  { background: var(--status-pending-bg);  color: var(--status-pending-text); }
+/* Reuses the Internship category tag's slate blue — a "reviewed, no decision
+   yet" signal that reads as calm/informational, distinct from every other
+   status tint, without adding a new color to the palette. */
+.oq-tag--status-viewed   { background: var(--tag-internship-bg);  color: var(--tag-internship-text); }
 
 /* Leading status dot — inherits the pill's text colour. */
 .oq-tag--dot::before {

@@ -22,6 +22,13 @@ import {
 
 import "./Applicants.css";
 
+// "Viewed" is a real, meaningful filter: it's how a faculty member sees which
+// applicants they've already opened and reviewed, separate from ones still
+// sitting untouched in "Applied" (see openDetail below, which transitions
+// Applied → Viewed the moment an applicant's detail is opened). It has its
+// own tag color (see Tag.jsx's STATUS_TONES) so it reads as a distinct,
+// meaningful state at a glance, not a peer of the decision stages that
+// happen to share a filter row with it.
 const FILTERS = [
   "All",
   "Applied",

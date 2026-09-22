@@ -8,10 +8,15 @@ const CATEGORY_SLUGS = {
   "Faculty Project": "faculty",
 };
 
-// Every status string the app uses, grouped onto the five status tints.
-// Opportunity/faculty lifecycle statuses map directly; the richer application
-// statuses fold onto the nearest tone (positive → active, in-progress →
-// pending, negative → expired, neutral → closed/archived).
+// Every status string the app uses, grouped onto a status tint. Opportunity/
+// faculty lifecycle statuses map directly; the richer application statuses
+// fold onto the nearest tone (positive → active, in-progress → pending,
+// negative → expired, neutral → closed/archived). Viewed is deliberately its
+// own "viewed" tone rather than folded into "closed" (Withdrawn's tone) — it's
+// a meaningfully different state (a faculty member has looked at this
+// applicant, no decision made yet) and reuses the existing Internship tag's
+// slate-blue, not a new color, so it stays visually distinct from every other
+// status without adding a new hue to the palette.
 const STATUS_TONES = {
   Active: "active",
   Selected: "active",
@@ -23,7 +28,7 @@ const STATUS_TONES = {
   Rejected: "expired",
   Closed: "closed",
   Withdrawn: "closed",
-  Viewed: "closed",
+  Viewed: "viewed",
   Archived: "archived",
   Suspended: "archived",
 };
