@@ -3,9 +3,18 @@
 # renders a "please sign in" shell for an unauthenticated crawler, which is
 # thin/duplicate content not worth indexing, so it's excluded rather than left
 # to waste crawl budget. $ anchors an exact match (Google/Bing extension).
+#
+# The sitemap and share-preview image are explicitly allowed despite the
+# broad Disallow below — Google's sitemap fetcher respects robots.txt for the
+# sitemap file itself, and a blanket "Disallow: /" with no exception for it
+# silently blocks Search Console from ever reading it ("Sitemap could not be
+# read"). This file did exactly that for three weeks before this fix.
 User-agent: *
 Disallow: /
 Allow: /$
 Allow: /register$
+Allow: /sitemap.xml$
+Allow: /robots.txt$
+Allow: /og-image.png$
 
 Sitemap: https://opportunityquest.agrimverma.dev/sitemap.xml
