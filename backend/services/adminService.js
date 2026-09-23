@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 import * as userRepo from "../repositories/userRepository.js";
+import * as opportunityRepo from "../repositories/opportunityRepository.js";
 import * as auditRepo from "../repositories/auditRepository.js";
 import * as emailService from "./emailService.js";
 import { cascadeDeleteUser } from "./userService.js";
@@ -20,15 +21,52 @@ const MODERATABLE_ROLES = [ROLES.STUDENT, ROLES.FACULTY];
 export const listPendingFaculty = (organizationId) =>
   userRepo.findPendingFacultyByOrg(organizationId);
 
-// The coordinator's people directory.
-export const listFaculty = (organizationId) =>
-  userRepo.findFacultyByOrg(organizationId);
-
-export const listStudents = (organizationId, query = {}) => {
-  const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const limit = Math.min(50, Math.max(1, parseInt(query.limit, 10) || 20));
-  return userRepo.findStudentsByOrg(organizationId, { page, limit });
+// The coordinator's people directory. Each row is annotated with how many
+// opportunities that faculty member currently has posted — merged on here,
+// from a separate count query, rather than reshaping findFacultyByOrg's
+// existing populate-based query into an aggregation.
+export const listFaculty = async (organizationId) => {
+  const [faculty, postingCounts] = await Promise.all([
+    userRepo.findFacultyByOrg(organizationId),
+    opportunityRepo.opportunityCountsByFaculty(organizationId),
+  ]);
+  const countsById = Object.fromEntries(
+    postingCounts.map((row) => [String(row._id), row.count])
+  );
+  return faculty.map((f) => ({
+    ...f.toObject(),
+    opportunitiesPosted: countsById[String(f._id)] || 0,
+  }));
 };
+
+// One faculty member's detail card — profile fields plus their all-time
+// posting/application totals, for the coordinator's faculty-engagement
+// leaderboard and roster ("click a name to see their record"). All-time by
+// design, not scoped to whatever leaderboard range was selected when the
+// coordinator clicked through — see facultyPostingStats.
+export const getFacultyDetail = async (organizationId, facultyId) => {
+  const faculty = await userRepo.findByIdInOrg(facultyId, organizationId);
+  if (!faculty || faculty.role !== ROLES.FACULTY) {
+    throw new AppError("Faculty member not found", 404);
+  }
+  const [stats] = await opportunityRepo.facultyPostingStats(facultyId);
+  return {
+    _id: faculty._id,
+    name: faculty.name,
+    department: faculty.department,
+    accountStatus: faculty.accountStatus,
+    employeeId: faculty.employeeId,
+    office: faculty.office,
+    profileImage: faculty.profileImage,
+    opportunitiesPosted: stats?.postings || 0,
+    applicationsReceived: stats?.applications || 0,
+  };
+};
+
+// page/limit/gender/year all already validated and defaulted by
+// studentsListQueryValidation before this runs.
+export const listStudents = (organizationId, { page, limit, gender, year, branch }) =>
+  userRepo.findStudentsByOrg(organizationId, { page, limit, gender, year, branch });
 
 // Asserts a loaded account is a faculty member of this org still awaiting
 // approval. Anything outside the org reads as not-found.

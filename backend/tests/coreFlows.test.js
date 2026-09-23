@@ -1,5 +1,6 @@
 import request from "supertest";
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import mongoose from "mongoose";
 
 import { createApp } from "../app.js";
 import Organization from "../models/Organization.js";
@@ -1752,9 +1753,13 @@ describe("coordinator analytics", () => {
     expect(a.kpis.activeOpportunities).toBe(2);
     expect(a.kpis.totalApplications).toBe(2);
 
-    expect(a.applicationFunnel.Applied).toBe(1);
+    // The funnel is cumulative ("reached at least this stage"): both
+    // applications reached Applied, so it reads 2, not the 1 that's
+    // currently *sitting* in Applied — that's awaitingFirstReview below.
+    expect(a.applicationFunnel.Applied).toBe(2);
     expect(a.applicationFunnel.Shortlisted).toBe(1);
     expect(a.applicationFunnel.Selected).toBe(0);
+    expect(a.awaitingFirstReview).toBe(1);
 
     expect(a.opportunitiesByCategory.Research).toBe(1);
     expect(a.opportunitiesByCategory.Internship).toBe(1);
@@ -1764,6 +1769,7 @@ describe("coordinator analytics", () => {
     expect(a.facultyByStatus.Pending).toBe(1);
 
     expect(a.topOpportunities[0].applications).toBe(2);
+    expect(a.topOpportunities[0].category).toBe("Research");
     expect(a.applicationsTrend).toHaveLength(30);
     expect(a.applicationsTrend.at(-1).count).toBe(2);
   });
@@ -1819,6 +1825,100 @@ describe("coordinator analytics", () => {
     expect(res.body.faculty[0]).toHaveProperty("createdAt");
   });
 
+  it("annotates each faculty member with how many opportunities they currently have posted", async () => {
+    const faculty = await asFaculty();
+    await registerUser({
+      email: "pending@thapar.edu",
+      role: "Faculty",
+      department: "DCSE",
+      employeeId: "EMP-8888",
+    });
+    const coordinator = await createCoordinator();
+
+    await createOpportunity(faculty.token, { title: "Posting One" });
+    await createOpportunity(faculty.token, { title: "Posting Two" });
+
+    const res = await request(app)
+      .get("/api/admin/faculty")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    const active = res.body.faculty.find((f) => f.accountStatus === "Active");
+    const pending = res.body.faculty.find((f) => f.accountStatus === "Pending");
+    expect(active.opportunitiesPosted).toBe(2);
+    expect(pending.opportunitiesPosted).toBe(0);
+  });
+
+  it("returns a faculty member's detail card with all-time postings and applications, not scoped to any date range", async () => {
+    const faculty = await asFaculty();
+    const coordinator = await createCoordinator();
+
+    const opp = await createOpportunity(faculty.token, { title: "Old Posting" });
+    // Backdated well outside any leaderboard range — the detail card must
+    // still count it, unlike the range-scoped leaderboard. Mongoose's
+    // timestamps option silently ignores a user-supplied createdAt on
+    // Model#updateOne, so this goes through the raw driver instead (same
+    // reason setCreatedAt exists in the Phase 1 additions block below).
+    await mongoose.connection
+      .collection("opportunities")
+      .updateOne({ _id: opp._id }, { $set: { createdAt: new Date("2020-01-01") } });
+    const student = await asStudent();
+    await applyTo(student.token, opp._id);
+
+    const res = await request(app)
+      .get(`/api/admin/faculty/${faculty.user.id}`)
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.faculty).toMatchObject({
+      name: "Test Person",
+      department: "DCSE",
+      accountStatus: "Active",
+      employeeId: "EMP-1001",
+      opportunitiesPosted: 1,
+      applicationsReceived: 1,
+    });
+    expect(res.body.faculty).toHaveProperty("office");
+  });
+
+  it("404s the faculty detail route for a student id or a non-existent id", async () => {
+    const coordinator = await createCoordinator();
+    const student = await asStudent();
+
+    const asStudentId = await request(app)
+      .get(`/api/admin/faculty/${student.user.id}`)
+      .set(bearer(coordinator.token));
+    expect(asStudentId.status).toBe(404);
+
+    const fakeId = new mongoose.Types.ObjectId().toString();
+    const missing = await request(app)
+      .get(`/api/admin/faculty/${fakeId}`)
+      .set(bearer(coordinator.token));
+    expect(missing.status).toBe(404);
+  });
+
+  it("scopes the faculty detail route to the coordinator's own organization", async () => {
+    const faculty = await asFaculty();
+
+    await Organization.create({
+      name: "Other University",
+      emailDomains: ["other.edu"],
+    });
+    const otherCoord = await createCoordinator("coord@other.edu", "other.edu");
+
+    const res = await request(app)
+      .get(`/api/admin/faculty/${faculty.user.id}`)
+      .set(bearer(otherCoord.token));
+    expect(res.status).toBe(404);
+  });
+
+  it("forbids a non-coordinator from the faculty detail route", async () => {
+    const faculty = await asFaculty();
+    const student = await asStudent();
+    const res = await request(app)
+      .get(`/api/admin/faculty/${faculty.user.id}`)
+      .set(bearer(student.token));
+    expect(res.status).toBe(403);
+  });
+
   it("lists the organization's students, paginated", async () => {
     await asFaculty();
     const coordinator = await createCoordinator();
@@ -1842,6 +1942,151 @@ describe("coordinator analytics", () => {
     expect(res.body.students[0]).toHaveProperty("accountStatus", "Active");
   });
 
+  it("filters the student roster by gender and by year", async () => {
+    const coordinator = await createCoordinator();
+    await registerAndLogin({
+      email: "male-y2@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+      gender: "Male",
+    });
+    await registerAndLogin({
+      email: "female-y3@thapar.edu",
+      role: "Student",
+      branch: "CSE",
+      year: 3,
+      gender: "Female",
+    });
+
+    const byGender = await request(app)
+      .get("/api/admin/students?gender=Female")
+      .set(bearer(coordinator.token));
+    expect(byGender.status).toBe(200);
+    expect(byGender.body.total).toBe(1);
+    expect(byGender.body.students[0].email).toBe("female-y3@thapar.edu");
+
+    const byYear = await request(app)
+      .get("/api/admin/students?year=2")
+      .set(bearer(coordinator.token));
+    expect(byYear.status).toBe(200);
+    expect(byYear.body.total).toBe(1);
+    expect(byYear.body.students[0].email).toBe("male-y2@thapar.edu");
+
+    const byBranch = await request(app)
+      .get("/api/admin/students?branch=CSE")
+      .set(bearer(coordinator.token));
+    expect(byBranch.status).toBe(200);
+    expect(byBranch.body.total).toBe(1);
+    expect(byBranch.body.students[0].email).toBe("female-y3@thapar.edu");
+
+    // Composes with year — branch alone isn't the whole story.
+    const byBranchAndYear = await request(app)
+      .get("/api/admin/students?branch=COE&year=2")
+      .set(bearer(coordinator.token));
+    expect(byBranchAndYear.status).toBe(200);
+    expect(byBranchAndYear.body.total).toBe(1);
+    expect(byBranchAndYear.body.students[0].email).toBe("male-y2@thapar.edu");
+  });
+
+  it("reports the distinct branches actually in use, sorted, excluding blanks", async () => {
+    const coordinator = await createCoordinator();
+    await registerAndLogin({
+      email: "s1@thapar.edu", role: "Student", branch: "Mechanical", year: 1,
+    });
+    await registerAndLogin({
+      email: "s2@thapar.edu", role: "Student", branch: "COE", year: 1,
+    });
+    // No branch given — registerUser's payload omits it entirely, so this
+    // student must not produce a blank entry in the branch list.
+    await registerAndLogin({ email: "s3@thapar.edu", role: "Student", year: 1 });
+
+    const res = await request(app)
+      .get("/api/admin/students/branches")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.branches).toEqual(["COE", "Mechanical"]);
+  });
+
+  it("year-counts composes with a branch filter", async () => {
+    const coordinator = await createCoordinator();
+    await registerAndLogin({
+      email: "coe-y1@thapar.edu", role: "Student", branch: "COE", year: 1,
+    });
+    await registerAndLogin({
+      email: "cse-y1@thapar.edu", role: "Student", branch: "CSE", year: 1,
+    });
+
+    const res = await request(app)
+      .get("/api/admin/students/year-counts?branch=COE")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.counts).toEqual({ 1: 1, 2: 0, 3: 0, 4: 0 });
+  });
+
+  it("reports student counts by year, optionally scoped to one gender", async () => {
+    const coordinator = await createCoordinator();
+    await registerAndLogin({
+      email: "a@thapar.edu", role: "Student", branch: "COE", year: 1, gender: "Male",
+    });
+    await registerAndLogin({
+      email: "b@thapar.edu", role: "Student", branch: "COE", year: 1, gender: "Female",
+    });
+    await registerAndLogin({
+      email: "c@thapar.edu", role: "Student", branch: "COE", year: 4, gender: "Male",
+    });
+
+    const all = await request(app)
+      .get("/api/admin/students/year-counts")
+      .set(bearer(coordinator.token));
+    expect(all.status).toBe(200);
+    expect(all.body.counts).toEqual({ 1: 2, 2: 0, 3: 0, 4: 1 });
+
+    const femaleOnly = await request(app)
+      .get("/api/admin/students/year-counts?gender=Female")
+      .set(bearer(coordinator.token));
+    expect(femaleOnly.body.counts).toEqual({ 1: 1, 2: 0, 3: 0, 4: 0 });
+  });
+
+  it("rejects unrecognised gender/year values on the student roster and year-counts routes", async () => {
+    const coordinator = await createCoordinator();
+    const routes = [
+      "/api/admin/students?gender=NotAGender",
+      "/api/admin/students?year=5",
+      "/api/admin/students?year=0",
+      "/api/admin/students/year-counts?gender=NotAGender",
+    ];
+    for (const url of routes) {
+      const res = await request(app).get(url).set(bearer(coordinator.token));
+      expect(res.status).toBe(400);
+    }
+  });
+
+  it("forbids a non-coordinator from the student year-counts route", async () => {
+    const student = await asStudent();
+    const res = await request(app)
+      .get("/api/admin/students/year-counts")
+      .set(bearer(student.token));
+    expect(res.status).toBe(403);
+  });
+
+  it("scopes student year-counts to the coordinator's own organization", async () => {
+    await registerAndLogin({
+      email: "own-org@thapar.edu", role: "Student", branch: "COE", year: 2, gender: "Male",
+    });
+    await Organization.create({
+      name: "Other University",
+      emailDomains: ["other.edu"],
+    });
+    const otherCoord = await createCoordinator("coord@other.edu", "other.edu");
+
+    const res = await request(app)
+      .get("/api/admin/students/year-counts")
+      .set(bearer(otherCoord.token));
+    expect(res.status).toBe(200);
+    expect(res.body.counts).toEqual({ 1: 0, 2: 0, 3: 0, 4: 0 });
+  });
+
   it("forbids a non-coordinator from the roster endpoints", async () => {
     const student = await asStudent();
     expect(
@@ -1852,5 +2097,710 @@ describe("coordinator analytics", () => {
       (await request(app).get("/api/admin/students").set(bearer(student.token)))
         .status
     ).toBe(403);
+  });
+});
+
+// ── Coordinator analytics: Phase 1 additions ─────────────────────────
+// Funnel-by-category, category demand, faculty activity (Month / Year-to-Date
+// / topN), student engagement (by year / by category / gender), and the new
+// opportunities listing — plus the security properties every one of them must
+// hold: strict allow-list validation (rejecting both nonsense values and
+// bracket-injection attempts), coordinator-only access, and organization
+// scoping.
+describe("coordinator analytics — Phase 1 additions", () => {
+  const bearer = (token) => ({ Authorization: `Bearer ${token}` });
+
+  const MONTH_ABBR = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  const monthToken = (date) => `${MONTH_ABBR[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+  const monthsAgo = (n) => {
+    const d = new Date();
+    d.setUTCMonth(d.getUTCMonth() - n);
+    return d;
+  };
+
+  // Mongoose's `timestamps: true` schema option silently strips a
+  // user-supplied createdAt from Model#updateOne (it still reports
+  // modifiedCount: 1, from touching updatedAt, but createdAt itself never
+  // changes) — so backdating a fixture for these range tests has to go
+  // through the raw driver, bypassing Mongoose's Model/hook layer entirely.
+  const setCreatedAt = (id, date) =>
+    mongoose.connection
+      .collection("opportunities")
+      .updateOne(
+        { _id: new mongoose.Types.ObjectId(id) },
+        { $set: { createdAt: date } }
+      );
+
+  const asFaculty2 = async () => {
+    await registerUser({
+      email: "prof2@thapar.edu",
+      role: "Faculty",
+      department: "DME",
+      employeeId: "EMP-1002",
+    });
+    await User.updateOne(
+      { email: "prof2@thapar.edu" },
+      { accountStatus: "Active" }
+    );
+    return loginUser("prof2@thapar.edu");
+  };
+
+  const asFaculty3 = async () => {
+    await registerUser({
+      email: "prof3@thapar.edu",
+      role: "Faculty",
+      department: "DEE",
+      employeeId: "EMP-1003",
+    });
+    await User.updateOne(
+      { email: "prof3@thapar.edu" },
+      { accountStatus: "Active" }
+    );
+    return loginUser("prof3@thapar.edu");
+  };
+
+  it("scopes the application funnel to a single category", async () => {
+    const faculty = await asFaculty();
+    const coordinator = await createCoordinator();
+    const research = await createOpportunity(faculty.token); // default: Research
+    const internship = await createOpportunity(faculty.token, {
+      title: "Backend Internship Programme",
+      category: "Internship",
+    });
+
+    const student = await asStudent();
+    const apply = await applyTo(student.token, research._id);
+    await request(app)
+      .patch(`/api/applications/${apply.body.application._id}/status`)
+      .set(bearer(faculty.token))
+      .send({ status: "Shortlisted" })
+      .expect(200);
+
+    const student2 = await registerAndLogin({
+      email: "s2@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 3,
+    });
+    await applyTo(student2.token, internship._id);
+
+    const researchRes = await request(app)
+      .get("/api/admin/analytics/funnel?category=Research")
+      .set(bearer(coordinator.token));
+    expect(researchRes.status).toBe(200);
+    expect(researchRes.body.funnel.Shortlisted).toBe(1);
+    // Cumulative: the one Research application reached Shortlisted, so it
+    // also reached Applied (and Viewed) on the way there, even though it
+    // skipped an explicit Viewed status (Applied → Shortlisted is a legal
+    // direct transition) — it must never read 0 here.
+    expect(researchRes.body.funnel.Applied).toBe(1);
+
+    const internshipRes = await request(app)
+      .get("/api/admin/analytics/funnel?category=Internship")
+      .set(bearer(coordinator.token));
+    expect(internshipRes.body.funnel.Applied).toBe(1);
+    expect(internshipRes.body.funnel.Shortlisted).toBe(0);
+
+    // Unscoped call combines both categories' applications.
+    const allRes = await request(app)
+      .get("/api/admin/analytics/funnel")
+      .set(bearer(coordinator.token));
+    expect(allRes.body.funnel.Applied).toBe(2);
+    expect(allRes.body.funnel.Shortlisted).toBe(1);
+  });
+
+  it("never shows an earlier funnel stage as 0 while a later stage is non-zero, even when Viewed was skipped entirely", async () => {
+    const faculty = await asFaculty();
+    const coordinator = await createCoordinator();
+    const opp = await createOpportunity(faculty.token);
+
+    // Two applications, both taken straight from Applied to Selected without
+    // ever passing through an explicit Viewed status (Applied → Shortlisted
+    // → Selected are both legal direct transitions) — the exact shape that
+    // previously produced Applied: 0, Viewed: 0, Shortlisted: 0, Selected: 2.
+    for (const email of ["sel1@thapar.edu", "sel2@thapar.edu"]) {
+      const student = await registerAndLogin({
+        email,
+        role: "Student",
+        branch: "COE",
+        year: 2,
+      });
+      const apply = await applyTo(student.token, opp._id);
+      const id = apply.body.application._id;
+      await request(app)
+        .patch(`/api/applications/${id}/status`)
+        .set(bearer(faculty.token))
+        .send({ status: "Shortlisted" })
+        .expect(200);
+      await request(app)
+        .patch(`/api/applications/${id}/status`)
+        .set(bearer(faculty.token))
+        .send({ status: "Selected" })
+        .expect(200);
+    }
+
+    const res = await request(app)
+      .get("/api/admin/analytics/funnel")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    const { funnel } = res.body;
+    expect(funnel).toEqual({
+      Applied: 2,
+      Viewed: 2,
+      Shortlisted: 2,
+      Selected: 2,
+      Rejected: 0,
+      Withdrawn: 0,
+    });
+    // Monotonically non-increasing down the main funnel path, by construction.
+    expect(funnel.Applied).toBeGreaterThanOrEqual(funnel.Viewed);
+    expect(funnel.Viewed).toBeGreaterThanOrEqual(funnel.Shortlisted);
+    expect(funnel.Shortlisted).toBeGreaterThanOrEqual(funnel.Selected);
+  });
+
+  it("reports category demand as postings vs. applications", async () => {
+    const faculty = await asFaculty();
+    const coordinator = await createCoordinator();
+    const research = await createOpportunity(faculty.token);
+    await createOpportunity(faculty.token, {
+      title: "Backend Internship Programme",
+      category: "Internship",
+    });
+    const student = await asStudent();
+    await applyTo(student.token, research._id);
+
+    const res = await request(app)
+      .get("/api/admin/analytics/category-demand")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    const byCategory = Object.fromEntries(
+      res.body.demand.map((d) => [d.category, d])
+    );
+    expect(byCategory.Research).toEqual({
+      category: "Research",
+      postings: 1,
+      applications: 1,
+    });
+    expect(byCategory.Internship).toEqual({
+      category: "Internship",
+      postings: 1,
+      applications: 0,
+    });
+    expect(byCategory["Paid Gig"]).toEqual({
+      category: "Paid Gig",
+      postings: 0,
+      applications: 0,
+    });
+  });
+
+  it("reports faculty activity for the requested month only", async () => {
+    const facultyA = await asFaculty();
+    const facultyB = await asFaculty2();
+    const coordinator = await createCoordinator();
+
+    const oppA = await createOpportunity(facultyA.token, {
+      title: "This Month's Posting",
+    });
+    await setCreatedAt(oppA._id, new Date());
+
+    const oppB = await createOpportunity(facultyB.token, {
+      title: "Two Months Ago Posting",
+    });
+    await setCreatedAt(oppB._id, monthsAgo(2));
+
+    const student = await asStudent();
+    await applyTo(student.token, oppA._id);
+
+    const thisMonth = monthToken(new Date());
+    const res = await request(app)
+      .get(
+        `/api/admin/analytics/faculty-activity?mode=month&month=${encodeURIComponent(
+          thisMonth
+        )}`
+      )
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.faculty).toHaveLength(1);
+    expect(res.body.faculty[0].postings).toBe(1);
+    expect(res.body.faculty[0].apps).toBe(1);
+  });
+
+  it("excludes postings from before the current year under Year to Date", async () => {
+    const facultyA = await asFaculty();
+    const coordinator = await createCoordinator();
+
+    const recent = await createOpportunity(facultyA.token, {
+      title: "Recent Posting",
+    });
+    await setCreatedAt(recent._id, new Date());
+
+    const stale = await createOpportunity(facultyA.token, {
+      title: "Last Year's Posting",
+    });
+    await setCreatedAt(stale._id, monthsAgo(13));
+
+    const res = await request(app)
+      .get("/api/admin/analytics/faculty-activity?mode=ytd")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.faculty).toHaveLength(1);
+    expect(res.body.faculty[0].postings).toBe(1);
+  });
+
+  it("caps the faculty-activity leaderboard at the requested topN", async () => {
+    const facultyA = await asFaculty();
+    const facultyB = await asFaculty2();
+    const facultyC = await asFaculty3();
+    const coordinator = await createCoordinator();
+
+    for (const f of [facultyA, facultyB, facultyC]) {
+      const opp = await createOpportunity(f.token, {
+        title: `Posting by ${f.user.email}`,
+      });
+      await setCreatedAt(opp._id, new Date());
+    }
+
+    const res = await request(app)
+      .get("/api/admin/analytics/faculty-activity?mode=ytd&topN=2")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.faculty).toHaveLength(2);
+    // `participation` reflects everyone who posted, not just the capped
+    // leaderboard — otherwise "3 of 12 posted" would be unrecoverable once
+    // topN trims the list to 2.
+    expect(res.body.participation).toBe(3);
+  });
+
+  it("ranks the leaderboard by postings or by applications, per sortBy", async () => {
+    const facultyA = await asFaculty(); // department: DCSE
+    const facultyB = await asFaculty2(); // department: DME
+    const coordinator = await createCoordinator();
+
+    // Faculty A: one posting, three applications.
+    const oppA = await createOpportunity(facultyA.token, { title: "High-demand posting" });
+    await setCreatedAt(oppA._id, new Date());
+    const s1 = await asStudent();
+    const s2 = await registerAndLogin({
+      email: "s2@thapar.edu", role: "Student", branch: "COE", year: 2,
+    });
+    const s3 = await registerAndLogin({
+      email: "s3@thapar.edu", role: "Student", branch: "COE", year: 2,
+    });
+    await applyTo(s1.token, oppA._id);
+    await applyTo(s2.token, oppA._id);
+    await applyTo(s3.token, oppA._id);
+
+    // Faculty B: two postings, no applications.
+    const oppB1 = await createOpportunity(facultyB.token, { title: "Posting B1" });
+    await setCreatedAt(oppB1._id, new Date());
+    const oppB2 = await createOpportunity(facultyB.token, { title: "Posting B2" });
+    await setCreatedAt(oppB2._id, new Date());
+
+    const byApps = await request(app)
+      .get("/api/admin/analytics/faculty-activity?mode=ytd")
+      .set(bearer(coordinator.token));
+    expect(byApps.body.faculty[0].department).toBe("DCSE");
+
+    const byPostings = await request(app)
+      .get("/api/admin/analytics/faculty-activity?mode=ytd&sortBy=postings")
+      .set(bearer(coordinator.token));
+    expect(byPostings.body.faculty[0].department).toBe("DME");
+  });
+
+  it("rejects an unrecognised sortBy value", async () => {
+    const coordinator = await createCoordinator();
+    const res = await request(app)
+      .get("/api/admin/analytics/faculty-activity?sortBy=nonsense")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(400);
+  });
+
+  it("scopes student engagement to a gender", async () => {
+    const faculty = await asFaculty();
+    const coordinator = await createCoordinator();
+    const opp = await createOpportunity(faculty.token);
+
+    const male = await asStudent(); // default gender: Male, year 2
+    const female = await registerAndLogin({
+      email: "f-student@thapar.edu",
+      role: "Student",
+      branch: "COE",
+      year: 2,
+      gender: "Female",
+    });
+    await applyTo(male.token, opp._id);
+    await applyTo(female.token, opp._id);
+
+    const all = await request(app)
+      .get("/api/admin/analytics/student-engagement")
+      .set(bearer(coordinator.token));
+    expect(all.status).toBe(200);
+    expect(all.body.engagement.byYear[2]).toBe(2);
+    expect(all.body.engagement.byCategory.Research).toBe(2);
+
+    const femaleOnly = await request(app)
+      .get("/api/admin/analytics/student-engagement?gender=Female")
+      .set(bearer(coordinator.token));
+    expect(femaleOnly.body.engagement.byYear[2]).toBe(1);
+    expect(femaleOnly.body.engagement.byCategory.Research).toBe(1);
+  });
+
+  it("lists opportunities with the poster's name, filterable and sortable", async () => {
+    const faculty = await asFaculty();
+    const coordinator = await createCoordinator();
+
+    await createOpportunity(faculty.token, {
+      title: "Closing Soon",
+      deadline: futureISO(2),
+    });
+    await createOpportunity(faculty.token, {
+      title: "Closing Later",
+      category: "Internship",
+      deadline: futureISO(20),
+    });
+
+    const listAll = await request(app)
+      .get("/api/admin/opportunities")
+      .set(bearer(coordinator.token));
+    expect(listAll.status).toBe(200);
+    expect(listAll.body.count).toBe(2);
+    expect(listAll.body.opportunities[0]).toHaveProperty(
+      "postedBy",
+      "Test Person"
+    );
+
+    const byCategory = await request(app)
+      .get("/api/admin/opportunities?category=Internship")
+      .set(bearer(coordinator.token));
+    expect(byCategory.body.count).toBe(1);
+    expect(byCategory.body.opportunities[0].title).toBe("Closing Later");
+
+    const byDeadline = await request(app)
+      .get("/api/admin/opportunities?sort=deadline")
+      .set(bearer(coordinator.token));
+    expect(byDeadline.body.opportunities.map((o) => o.title)).toEqual([
+      "Closing Soon",
+      "Closing Later",
+    ]);
+  });
+
+  it("rejects unrecognised filter values on the new analytics routes", async () => {
+    const coordinator = await createCoordinator();
+    const routes = [
+      "/api/admin/analytics/funnel?category=NotACategory",
+      "/api/admin/opportunities?status=NotAStatus",
+      "/api/admin/opportunities?sort=NotASort",
+      "/api/admin/analytics/student-engagement?gender=NotAGender",
+      "/api/admin/analytics/faculty-activity?mode=NotAMode",
+      "/api/admin/analytics/faculty-activity?mode=month&month=NotAMonth",
+      // topN outside the allowed range.
+      "/api/admin/analytics/faculty-activity?mode=ytd&topN=1000",
+    ];
+    for (const url of routes) {
+      const res = await request(app).get(url).set(bearer(coordinator.token));
+      expect(res.status).toBe(400);
+    }
+  });
+
+  it("rejects a query value that doesn't match the expected shape", async () => {
+    const coordinator = await createCoordinator();
+    // Express 5's default query parser is "simple" (Node's querystring), not
+    // the older "extended" (qs) parser — a bracketed key like
+    // "category[$ne]=null" is not nested into an object here, it's just a
+    // literal (harmless) key named "category[$ne]". The shape this parser
+    // *does* produce unexpectedly is an array, from a repeated key — and the
+    // allow-list (Joi .string().valid(...)) must reject that too, not just a
+    // wrong value.
+    const res = await request(app)
+      .get("/api/admin/analytics/funnel?category=Research&category=Internship")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(400);
+  });
+
+  it("forbids a non-coordinator from every new analytics/opportunities route", async () => {
+    const student = await asStudent();
+    const routes = [
+      "/api/admin/analytics/funnel",
+      "/api/admin/analytics/category-demand",
+      "/api/admin/analytics/faculty-activity",
+      "/api/admin/analytics/student-engagement",
+      "/api/admin/opportunities",
+    ];
+    for (const url of routes) {
+      const res = await request(app).get(url).set(bearer(student.token));
+      expect(res.status).toBe(403);
+    }
+  });
+
+  it("scopes the new analytics/opportunities routes to the coordinator's own organization", async () => {
+    const faculty = await asFaculty();
+    const opportunity = await createOpportunity(faculty.token);
+    const student = await asStudent();
+    await applyTo(student.token, opportunity._id);
+
+    await Organization.create({
+      name: "Other University",
+      emailDomains: ["other.edu"],
+    });
+    const otherCoord = await createCoordinator("coord@other.edu", "other.edu");
+
+    const funnel = await request(app)
+      .get("/api/admin/analytics/funnel")
+      .set(bearer(otherCoord.token));
+    expect(funnel.body.funnel.Applied).toBe(0);
+
+    const demand = await request(app)
+      .get("/api/admin/analytics/category-demand")
+      .set(bearer(otherCoord.token));
+    expect(demand.body.demand.every((d) => d.postings === 0 && d.applications === 0)).toBe(true);
+
+    const opportunities = await request(app)
+      .get("/api/admin/opportunities")
+      .set(bearer(otherCoord.token));
+    expect(opportunities.body.count).toBe(0);
+
+    const facultyActivity = await request(app)
+      .get("/api/admin/analytics/faculty-activity?mode=ytd")
+      .set(bearer(otherCoord.token));
+    expect(facultyActivity.body.faculty).toHaveLength(0);
+
+    const engagement = await request(app)
+      .get("/api/admin/analytics/student-engagement")
+      .set(bearer(otherCoord.token));
+    expect(Object.values(engagement.body.engagement.byYear).every((c) => c === 0)).toBe(true);
+  });
+});
+
+describe("coordinator analytics — Phase 6 (applications queue + activity trend)", () => {
+  const bearer = (token) => ({ Authorization: `Bearer ${token}` });
+
+  describe("applications queue", () => {
+    it("lists the organization's applications with student/opportunity summaries, newest first", async () => {
+      const faculty = await asFaculty();
+      const coordinator = await createCoordinator();
+      const opp = await createOpportunity(faculty.token, { title: "Research Assistant Position" });
+      const student = await asStudent();
+      await applyTo(student.token, opp._id);
+
+      const res = await request(app)
+        .get("/api/admin/applications")
+        .set(bearer(coordinator.token));
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(1);
+      expect(res.body.hasMore).toBe(false);
+      const [row] = res.body.applications;
+      expect(row.status).toBe("Applied");
+      expect(row.student.name).toBe("Test Person");
+      expect(row.opportunity.title).toBe("Research Assistant Position");
+      expect(row.opportunity.category).toBe("Research");
+    });
+
+    it("never exposes coverLetter or resume in the applications queue", async () => {
+      const faculty = await asFaculty();
+      const coordinator = await createCoordinator();
+      const opp = await createOpportunity(faculty.token);
+      const student = await asStudent();
+      await applyTo(student.token, opp._id, "Something that must never leak into an org-wide list.");
+
+      const res = await request(app)
+        .get("/api/admin/applications")
+        .set(bearer(coordinator.token));
+      expect(res.status).toBe(200);
+      expect(res.body.applications[0]).not.toHaveProperty("coverLetter");
+      expect(res.body.applications[0]).not.toHaveProperty("resume");
+      expect(res.body.applications[0]).not.toHaveProperty("statusHistory");
+    });
+
+    it("filters the applications queue by status", async () => {
+      const faculty = await asFaculty();
+      const coordinator = await createCoordinator();
+      const opp = await createOpportunity(faculty.token);
+      const student = await asStudent();
+      const student2 = await registerAndLogin({
+        email: "s2@thapar.edu",
+        role: "Student",
+        branch: "COE",
+        year: 2,
+      });
+
+      const apply = await applyTo(student.token, opp._id);
+      await request(app)
+        .patch(`/api/applications/${apply.body.application._id}/status`)
+        .set(bearer(faculty.token))
+        .send({ status: "Shortlisted" })
+        .expect(200);
+      await applyTo(student2.token, opp._id);
+
+      const shortlisted = await request(app)
+        .get("/api/admin/applications?status=Shortlisted")
+        .set(bearer(coordinator.token));
+      expect(shortlisted.body.total).toBe(1);
+      expect(shortlisted.body.applications[0].status).toBe("Shortlisted");
+
+      const applied = await request(app)
+        .get("/api/admin/applications?status=Applied")
+        .set(bearer(coordinator.token));
+      expect(applied.body.total).toBe(1);
+      expect(applied.body.applications[0].status).toBe("Applied");
+    });
+
+    it("paginates the applications queue", async () => {
+      const faculty = await asFaculty();
+      const coordinator = await createCoordinator();
+      const opp = await createOpportunity(faculty.token);
+      for (let i = 0; i < 3; i += 1) {
+        const student = await registerAndLogin({
+          email: `s${i}@thapar.edu`,
+          role: "Student",
+          branch: "COE",
+          year: 2,
+        });
+        await applyTo(student.token, opp._id);
+      }
+
+      const page1 = await request(app)
+        .get("/api/admin/applications?page=1&limit=2")
+        .set(bearer(coordinator.token));
+      expect(page1.body.total).toBe(3);
+      expect(page1.body.applications).toHaveLength(2);
+      expect(page1.body.hasMore).toBe(true);
+
+      const page2 = await request(app)
+        .get("/api/admin/applications?page=2&limit=2")
+        .set(bearer(coordinator.token));
+      expect(page2.body.applications).toHaveLength(1);
+      expect(page2.body.hasMore).toBe(false);
+    });
+
+    it("scopes the applications queue to the coordinator's own organization", async () => {
+      const faculty = await asFaculty();
+      const opp = await createOpportunity(faculty.token);
+      const student = await asStudent();
+      await applyTo(student.token, opp._id);
+
+      await Organization.create({
+        name: "Other University",
+        emailDomains: ["other.edu"],
+      });
+      const otherCoord = await createCoordinator("coord@other.edu", "other.edu");
+
+      const res = await request(app)
+        .get("/api/admin/applications")
+        .set(bearer(otherCoord.token));
+      expect(res.body.total).toBe(0);
+      expect(res.body.applications).toHaveLength(0);
+    });
+
+    it("rejects an unrecognised status value", async () => {
+      const coordinator = await createCoordinator();
+      const res = await request(app)
+        .get("/api/admin/applications?status=NotAStatus")
+        .set(bearer(coordinator.token));
+      expect(res.status).toBe(400);
+    });
+
+    it("forbids a non-coordinator from the applications queue", async () => {
+      const student = await asStudent();
+      const res = await request(app)
+        .get("/api/admin/applications")
+        .set(bearer(student.token));
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe("activity trend", () => {
+    it("defaults to a gap-free 30-day applications series", async () => {
+      const faculty = await asFaculty();
+      const coordinator = await createCoordinator();
+      const opp = await createOpportunity(faculty.token);
+      const student = await asStudent();
+      await applyTo(student.token, opp._id);
+
+      const res = await request(app)
+        .get("/api/admin/analytics/trend")
+        .set(bearer(coordinator.token));
+      expect(res.status).toBe(200);
+      expect(res.body.trend).toHaveLength(30);
+      expect(res.body.trend.at(-1).count).toBe(1);
+    });
+
+    it("honors the period toggle (7d/30d/90d)", async () => {
+      const coordinator = await createCoordinator();
+      for (const [period, days] of [["7d", 7], ["30d", 30], ["90d", 90]]) {
+        const res = await request(app)
+          .get(`/api/admin/analytics/trend?period=${period}`)
+          .set(bearer(coordinator.token));
+        expect(res.status).toBe(200);
+        expect(res.body.trend).toHaveLength(days);
+      }
+    });
+
+    it("counts only Student/Faculty registrations on the signups series, never Coordinator", async () => {
+      const coordinator = await createCoordinator();
+      await asFaculty();
+      await asStudent();
+
+      const res = await request(app)
+        .get("/api/admin/analytics/trend?series=signups")
+        .set(bearer(coordinator.token));
+      expect(res.status).toBe(200);
+      // Faculty + Student registered just now; the Coordinator itself (created
+      // in the same organization, in the same instant) must not be counted.
+      expect(res.body.trend.at(-1).count).toBe(2);
+    });
+
+    it("counts new opportunities on the postings series", async () => {
+      const faculty = await asFaculty();
+      const coordinator = await createCoordinator();
+      await createOpportunity(faculty.token, { title: "First Posting" });
+      await createOpportunity(faculty.token, { title: "Second Posting" });
+
+      const res = await request(app)
+        .get("/api/admin/analytics/trend?series=postings")
+        .set(bearer(coordinator.token));
+      expect(res.status).toBe(200);
+      expect(res.body.trend.at(-1).count).toBe(2);
+    });
+
+    it("scopes the activity trend to the coordinator's own organization", async () => {
+      const faculty = await asFaculty();
+      const opp = await createOpportunity(faculty.token);
+      const student = await asStudent();
+      await applyTo(student.token, opp._id);
+
+      await Organization.create({
+        name: "Other University",
+        emailDomains: ["other.edu"],
+      });
+      const otherCoord = await createCoordinator("coord@other.edu", "other.edu");
+
+      const res = await request(app)
+        .get("/api/admin/analytics/trend")
+        .set(bearer(otherCoord.token));
+      expect(res.body.trend.every((d) => d.count === 0)).toBe(true);
+    });
+
+    it("rejects unrecognised period/series values", async () => {
+      const coordinator = await createCoordinator();
+      const routes = [
+        "/api/admin/analytics/trend?period=14d",
+        "/api/admin/analytics/trend?series=views",
+      ];
+      for (const url of routes) {
+        const res = await request(app).get(url).set(bearer(coordinator.token));
+        expect(res.status).toBe(400);
+      }
+    });
+
+    it("forbids a non-coordinator from the activity trend", async () => {
+      const student = await asStudent();
+      const res = await request(app)
+        .get("/api/admin/analytics/trend")
+        .set(bearer(student.token));
+      expect(res.status).toBe(403);
+    });
   });
 });

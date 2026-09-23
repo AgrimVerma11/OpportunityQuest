@@ -236,6 +236,12 @@ userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 // Its organizationId prefix also serves any org-scoped user lookup.
 userSchema.index({ organizationId: 1, role: 1, accountStatus: 1 });
 
+// The coordinator dashboard's activity trend, "Signups" series: new
+// registrations for one organization within a date window, grouped by day in
+// memory. Mirrors the equivalent index on Opportunity (createdAt-range
+// queries for the "Postings" series and the faculty-activity leaderboard).
+userSchema.index({ organizationId: 1, createdAt: 1 });
+
 // NB: single-field indexes on name (text), role, department, branch,
 // researchDomains and skills were removed. They existed for a user directory /
 // search that is not built; each taxed writes for no read. Reintroduce the

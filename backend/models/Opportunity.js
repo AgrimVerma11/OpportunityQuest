@@ -218,6 +218,11 @@ opportunitySchema.index({ organizationId: 1, status: 1, deadline: 1 });
 // A faculty member's own postings ("my opportunities").
 opportunitySchema.index({ postedBy: 1 });
 
+// The coordinator dashboard's faculty-activity range query: opportunities for
+// one organization, created within a date window (Month / Year-to-Date /
+// Custom Range), then grouped by postedBy in memory.
+opportunitySchema.index({ organizationId: 1, createdAt: 1 });
+
 // NB: eligibleBranches and eligibleYears are both arrays, and MongoDB cannot
 // build a compound index spanning two array fields ("parallel arrays") — it
 // breaks the first insert on a clean database. The feed does filter on them

@@ -73,12 +73,84 @@ export const save = (opportunity) => opportunity.save();
 export const incrementApplicationsCount = (id, delta) =>
   Opportunity.findByIdAndUpdate(id, { $inc: { applicationsCount: delta } });
 
+// Live opportunity counts per faculty member (postedBy), for the coordinator's
+// faculty roster's "Opportunities posted" column. Excludes soft-deleted
+// postings, matching every other opportunity query in this app.
+export const opportunityCountsByFaculty = (organizationId) =>
+  Opportunity.aggregate([
+    {
+      $match: {
+        organizationId: new mongoose.Types.ObjectId(organizationId),
+        isDeleted: { $ne: true },
+      },
+    },
+    { $group: { _id: "$postedBy", count: { $sum: 1 } } },
+  ]);
+
+// One faculty member's all-time totals: opportunities posted and the live
+// applications those postings have drawn. Distinct from
+// facultyActivityByRange, which is date-scoped and org-wide (the
+// leaderboard) — this is the stable, whole-career figure for a profile view,
+// so it doesn't change depending on which range happened to be selected on
+// the leaderboard when the coordinator clicked through.
+export const facultyPostingStats = (facultyId) =>
+  Opportunity.aggregate([
+    {
+      $match: {
+        postedBy: new mongoose.Types.ObjectId(facultyId),
+        isDeleted: { $ne: true },
+      },
+    },
+    {
+      $lookup: {
+        from: "applications",
+        localField: "_id",
+        foreignField: "opportunity",
+        as: "applications",
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        postings: { $sum: 1 },
+        applications: { $sum: { $size: "$applications" } },
+      },
+    },
+  ]);
+
 export const countActive = (organizationId) =>
   Opportunity.countDocuments({
     organizationId,
     status: "Active",
     isDeleted: { $ne: true },
   });
+
+// The $addFields stage that derives Active/Expired/Archived/Closed *display*
+// status ("Expired" = status Active but the deadline has passed). Shared by
+// opportunityStatusBreakdown and listForOrg below so the two can never derive
+// "Expired" differently from one another.
+const DISPLAY_STATUS_STAGE = {
+  $addFields: {
+    displayStatus: {
+      $switch: {
+        branches: [
+          { case: { $eq: ["$status", "Closed"] }, then: "Closed" },
+          { case: { $eq: ["$status", "Archived"] }, then: "Archived" },
+          {
+            case: {
+              $and: [
+                { $eq: ["$status", "Active"] },
+                { $lt: ["$deadline", "$$NOW"] },
+              ],
+            },
+            then: "Expired",
+          },
+        ],
+        default: "Active",
+      },
+    },
+  },
+};
 
 // Opportunity counts by *display* status: Active / Expired / Archived / Closed.
 // "Expired" is derived (status Active but the deadline has passed), matching how
@@ -92,28 +164,7 @@ export const opportunityStatusBreakdown = (organizationId) =>
         isDeleted: { $ne: true },
       },
     },
-    {
-      $addFields: {
-        displayStatus: {
-          $switch: {
-            branches: [
-              { case: { $eq: ["$status", "Closed"] }, then: "Closed" },
-              { case: { $eq: ["$status", "Archived"] }, then: "Archived" },
-              {
-                case: {
-                  $and: [
-                    { $eq: ["$status", "Active"] },
-                    { $lt: ["$deadline", "$$NOW"] },
-                  ],
-                },
-                then: "Expired",
-              },
-            ],
-            default: "Active",
-          },
-        },
-      },
-    },
+    DISPLAY_STATUS_STAGE,
     { $group: { _id: "$displayStatus", count: { $sum: 1 } } },
   ]);
 
@@ -129,3 +180,136 @@ export const aggregateCategoryStats = (organizationId, { status } = {}) =>
     { $group: { _id: "$category", count: { $sum: 1 } } },
     { $sort: { count: -1 } },
   ]);
+
+// Opportunities posted (and the live applications those postings have drawn)
+// per faculty member, within a date range — the source for the coordinator
+// dashboard's faculty-engagement leaderboard across Month / Year-to-Date /
+// Custom Range views. Applications are counted from the live Application
+// collection rather than the denormalized applicationsCount cache, matching
+// how the rest of this service reads (see topOpportunitiesByApplications),
+// so a stale cache can never skew who appears to be "most active". Ranked by
+// applications received by default; pass sortBy: "postings" to rank by
+// posting count instead.
+export const facultyActivityByRange = (organizationId, from, to, sortBy = "apps") =>
+  Opportunity.aggregate([
+    {
+      $match: {
+        organizationId: new mongoose.Types.ObjectId(organizationId),
+        isDeleted: { $ne: true },
+        createdAt: { $gte: from, $lte: to },
+      },
+    },
+    {
+      $lookup: {
+        from: "applications",
+        localField: "_id",
+        foreignField: "opportunity",
+        as: "applications",
+      },
+    },
+    {
+      $group: {
+        _id: "$postedBy",
+        postings: { $sum: 1 },
+        apps: { $sum: { $size: "$applications" } },
+      },
+    },
+    { $sort: sortBy === "postings" ? { postings: -1, apps: -1 } : { apps: -1, postings: -1 } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "faculty",
+      },
+    },
+    { $unwind: "$faculty" },
+    {
+      $project: {
+        _id: 0,
+        facultyId: "$_id",
+        name: "$faculty.name",
+        department: "$faculty.department",
+        postings: 1,
+        apps: 1,
+      },
+    },
+  ]);
+
+// New opportunities posted per calendar day since `since` — the "Postings"
+// series on the coordinator dashboard's activity trend.
+export const dailyPostingCountsByOrg = (organizationId, since) =>
+  Opportunity.aggregate([
+    {
+      $match: {
+        organizationId: new mongoose.Types.ObjectId(organizationId),
+        isDeleted: { $ne: true },
+        createdAt: { $gte: since },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+// Hard cap for listForOrg below — independent of how many opportunities an
+// organization actually has, so this listing can't become a cheap
+// resource-exhaustion lever as it grows. Revisit with real pagination if this
+// is ever reached in practice.
+const MAX_LISTING = 500;
+
+// The full opportunity listing behind the coordinator's Opportunities tab:
+// title, category, status, deadline and applicationsCount, with the same
+// Active/Expired/Archived/Closed *display* status opportunityStatusBreakdown
+// computes (shared via DISPLAY_STATUS_STAGE), so a status filter here matches
+// exactly what the status tiles show. applicationsCount (not a live count) is
+// used for the "fewest applications" sort — acceptable for ordering a listing,
+// unlike the KPI totals above which deliberately read live data.
+export const listForOrg = (organizationId, { status, category, sort } = {}) => {
+  const pipeline = [
+    {
+      $match: {
+        organizationId: new mongoose.Types.ObjectId(organizationId),
+        isDeleted: { $ne: true },
+        ...(category ? { category } : {}),
+      },
+    },
+    DISPLAY_STATUS_STAGE,
+  ];
+
+  if (status) pipeline.push({ $match: { displayStatus: status } });
+
+  if (sort === "deadline") pipeline.push({ $sort: { deadline: 1 } });
+  else if (sort === "applications") pipeline.push({ $sort: { applicationsCount: 1 } });
+  else pipeline.push({ $sort: { createdAt: -1 } });
+
+  pipeline.push(
+    { $limit: MAX_LISTING },
+    {
+      $lookup: {
+        from: "users",
+        localField: "postedBy",
+        foreignField: "_id",
+        as: "postedBy",
+      },
+    },
+    { $unwind: "$postedBy" },
+    {
+      $project: {
+        title: 1,
+        category: 1,
+        status: "$displayStatus",
+        deadline: 1,
+        applicationsCount: 1,
+        createdAt: 1,
+        postedBy: "$postedBy.name",
+      },
+    }
+  );
+
+  return Opportunity.aggregate(pipeline);
+};
