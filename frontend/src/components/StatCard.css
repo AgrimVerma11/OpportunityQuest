@@ -7,6 +7,22 @@
   box-shadow: var(--shadow-panel);
 }
 
+/* When rendered as a <button> (StatCard's onClick prop), undo the browser's
+   button defaults so it reads identically to the static <div> version, plus
+   a hover/focus affordance so it's clear it's interactive. */
+button.oq-stat {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+button.oq-stat:hover,
+button.oq-stat:focus-visible {
+  border-color: var(--gold-deep);
+}
+
 .oq-stat__icon {
   width: 30px;
   height: 30px;
@@ -32,6 +48,9 @@
   line-height: 1;
   margin-bottom: 8px;
   color: var(--ink);
+  /* Georgia's default digits are old-style (varying heights/descenders),
+     which looks uneven at this size — force lining figures. */
+  font-variant-numeric: lining-nums;
 }
 .oq-stat__num--active   { color: var(--status-active-text); }
 .oq-stat__num--archived { color: var(--status-archived-text); }

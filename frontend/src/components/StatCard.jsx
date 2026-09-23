@@ -4,6 +4,8 @@ import "./StatCard.css";
 // `tone` tints the number to a status colour (active/archived/expired/closed/
 // pending). Pass `iconTone` (and optionally `icon`) to render the small rounded
 // icon tile used on the analytics KPIs — the tile shows even with no glyph.
+// Pass `onClick` to make the tile a real, keyboard-operable button (a plain
+// <div> otherwise) — used for KPIs that drill into another view.
 // Namespaced (oq-).
 export default function StatCard({
   value,
@@ -12,10 +14,12 @@ export default function StatCard({
   icon,
   iconTone,
   className = "",
+  onClick,
 }) {
   const showIcon = icon != null || iconTone;
-  return (
-    <div className={`oq-stat${className ? ` ${className}` : ""}`}>
+  const classes = `oq-stat${className ? ` ${className}` : ""}`;
+  const content = (
+    <>
       {showIcon && (
         <span
           className={`oq-stat__icon${
@@ -29,6 +33,16 @@ export default function StatCard({
         {value}
       </div>
       <div className="oq-stat__label">{label}</div>
-    </div>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button type="button" className={classes} onClick={onClick}>
+        {content}
+      </button>
+    );
+  }
+
+  return <div className={classes}>{content}</div>;
 }
