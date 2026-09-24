@@ -58,6 +58,23 @@
   z-index: var(--z-dropdown);
 }
 
+@media (max-width: 480px) {
+  /* Anchored to the bell (position: absolute; right: 0) the panel opens
+     leftward from wherever the bell sits — not the page's right edge, since
+     the avatar/user menu sits further right in the same nav cluster. At
+     340px wide (or even the 88vw cap) that ran the panel's left edge off
+     the screen entirely. Anchoring to the viewport instead of the bell
+     fixes that regardless of exactly where the bell falls in the header. */
+  .notif-panel {
+    position: fixed;
+    top: 62px;
+    left: var(--space-4);
+    right: var(--space-4);
+    width: auto;
+    max-width: none;
+  }
+}
+
 .notif-head {
   display: flex;
   align-items: center;

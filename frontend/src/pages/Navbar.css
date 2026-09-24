@@ -48,6 +48,25 @@
   display: none;
   flex-shrink: 0;
 }
+/* Mobile-only compact wordmark (see Navbar.jsx) — hidden on desktop, where
+   the full lockup image already carries the name. */
+.nav-brand-wordmark {
+  display: none;
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.05;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.nav-brand-quest {
+  display: block;
+  font-family: var(--sans);
+  font-size: 7.5px;
+  font-weight: var(--weight-bold);
+  letter-spacing: 2.5px;
+  color: var(--gold-deep);
+  margin-top: 1px;
+}
 
 /* ── Primary links (desktop) ── */
 .nav-links {
@@ -219,7 +238,8 @@
   .nav-burger { display: inline-flex; }
   .nav-brand-lockup { display: none; }
   .nav-brand-mark { display: block; }
-  .nav-brand { margin-right: 0; }
+  .nav-brand-wordmark { display: block; }
+  .nav-brand { margin-right: 0; gap: var(--space-2); }
   .nav-mobile { display: flex; }
   .nav-user-meta { display: none; }
   .nav-user-caret { display: none; }

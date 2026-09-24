@@ -86,7 +86,14 @@ function Navbar() {
               alt="Opportunity Quest"
               className="nav-brand-lockup"
             />
-            <Logo className="nav-brand-mark" size={42} />
+            <Logo className="nav-brand-mark" size={36} />
+            {/* Compact text wordmark, shown only at the mobile breakpoint in
+                place of the (too-wide) lockup image — same "serif name +
+                tracked gold QUEST" pattern as the footer's wordmark, just
+                sized for a 72px header instead of a spacious footer row. */}
+            <span className="nav-brand-wordmark" aria-hidden="true">
+              Opportunity<span className="nav-brand-quest">QUEST</span>
+            </span>
           </Link>
 
           {!isAuthPage && (
