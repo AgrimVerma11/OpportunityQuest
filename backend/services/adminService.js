@@ -26,17 +26,20 @@ export const listPendingFaculty = (organizationId) =>
 // from a separate count query, rather than reshaping findFacultyByOrg's
 // existing populate-based query into an aggregation.
 export const listFaculty = async (organizationId) => {
-  const [faculty, postingCounts] = await Promise.all([
+  const [{ faculty, capped }, postingCounts] = await Promise.all([
     userRepo.findFacultyByOrg(organizationId),
     opportunityRepo.opportunityCountsByFaculty(organizationId),
   ]);
   const countsById = Object.fromEntries(
     postingCounts.map((row) => [String(row._id), row.count])
   );
-  return faculty.map((f) => ({
-    ...f.toObject(),
-    opportunitiesPosted: countsById[String(f._id)] || 0,
-  }));
+  return {
+    faculty: faculty.map((f) => ({
+      ...f.toObject(),
+      opportunitiesPosted: countsById[String(f._id)] || 0,
+    })),
+    capped,
+  };
 };
 
 // One faculty member's detail card — profile fields plus their all-time

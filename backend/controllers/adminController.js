@@ -1,6 +1,7 @@
 import * as adminService from "../services/adminService.js";
 import * as analyticsService from "../services/analyticsService.js";
 import { respondError } from "../utils/respondError.js";
+import logger from "../config/logger.js";
 
 // GET /api/admin/analytics  (Coordinator) — org-scoped dashboard figures.
 export const getAnalytics = async (req, res) => {
@@ -73,11 +74,17 @@ export const getStudentEngagement = async (req, res) => {
 // opportunity listing, for the Opportunities tab.
 export const getOpportunities = async (req, res) => {
   try {
-    const opportunities = await analyticsService.getOpportunitiesList(
+    const { opportunities, capped } = await analyticsService.getOpportunitiesList(
       req.user.organizationId,
       req.validatedQuery
     );
-    res.json({ success: true, count: opportunities.length, opportunities });
+    if (capped) {
+      logger.warn(
+        { organizationId: req.user.organizationId },
+        "Opportunities listing hit its cap — results were truncated"
+      );
+    }
+    res.json({ success: true, count: opportunities.length, capped, opportunities });
   } catch (error) {
     respondError(res, error);
   }
@@ -115,8 +122,14 @@ export const getActivityTrend = async (req, res) => {
 // GET /api/admin/faculty  (Coordinator) — full faculty roster.
 export const getFaculty = async (req, res) => {
   try {
-    const faculty = await adminService.listFaculty(req.user.organizationId);
-    res.json({ success: true, count: faculty.length, faculty });
+    const { faculty, capped } = await adminService.listFaculty(req.user.organizationId);
+    if (capped) {
+      logger.warn(
+        { organizationId: req.user.organizationId },
+        "Faculty roster hit its cap — results were truncated"
+      );
+    }
+    res.json({ success: true, count: faculty.length, capped, faculty });
   } catch (error) {
     respondError(res, error);
   }

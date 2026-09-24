@@ -1818,11 +1818,41 @@ describe("coordinator analytics", () => {
       .set(bearer(coordinator.token));
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(2);
+    expect(res.body.capped).toBe(false);
     expect(res.body.faculty.map((f) => f.accountStatus).sort()).toEqual([
       "Active",
       "Pending",
     ]);
     expect(res.body.faculty[0]).toHaveProperty("createdAt");
+  });
+
+  it("caps the faculty roster and reports when results were truncated", async () => {
+    const coordinator = await createCoordinator();
+    const org = await Organization.findOne({ emailDomains: "thapar.edu" });
+    const passwordHash = await bcrypt.hash("Password@123", 10);
+
+    // Bulk-inserted directly — 2,001 real registrations through the HTTP API
+    // would be far too slow for a test; the cap logic only cares about row
+    // count, not how the rows got there.
+    const docs = Array.from({ length: 2001 }, (_, i) => ({
+      organizationId: org._id,
+      name: `Bulk Faculty ${i}`,
+      email: `bulk-faculty-${i}@thapar.edu`,
+      password: passwordHash,
+      role: "Faculty",
+      gender: "Other",
+      accountStatus: "Active",
+      department: "DCSE",
+    }));
+    await User.insertMany(docs);
+
+    const res = await request(app)
+      .get("/api/admin/faculty")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.capped).toBe(true);
+    expect(res.body.faculty).toHaveLength(2000);
+    expect(res.body.count).toBe(2000);
   });
 
   it("annotates each faculty member with how many opportunities they currently have posted", async () => {
@@ -2467,6 +2497,7 @@ describe("coordinator analytics — Phase 1 additions", () => {
       .set(bearer(coordinator.token));
     expect(listAll.status).toBe(200);
     expect(listAll.body.count).toBe(2);
+    expect(listAll.body.capped).toBe(false);
     expect(listAll.body.opportunities[0]).toHaveProperty(
       "postedBy",
       "Test Person"
@@ -2485,6 +2516,38 @@ describe("coordinator analytics — Phase 1 additions", () => {
       "Closing Soon",
       "Closing Later",
     ]);
+  });
+
+  it("caps the opportunities listing and reports when results were truncated", async () => {
+    const faculty = await asFaculty();
+    const coordinator = await createCoordinator();
+    const org = await Organization.findOne({ emailDomains: "thapar.edu" });
+    const facultyUser = await User.findOne({ email: "prof@thapar.edu" });
+
+    // Bulk-inserted directly, same reasoning as the faculty-roster cap test:
+    // 2,001 real postings through the HTTP API would be far too slow here.
+    const docs = Array.from({ length: 2001 }, (_, i) => ({
+      organizationId: org._id,
+      title: `Bulk Opportunity ${i}`,
+      description: "Bulk-seeded directly for the listing cap test.",
+      category: "Research",
+      postedBy: facultyUser._id,
+      eligibleBranches: ["All"],
+      eligibleYears: ["All"],
+      eligibleGender: "Any",
+      contactEmail: "prof@thapar.edu",
+      deadline: futureISO(30),
+      status: "Active",
+    }));
+    await Opportunity.insertMany(docs);
+
+    const res = await request(app)
+      .get("/api/admin/opportunities")
+      .set(bearer(coordinator.token));
+    expect(res.status).toBe(200);
+    expect(res.body.capped).toBe(true);
+    expect(res.body.opportunities).toHaveLength(2000);
+    expect(res.body.count).toBe(2000);
   });
 
   it("rejects unrecognised filter values on the new analytics routes", async () => {

@@ -258,9 +258,15 @@ export const dailyPostingCountsByOrg = (organizationId, since) =>
 
 // Hard cap for listForOrg below — independent of how many opportunities an
 // organization actually has, so this listing can't become a cheap
-// resource-exhaustion lever as it grows. Revisit with real pagination if this
-// is ever reached in practice.
-const MAX_LISTING = 500;
+// resource-exhaustion lever as it grows. Sized generously above any pilot
+// institution's real volume; listForOrg requests one extra row past this cap
+// so it can report `capped` rather than silently truncating with no signal
+// that anything was left out. Revisit with real pagination (and, since the
+// Opportunities tab's "By category" view groups the full result client-side,
+// a matching redesign of that grouping — see StudentsByYear's lazy-loaded
+// group pattern for the shape that would take) if this is ever hit in
+// practice.
+const MAX_LISTING = 2000;
 
 // The full opportunity listing behind the coordinator's Opportunities tab:
 // title, category, status, deadline and applicationsCount, with the same
@@ -269,7 +275,7 @@ const MAX_LISTING = 500;
 // exactly what the status tiles show. applicationsCount (not a live count) is
 // used for the "fewest applications" sort — acceptable for ordering a listing,
 // unlike the KPI totals above which deliberately read live data.
-export const listForOrg = (organizationId, { status, category, sort } = {}) => {
+export const listForOrg = async (organizationId, { status, category, sort } = {}) => {
   const pipeline = [
     {
       $match: {
@@ -288,7 +294,8 @@ export const listForOrg = (organizationId, { status, category, sort } = {}) => {
   else pipeline.push({ $sort: { createdAt: -1 } });
 
   pipeline.push(
-    { $limit: MAX_LISTING },
+    // One extra row past the cap, purely to detect whether there's more.
+    { $limit: MAX_LISTING + 1 },
     {
       $lookup: {
         from: "users",
@@ -311,5 +318,7 @@ export const listForOrg = (organizationId, { status, category, sort } = {}) => {
     }
   );
 
-  return Opportunity.aggregate(pipeline);
+  const rows = await Opportunity.aggregate(pipeline);
+  const capped = rows.length > MAX_LISTING;
+  return { opportunities: capped ? rows.slice(0, MAX_LISTING) : rows, capped };
 };

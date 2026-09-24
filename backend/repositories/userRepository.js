@@ -46,13 +46,26 @@ export const incrementApplicationsSubmitted = (id, delta) =>
 export const countByRole = (organizationId, role) =>
   User.countDocuments({ organizationId, role });
 
+// Hard cap on the faculty roster — this listing has never had one, and an
+// unbounded query only gets more expensive to build and to render as an
+// institution's faculty count grows. One extra row past the cap so a caller
+// can detect (and report) truncation instead of it being silent. Revisit with
+// real pagination (and a redesign of the roster's "group by department" view,
+// which groups the full result client-side) if this is ever hit in practice —
+// see the identical note on opportunityRepository's MAX_LISTING.
+const MAX_ROSTER = 2000;
+
 // Full faculty roster for the coordinator directory — all statuses, newest
 // first, with who approved them (if anyone).
-export const findFacultyByOrg = (organizationId) =>
-  User.find({ organizationId, role: ROLES.FACULTY })
+export const findFacultyByOrg = async (organizationId) => {
+  const rows = await User.find({ organizationId, role: ROLES.FACULTY })
     .select("name department employeeId accountStatus createdAt approvedAt approvedBy profileImage")
     .populate("approvedBy", "name")
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .limit(MAX_ROSTER + 1);
+  const capped = rows.length > MAX_ROSTER;
+  return { faculty: capped ? rows.slice(0, MAX_ROSTER) : rows, capped };
+};
 
 // A page of the organization's students, newest first, plus the total.
 // Optionally scoped to one gender, year and/or branch — the Students tab's
