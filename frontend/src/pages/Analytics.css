@@ -445,35 +445,35 @@ button.an-stat:focus-visible {
 /* ── Top opportunities ── */
 .an-top-list {
   list-style: none;
-}
-.an-top-list li {
-  border-bottom: 1px solid var(--border);
-}
-.an-top-list li:last-child {
-  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 /* The whole row is the click target (→ that opportunity's detail page) —
-   button-reset plus a hover/focus tint and a chevron that eases in, the same
-   "quiet until you touch it" affordance as the faculty engagement leaderboard
-   rows. */
+   an outlined card (not just a flush, divider-separated row) so each entry
+   reads as its own distinct, clickable unit, plus a hover/focus tint and a
+   chevron that eases in. Same treatment as the faculty engagement
+   leaderboard rows below. */
 .an-top-row {
   display: flex;
   align-items: center;
   width: 100%;
   gap: 14px;
-  padding: 10px 6px;
-  margin: 0 -6px;
-  border: none;
-  background: none;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--paper);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background var(--transition), border-color var(--transition),
+    box-shadow var(--transition);
 }
 .an-top-row:hover,
 .an-top-row:focus-visible {
   background: var(--ivory);
+  border-color: var(--gold-deep);
+  box-shadow: var(--shadow-card);
 }
 .an-top-rank {
   flex-shrink: 0;
@@ -779,33 +779,32 @@ button.an-opp-group-head--toggle:hover {
 }
 .an-eng-list {
   list-style: none;
-}
-.an-eng-list li {
-  border-bottom: 1px solid var(--border);
-}
-.an-eng-list li:last-child {
-  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 /* The whole row is the click target (→ that faculty member's detail card) —
-   same "quiet until you touch it" treatment as .an-top-row. */
+   an outlined card, same treatment as .an-top-row (see its comment). */
 .an-eng-row {
   display: flex;
   align-items: center;
   width: 100%;
   gap: 12px;
-  padding: 10px 6px;
-  margin: 0 -6px;
-  border: none;
-  background: none;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--paper);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background var(--transition), border-color var(--transition),
+    box-shadow var(--transition);
 }
 .an-eng-row:hover,
 .an-eng-row:focus-visible {
   background: var(--ivory);
+  border-color: var(--gold-deep);
+  box-shadow: var(--shadow-card);
 }
 .an-eng-person {
   flex: 1;
@@ -977,8 +976,46 @@ button.an-opp-group-head--toggle:hover {
 @media (max-width: 1024px) {
   .an-grid-3,
   .an-grid-2 {
-    grid-template-columns: 1fr;
+    /* minmax(0, 1fr), not a bare 1fr: a bare 1fr is minmax(auto, 1fr), which
+       lets the track grow to a child's intrinsic min-content instead of
+       respecting the container's actual width. Grid items default to
+       min-width: auto, so a card with any unwrappable content (a long
+       nowrap opportunity title, in practice) was pulling its whole
+       single-column track — and every card sharing that row — out past the
+       viewport instead of shrinking to fit. This is what was blowing the
+       Overview tab's Opportunity status / Top opportunities row out to
+       ~560px on a ~360px-wide phone. */
+    grid-template-columns: minmax(0, 1fr);
   }
   /* Cards are full-width here, so the label column keeps its roomy desktop size
      (inherited) rather than narrowing — no truncation on tablet/mobile. */
+}
+
+@media (max-width: 768px) {
+  /* Overview/Opportunities/Faculty/Students at the desktop gap (32px) and
+     font size (15px) don't fit a phone's width — the row itself was the
+     widest thing on the page after the grid-track bug above, wider than the
+     viewport with no way to reach the later tabs short of the page-level
+     horizontal scroll this whole section exists to eliminate. */
+  .an-tabs {
+    gap: 18px;
+  }
+  .an-tab {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* The student-engagement panel's two side-by-side bar groups: each
+     BarRow's own grid (a fixed 120px label + 26px value, see .an-bar-row)
+     needs more room than half a phone-width card has left over — the two
+     fixed-width columns alone are wider than the whole half, so the label
+     and value collide and render on top of each other. Stacking the two
+     groups instead of sitting them side by side gives each BarRow the
+     card's full width, which it already comfortably fits everywhere else
+     on this page. */
+  .an-eng-cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
 }
