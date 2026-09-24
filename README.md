@@ -7,7 +7,7 @@ Opportunity Quest turns scattered, word-of-mouth academic opportunity into a str
 **Live:** [opportunityquest.agrimverma.dev](https://opportunityquest.agrimverma.dev)  ·  API: `api.opportunityquest.agrimverma.dev`
 
 ![CI](https://github.com/AgrimVerma11/OpportunityQuest/actions/workflows/ci.yml/badge.svg)
-![Tests](https://img.shields.io/badge/tests-91%20passing-3f6b45)
+![Tests](https://img.shields.io/badge/tests-199%20passing-3f6b45)
 ![React](https://img.shields.io/badge/React-19-14172e)
 ![Express](https://img.shields.io/badge/Express-5-14172e)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-3f6b45)
@@ -134,22 +134,22 @@ Cross-cutting concerns live in middleware: JWT auth, role and ownership checks, 
 - **Tenant isolation:** every read is organization-scoped; cross-tenant access reads as *not found*.
 - **Input & transport:** Joi schema validation, NoSQL-operator sanitization, ObjectId parameter guards, Helmet headers, CORS locked to a configured origin, and request-body size limits.
 - **Abuse control:** global and per-route rate limiting backed by Redis, with a fail-open wrapper so a cache outage degrades limiting rather than the whole API.
-- **Private files:** résumés are never served statically — only through an authenticated endpoint that checks ownership before streaming.
+- **Private files:** resumes are never served statically — only through an authenticated endpoint that checks ownership before streaming.
 
 ---
 
 ## Testing & CI
 
-**91 automated tests**, gated in CI on every push:
+**199 automated tests**, gated in CI on every push:
 
-- **61 API tests** (Vitest + Supertest against an in-memory MongoDB) drive real requests through the full stack — auth and RBAC, the eligibility gate, the application state machine, tenant isolation, the faculty-approval flow with its transaction rollback, Google sign-in and account linking, feed pagination and search, private file storage and authorized streaming, messaging, notifications, and analytics.
-- **30 UI tests** (Vitest + React Testing Library) cover the component kit and page logic.
+- **122 API tests** (Vitest + Supertest against an in-memory MongoDB) drive real requests through the full stack — auth and RBAC, the eligibility gate, the application state machine, tenant isolation, the faculty-approval flow with its transaction rollback, Google sign-in and account linking, feed pagination and search, private file storage and authorized streaming, messaging, notifications, and the coordinator analytics dashboard.
+- **77 UI tests** (Vitest + React Testing Library) cover the component kit and page logic.
 
 GitHub Actions lints, tests, and builds both the API and the web app on every push and pull request.
 
 ```bash
-cd backend && npm test     # 61 API tests
-cd frontend && npm test    # 30 UI tests
+cd backend && npm test     # 122 API tests
+cd frontend && npm test    # 77 UI tests
 ```
 
 ---
@@ -177,6 +177,8 @@ GOOGLE_CLIENT_ID=                        # enables "Continue with Google"
 STORAGE_DRIVER=local                     # local | r2   (R2 needs its own credentials)
 EMAIL_PROVIDER=                          # e.g. resend  (needs EMAIL_FROM + provider key)
 REDIS_URL=                               # rate-limit store; falls back to in-memory if unset
+SENTRY_DSN=                              # error tracking; no-op if unset
+LOG_LEVEL=info                           # trace | debug | info | warn | error | silent
 ```
 
 **`frontend/.env`**
@@ -192,28 +194,6 @@ cd frontend && npm run dev    # web on http://localhost:5173
 ```
 
 Registration is restricted to institutional domains (`@thapar.edu` on this deployment), enforced server-side from the organization table. Seed a working dataset with `npm run seed` in `backend/`, then register a faculty and a student, post an opportunity, and apply.
-
----
-
-## Operations
-
-Coordinators are provisioned by an operator, and a few maintenance scripts keep the data honest:
-
-```bash
-# Provision the institution's coordinator (the approval trust anchor)
-COORD_NAME="Name" COORD_EMAIL="coord@thapar.edu" COORD_PASSWORD="…" \
-  node scripts/provisionCoordinator.js
-
-# Remove a user and their entire footprint (opportunities, applications,
-# conversations, messages, notifications) — never delete users by hand
-USER_EMAIL="someone@thapar.edu" node scripts/deleteUser.js
-
-# Heal any records/counters left dangling by an out-of-band edit
-node scripts/cleanupOrphans.js
-
-# Keep Mongoose indexes in sync with the schemas
-npm run sync:indexes
-```
 
 ---
 

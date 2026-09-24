@@ -2,7 +2,10 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import mongoose from "mongoose";
+import pinoHttp from "pino-http";
 
+import logger from "./config/logger.js";
+import { captureException } from "./config/sentry.js";
 import authRoutes from "./routes/authRoutes.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import opportunityRoutes from "./routes/opportunityRoutes.js";
@@ -41,6 +44,17 @@ export function createApp() {
     cors({
       origin: process.env.ALLOWED_ORIGIN || "http://localhost:5173",
       credentials: true,
+    })
+  );
+
+  // One structured log line per request, tagged with a request id so every
+  // log a single request produces (this one included) can be correlated.
+  // The health check is polled constantly by uptime monitors — excluded so
+  // it can't drown out everything else.
+  app.use(
+    pinoHttp({
+      logger,
+      autoLogging: { ignore: (req) => req.url === "/api/health" },
     })
   );
 
@@ -103,8 +117,13 @@ export function createApp() {
 
   // -------- ERROR HANDLER --------
 
+  // Last resort — anything that escaped a controller's own try/catch (see
+  // respondError.js, which every controller uses) and never got the chance
+  // to be classified as a routine AppError. Always unexpected, so always
+  // logged and reported.
   app.use((err, req, res, next) => {
-    console.error(err);
+    logger.error({ err }, err.message || "Unhandled error");
+    captureException(err);
     res.status(err.status || 500).json({
       success: false,
       message: err.message || "Internal server error",

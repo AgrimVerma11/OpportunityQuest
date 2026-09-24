@@ -1,5 +1,7 @@
 import Redis from "ioredis";
 
+import logger from "./logger.js";
+
 // A shared Redis client for state that must be consistent across backend
 // instances — today, rate-limit counters. It is created only when REDIS_URL is
 // set; without it the app runs fine and those features fall back to a local
@@ -24,13 +26,13 @@ if (process.env.REDIS_URL) {
   let lastError = null;
   redisClient.on("error", (err) => {
     if (err.message !== lastError) {
-      console.error("Redis client error:", err.message);
+      logger.error({ err }, "Redis client error");
       lastError = err.message;
     }
   });
   redisClient.on("ready", () => {
     lastError = null;
-    console.log("Redis connected");
+    logger.info("Redis connected");
   });
 }
 

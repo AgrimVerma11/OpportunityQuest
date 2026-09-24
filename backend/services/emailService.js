@@ -1,5 +1,6 @@
 import * as emailTransport from "../lib/email/index.js";
 import * as templates from "../lib/email/templates.js";
+import logger from "../config/logger.js";
 
 // Domain email senders. These are deliberately BEST-EFFORT: an email is a side
 // effect of an action, never a precondition for it. Every sender swallows its
@@ -11,7 +12,10 @@ const bestEffort = async (label, to, build) => {
     const { subject, html, text } = build();
     await emailTransport.sendEmail({ to, subject, html, text });
   } catch (err) {
-    console.error(`Failed to send ${label} email to ${to}:`, err.message);
+    // Still swallowed (see above) — but logged, not silently dropped, so a
+    // provider outage shows up somewhere instead of just "nobody got their
+    // approval email" reaching you third-hand.
+    logger.error({ err, label, to }, "Failed to send email");
   }
 };
 
